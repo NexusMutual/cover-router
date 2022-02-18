@@ -1,0 +1,37 @@
+{
+  "name": "cover-router",
+  "version": "1.0.0",
+  "description": "Computes optimal capacity allocation per Nexus Mutual staking pool on cover purchase",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NexusMutual/cover-router.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NexusMutual/cover-router/issues"
+  },
+  "homepage": "https://github.com/NexusMutual/cover-router#readme",
+  "dependencies": {
+    "async": "^3.2.0",
+    "dotenv": "^8.2.0",
+    "ethers": "^5.0.18",
+    "express": "^4.17.1",
+    "json2csv": "^5.0.6",
+    "node-cache": "^5.1.2",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.18.0",
+    "eslint-config-semistandard": "^15.0.1",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^5.0.0"
+  }
+}
