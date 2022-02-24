@@ -1,5 +1,4 @@
 
-
 function calculateCapacityAllocation(pools, coverAmount) {
 
   const sortedPoolsWithPrices = [];

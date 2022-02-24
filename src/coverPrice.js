@@ -1,4 +1,5 @@
 const { toBN, BN } = web3.utils;
+const { BigNumber } = require('ethers');
 
 const SURGE_THRESHOLD = toBN(8e17);
 const BASE_SURGE_LOADING = 1e17;

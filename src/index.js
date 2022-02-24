@@ -26,7 +26,7 @@ async function init () {
   );
   // Get contracts instances
   console.log(`Getting contract instances...`);
-  await initContracts(['CD', 'QD', 'CP'], provider);
+  await initContracts(['CO'], provider);
   const app = routes();
   await startServer(app, PORT);
   console.log(`proof-api listening on port ${PORT}`);
