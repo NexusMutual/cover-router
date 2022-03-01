@@ -3,6 +3,7 @@ const ethers = require('ethers');
 
 const routes = require('./routes');
 const { initContracts } = require('./initContracts');
+const { initializePoolPriceData } = require('./poolPriceParameters');
 
 async function startServer (app, port) {
   return new Promise(resolve => app.listen(port, resolve));
@@ -27,6 +28,9 @@ async function init () {
   // Get contracts instances
   console.log(`Getting contract instances...`);
   await initContracts(['CO'], provider);
+
+  await initializePoolPriceData();
+
   const app = routes();
   await startServer(app, PORT);
   console.log(`proof-api listening on port ${PORT}`);

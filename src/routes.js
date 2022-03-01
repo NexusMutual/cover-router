@@ -2,7 +2,9 @@ const express = require('express');
 const NodeCache = require('node-cache');
 
 const { instanceOf } = require('./initContracts');
-const coverAllocation = require('./coverAllocation');
+const { calculateCapacityAllocation } = require('./coverAllocation');
+const { getPools } = require('./poolPriceParameters');
+
 
 const asyncRoute = route => (req, res, ...rest) => {
   route(req, res, ...rest).catch(e => {
@@ -48,17 +50,15 @@ module.exports = () => {
 
   app.get(
     '/v1/cover-allocation',
-    asyncRoute(async (_, res) => {
-      // const { CD } = instanceOf;
-      // const lastClaimId = await CD.actualClaimLength();
-      // if (cache.get('lastClaimId') === lastClaimId.toString()) {
-      //   return res.json(cache.get('proofValidity'));
-      // }
-      // const proofValidity = await checkProofValidity();
-      // cache.set('proofValidity', proofValidity);
-      // cache.set('lastClaimId', lastClaimId.toString());
-      // res.json(proofValidity);
-    }),
+    asyncRoute(async (req, res) => {
+
+      const amount = req.query.amount;
+      const productId = req.query.productId;
+
+      const capacityAllocation = calculateCapacityAllocation(getPools(productId), amount)
+
+      res.json(capacityAllocation);
+    })
   );
 
   return app;

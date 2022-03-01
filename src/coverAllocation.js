@@ -1,3 +1,4 @@
+const { getPrices } = require('./coverPrice');
 
 function calculateCapacityAllocation(pools, coverAmount) {
 
@@ -30,7 +31,8 @@ function calculateCapacityAllocation(pools, coverAmount) {
 }
 
 function calculatePoolPrice(pool, coverAmount) {
-  // TODO: implement
+  // TODO: finish implementation
+  getPrices(coverAmount, pool.activeCover, pool.capacity, pool.initialPriceRatio, pool.lastBasePrice, pool.targetPrice);
 }
 
 module.exports = {
