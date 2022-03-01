@@ -32,7 +32,11 @@ function calculateCapacityAllocation(pools, coverAmount) {
 
 function calculatePoolPrice(pool, coverAmount) {
   // TODO: finish implementation
-  getPrices(coverAmount, pool.activeCover, pool.capacity, pool.initialPriceRatio, pool.lastBasePrice, pool.targetPrice);
+  const { coveredAmount, actualPrice } = getPrices(coverAmount, pool.activeCover, pool.capacity, pool.initialPriceRatio, pool.lastBasePrice, pool.targetPrice);
+  return {
+    coveredAmount,
+    price: actualPrice
+  };
 }
 
 module.exports = {

@@ -70,6 +70,9 @@ function getPrices (
   const lastBasePriceValue = BigNumber.from(lastBasePrice.value);
   const lastUpdateTime = BigNumber.from(lastBasePrice.lastUpdateTime);
 
+  // limit amount to what is left of the total capacity
+  amount = BigNumber.min(amount, capacity.sub(activeCover));
+
   const basePrice = interpolatePrice(
     lastBasePriceValue.gt(0) ? lastBasePriceValue : initialPrice,
     targetPrice,
@@ -90,7 +93,7 @@ function getPrices (
 
   const bumpedBasePrice = basePrice.add(priceBump);
 
-  return { basePrice: bumpedBasePrice, actualPrice };
+  return { basePrice: bumpedBasePrice, actualPrice, coveredAmount: amount };
 }
 
 
