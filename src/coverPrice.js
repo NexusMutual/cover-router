@@ -1,7 +1,6 @@
-const { toBN, BN } = web3.utils;
 const { BigNumber } = require('ethers');
 
-const SURGE_THRESHOLD = toBN(8e17);
+const SURGE_THRESHOLD = BigNumber.from(8e17);
 const BASE_SURGE_LOADING = 1e17;
 
 const PRICE_RATIO_CHANGE_PER_DAY = 100;
@@ -32,10 +31,10 @@ function calculatePrice (
   activeCover,
   capacity) {
 
-  amount = toDecimal(amount);
-  basePrice = toDecimal(basePrice);
-  activeCover = toDecimal(activeCover);
-  capacity = toDecimal(capacity);
+  amount = BigNumber.from(amount);
+  basePrice = BigNumber.from(basePrice);
+  activeCover = BigNumber.from(activeCover);
+  capacity = BigNumber.from(capacity);
 
   const newActiveCoverAmount = amount.add(activeCover);
   const activeCoverRatio = activeCover.mul(1e18).div(capacity);
@@ -47,7 +46,7 @@ function calculatePrice (
 
   const surgeLoadingRatio = newActiveCoverRatio.sub(SURGE_THRESHOLD);
   const surgeFraction =
-    activeCoverRatio.gte(SURGE_THRESHOLD) ? toDecimal(1e18) : surgeLoadingRatio.mul(capacity).div(amount);
+    activeCoverRatio.gte(SURGE_THRESHOLD) ? BigNumber.from(1e18) : surgeLoadingRatio.mul(capacity).div(amount);
   const surgeLoading = surgeLoadingRatio.mul(BASE_SURGE_LOADING).div(1e16).div(2).mul(surgeFraction).div(1e18);
 
   return basePrice.mul(surgeLoading.add(1e18)).div(1e18).floor();
@@ -63,13 +62,13 @@ function getPrices (
   blockTimestamp,
 ) {
 
-  amount = toBN(amount);
-  activeCover = toBN(activeCover);
-  capacity = toBN(capacity);
-  initialPrice = toBN(initialPrice);
-  targetPrice = toBN(targetPrice);
-  const lastBasePriceValue = toBN(lastBasePrice.value);
-  const lastUpdateTime = toBN(lastBasePrice.lastUpdateTime);
+  amount = BigNumber.from(amount);
+  activeCover = BigNumber.from(activeCover);
+  capacity = BigNumber.from(capacity);
+  initialPrice = BigNumber.from(initialPrice);
+  targetPrice = BigNumber.from(targetPrice);
+  const lastBasePriceValue = BigNumber.from(lastBasePrice.value);
+  const lastUpdateTime = BigNumber.from(lastBasePrice.lastUpdateTime);
 
   const basePrice = interpolatePrice(
     lastBasePriceValue.gt(0) ? lastBasePriceValue : initialPrice,
