@@ -1,10 +1,10 @@
 const { getPrices } = require('./coverPrice');
 
-function calculateCapacityAllocation(pools, coverAmount) {
+function calculateCapacityAllocation(pools, coverAmount, blockTimestamp) {
 
   const sortedPoolsWithPrices = [];
   for (const pool of pools) {
-    const { coveredAmount, price } = calculatePoolPrice(pool, coverAmount);
+    const { coveredAmount, price } = calculatePoolPrice(pool, coverAmount, blockTimestamp);
 
     sortedPoolsWithPrices.push({
       coveredAmount,
@@ -18,7 +18,7 @@ function calculateCapacityAllocation(pools, coverAmount) {
   const poolAllocations = [];
   let amountLeftToCover = coverAmount;
   for (const poolWithPrice of sortedPoolsWithPrices) {
-    const { coveredAmount, price } = poolWithPrice;
+    const { coveredAmount } = poolWithPrice;
 
     poolAllocations.push(poolWithPrice);
     if (coveredAmount.gte(amountLeftToCover)) {
@@ -30,9 +30,10 @@ function calculateCapacityAllocation(pools, coverAmount) {
   return poolAllocations;
 }
 
-function calculatePoolPrice(pool, coverAmount) {
-  // TODO: finish implementation
-  const { coveredAmount, actualPrice } = getPrices(coverAmount, pool.activeCover, pool.capacity, pool.initialPriceRatio, pool.lastBasePrice, pool.targetPrice);
+function calculatePoolPrice(pool, coverAmount, blockTimestamp) {
+  const { coveredAmount, actualPrice } = getPrices(
+    coverAmount, pool.activeCover, pool.capacity, pool.initialPriceRatio, pool.lastBasePrice, pool.targetPrice, blockTimestamp
+  );
   return {
     coveredAmount,
     price: actualPrice

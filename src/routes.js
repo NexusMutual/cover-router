@@ -3,7 +3,7 @@ const NodeCache = require('node-cache');
 
 const { instanceOf } = require('./initContracts');
 const { calculateCapacityAllocation } = require('./coverAllocation');
-const { getPools } = require('./poolPriceParameters');
+const { getPools, getLastBlockTimestamp } = require('./poolPriceParameters');
 
 
 const asyncRoute = route => (req, res, ...rest) => {
@@ -55,7 +55,11 @@ module.exports = () => {
       const amount = req.query.amount;
       const productId = req.query.productId;
 
-      const capacityAllocation = calculateCapacityAllocation(getPools(productId), amount)
+      const capacityAllocation = calculateCapacityAllocation(
+        getPools(productId),
+        amount,
+        getLastBlockTimestamp()
+      );
 
       res.json(capacityAllocation);
     })

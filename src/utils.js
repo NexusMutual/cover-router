@@ -5,7 +5,7 @@ const NEW_BLOCK_POLL_INTERVAL = 15000;
 function getPollingBlockEmitter(provider) {
 
   let lastBlockNumber = undefined;
-  const emitter = EventEmitter();
+  const emitter = new EventEmitter();
 
   provider.on("block", (blockNumber) => {
     emitter.emit("block", blockNumber);

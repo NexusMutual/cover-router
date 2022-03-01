@@ -6,6 +6,7 @@ const { getPollingBlockEmitter } = require('./utils');
 const allPoolPriceParameters = [];
 
 let lastBlockNumber = 0;
+let lastBlockTimestamp = 0;
 
 async function fetchAllPoolPriceData() {
   const { provider, CO } = instanceOf;
@@ -16,6 +17,8 @@ async function fetchAllPoolPriceData() {
   log.info(`Fetching pool price data`);
 
   lastBlockNumber =  await provider.getBlockNumber();
+  const block = await provider.getBlock(blockNumber);
+  lastBlockTimestamp = block.timestamp;
 
   for (let i = 0; i < stakingPoolCount; i++) {
     log.info(`Fetching pool price parameters for pool ${i}`);
@@ -35,6 +38,9 @@ async function initializePoolPriceData() {
     if (blockNumber.gt(lastBlockNumber)) {
 
       log.info(`Processing block ${blockNumber.toString()}`);
+
+      const block = await provider.getBlock(blockNumber);
+      lastBlockTimestamp = block.timestamp;
 
       await getPoolAllocationPriceParametersForCoverActionEvents('CoverBought', blockNumber, CO);
       await getPoolAllocationPriceParametersForCoverActionEvents('CoverEdited', blockNumber, CO);
@@ -77,8 +83,13 @@ function getPools(productId) {
   return pools;
 }
 
+function getLastBlockTimestamp() {
+  return lastBlockTimestamp;
+}
+
 module.exports = {
   fetchAllPoolPriceData,
   initializePoolPriceData,
-  getPools
+  getPools,
+  getLastBlockTimestamp
 }
