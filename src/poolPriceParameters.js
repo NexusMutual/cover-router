@@ -36,15 +36,17 @@ async function initializePoolPriceData() {
 
       log.info(`Processing block ${blockNumber.toString()}`);
 
-      await getPoolAllocationPriceParametersForCoverActionEvents('CoverBought', blockNumber);
-      await getPoolAllocationPriceParametersForCoverActionEvents('CoverEdited', blockNumber);
+      await getPoolAllocationPriceParametersForCoverActionEvents('CoverBought', blockNumber, CO);
+      await getPoolAllocationPriceParametersForCoverActionEvents('CoverEdited', blockNumber, CO);
+
+      // TODO: add event handling for staking and weight adjustment on pools.
 
       lastBlockNumber = blockNumber;
     }
   });
 }
 
-async function getPoolAllocationPriceParametersForCoverActionEvents(eventName, blockNumber) {
+async function getPoolAllocationPriceParametersForCoverActionEvents(eventName, blockNumber, CO) {
   const filter = CO.filters[eventName]();
   filter.fromBlock = blockNumber;
   log.info(`Getting ${eventName} events`, {
@@ -56,10 +58,8 @@ async function getPoolAllocationPriceParametersForCoverActionEvents(eventName, b
 
   for (const log of parsedLogs) {
     const { coverId, productId, segmentId } = log.args;
-    const parameters = allPoolPriceParameters[poolId.toNumber()];
-    parameters.price = price.toNumber();
 
-    const { poolId } = await CO.coverSegmentAllocations(poolId, parameters.price);
+    const { poolId } = await CO.coverSegmentAllocations(coverId, segmentId);
     const poolAllocationPriceParameters = await CO.getPoolAllocationPriceParametersForProduct(poolId, productId);
 
     allPoolPriceParameters[poolId.toNumber()][productId.toNumber()] = poolAllocationPriceParameters;

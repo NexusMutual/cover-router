@@ -90,17 +90,6 @@ function getPrices (
 
   const bumpedBasePrice = basePrice.add(priceBump);
 
-  console.log({
-    initialPrice: initialPrice.toString(),
-    lastBasePriceValue: lastBasePriceValue.toString(),
-    capacity: capacity.toString(),
-    amount: amount.toString(),
-    priceBump: priceBump.toString(),
-    basePrice: basePrice.toString(),
-    bumpedBasePrice: bumpedBasePrice.toString(),
-    actualPrice: actualPrice.toString(),
-  });
-
   return { basePrice: bumpedBasePrice, actualPrice };
 }
 
