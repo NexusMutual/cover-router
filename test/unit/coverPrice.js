@@ -1,5 +1,7 @@
-const assert = require('assert');
-const {} = require('../../src/coverPrice');
+const ethers = require('ethers');
+const assert = require('assert')
+const { parseEther } = ethers.utils;
+const { getPrices } = require('../../src/coverPrice');
 
 describe('cover price', function () {
   describe('getPrices()', function () {
@@ -22,11 +24,10 @@ describe('cover price', function () {
       blockTimestamp,
     );
 
-     const expectedNewBasePrice = '300';
-    const expectedActualPrice = '300';
+     const expectedNewBasePrice = '499';
+    const expectedActualPrice = '448';
 
     assert.equal(newBasePrice.toString(), expectedNewBasePrice.toString());
     assert.equal(actualPrice.toString(), expectedActualPrice.toString());
-
   });
 });

@@ -1,13 +1,13 @@
 const { BigNumber } = require('ethers');
 
-const SURGE_THRESHOLD = BigNumber.from(8e17);
-const BASE_SURGE_LOADING = 1e17;
+const SURGE_THRESHOLD = BigNumber.from(8e17.toString());
+const BASE_SURGE_LOADING = BigNumber.from(1e17.toString());
 
-const PRICE_RATIO_CHANGE_PER_DAY = 100;
-const PRICE_DENOMINATOR = 10000;
-const BASE_PRICE_BUMP_RATIO = 200; // 2%
-const BASE_PRICE_BUMP_INTERVAL = 1000; // 10%
-const BASE_PRICE_BUMP_DENOMINATOR = 10000;
+const PRICE_RATIO_CHANGE_PER_DAY = BigNumber.from(100);
+const PRICE_DENOMINATOR = BigNumber.from(10000)
+const BASE_PRICE_BUMP_RATIO = BigNumber.from(200); // 2%
+const BASE_PRICE_BUMP_INTERVAL = BigNumber.from(1000); // 10%
+const BASE_PRICE_BUMP_DENOMINATOR = BigNumber.from(10000);
 
 function interpolatePrice (
   lastPrice,
@@ -22,7 +22,7 @@ function interpolatePrice (
     return targetPrice;
   }
 
-  return lastPrice.sub(lastPrice.sub(targetPrice).muln(priceChange).divn(PRICE_DENOMINATOR));
+  return lastPrice.sub(lastPrice.sub(targetPrice).mul(priceChange).div(PRICE_DENOMINATOR));
 }
 
 function calculatePrice (
@@ -37,8 +37,9 @@ function calculatePrice (
   capacity = BigNumber.from(capacity);
 
   const newActiveCoverAmount = amount.add(activeCover);
-  const activeCoverRatio = activeCover.mul(1e18).div(capacity);
-  const newActiveCoverRatio = newActiveCoverAmount.mul(1e18).div(capacity);
+  console.log('wtf');
+  const activeCoverRatio = activeCover.mul(1e18.toString()).div(capacity);
+  const newActiveCoverRatio = newActiveCoverAmount.mul(1e18.toString()).div(capacity);
 
   if (newActiveCoverRatio.lt(SURGE_THRESHOLD)) {
     return basePrice;
@@ -46,10 +47,10 @@ function calculatePrice (
 
   const surgeLoadingRatio = newActiveCoverRatio.sub(SURGE_THRESHOLD);
   const surgeFraction =
-    activeCoverRatio.gte(SURGE_THRESHOLD) ? BigNumber.from(1e18) : surgeLoadingRatio.mul(capacity).div(amount);
-  const surgeLoading = surgeLoadingRatio.mul(BASE_SURGE_LOADING).div(1e16).div(2).mul(surgeFraction).div(1e18);
+    activeCoverRatio.gte(SURGE_THRESHOLD) ? BigNumber.from(1e18.toString()) : surgeLoadingRatio.mul(capacity).div(amount);
+  const surgeLoading = surgeLoadingRatio.mul(BASE_SURGE_LOADING).div(1e16.toString()).div(2).mul(surgeFraction).div(1e18.toString());
 
-  return basePrice.mul(surgeLoading.add(1e18)).div(1e18).floor();
+  return basePrice.mul(surgeLoading.add(1e18.toString())).div(1e18.toString());
 }
 
 function getPrices (
@@ -71,7 +72,10 @@ function getPrices (
   const lastUpdateTime = BigNumber.from(lastBasePrice.lastUpdateTime);
 
   // limit amount to what is left of the total capacity
-  amount = BigNumber.min(amount, capacity.sub(activeCover));
+  const capacityLeft = capacity.sub(activeCover);
+  if (capacityLeft.lt(amount)) {
+    amount = capacityLeft;
+  }
 
   const basePrice = interpolatePrice(
     lastBasePriceValue.gt(0) ? lastBasePriceValue : initialPrice,
@@ -89,7 +93,7 @@ function getPrices (
   const actualPrice = calculatePrice(amount, basePrice, activeCover, capacity);
 
   // Bump base price by 2% (200 basis points) per 10% (1000 basis points) of capacity used
-  const priceBump = amount.muln(BASE_PRICE_BUMP_DENOMINATOR).div(capacity).divn(BASE_PRICE_BUMP_INTERVAL).muln(BASE_PRICE_BUMP_RATIO);
+  const priceBump = amount.mul(BASE_PRICE_BUMP_DENOMINATOR).div(capacity).div(BASE_PRICE_BUMP_INTERVAL).mul(BASE_PRICE_BUMP_RATIO);
 
   const bumpedBasePrice = basePrice.add(priceBump);
 
