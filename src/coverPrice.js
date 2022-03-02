@@ -37,7 +37,6 @@ function calculatePrice (
   capacity = BigNumber.from(capacity);
 
   const newActiveCoverAmount = amount.add(activeCover);
-  console.log('wtf');
   const activeCoverRatio = activeCover.mul(1e18.toString()).div(capacity);
   const newActiveCoverRatio = newActiveCoverAmount.mul(1e18.toString()).div(capacity);
 
