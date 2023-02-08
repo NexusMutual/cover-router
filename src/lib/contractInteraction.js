@@ -13,6 +13,12 @@ const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545/');
 function calculateCurrentTrancheId() {
   return Math.floor(Date.now() / (constants.TRANCHE_DURATION_DAYS * 24 * 3600 * 1000));
 }
+
+function calculateAddress(id) {
+  const salt = Buffer.from(id.toString(16).padStart(64, '0'), 'hex');
+  const initCodeHash = Buffer.from(INIT_CODE_HASH, 'hex');
+  return getCreate2Address(CONTRACTS_ADDRESSES.StakingPoolFactory, salt, initCodeHash);
+}
 async function fetchStakingPools() {
   const StakingPoolFactory = new ethers.Contract(
     CONTRACTS_ADDRESSES.StakingPoolFactory,
@@ -24,61 +30,76 @@ async function fetchStakingPools() {
 
   const pools = [];
   for (let id = STAKING_POOL_STARTING_ID; id < STAKING_POOL_STARTING_ID + Number(count); id += 1) {
-    const salt = Buffer.from(id.toString(16).padStart(64, '0'), 'hex');
-    const initCodeHash = Buffer.from(INIT_CODE_HASH, 'hex');
-    const address = getCreate2Address(CONTRACTS_ADDRESSES.StakingPoolFactory, salt, initCodeHash);
+    const address = calculateAddress(id);
     pools.push({ id, address });
   }
   return pools;
 }
 
-async function fetchStakingPoolData() {
-  const pools = await fetchStakingPools();
+async function fetchStakingPoolDataById(poolId) {
+  const address = calculateAddress(poolId);
+  return fetchStakingPoolDataByIAddress(address);
+}
+async function fetchStakingPoolDataByIAddress(address) {
+  const StakingPool = new ethers.Contract(address, StakingPoolAbi, provider);
 
-  const stakingPools = {};
-  for (const pool of pools) {
-    const StakingPool = new ethers.Contract(pool.address, StakingPoolAbi, provider);
+  const currentTrancheId = calculateCurrentTrancheId();
 
-    const currentTrancheId = calculateCurrentTrancheId();
-    const deposits = await StakingPool.queryFilter('StakeDeposited');
-    const depositsPerTranche = deposits.reduce((acc, { args }) => {
-      const [, amount, tranchId] = args;
-      const key = tranchId.toString();
-      if (tranchId.lt(currentTrancheId)) {
-        return acc;
+  const deposits = await StakingPool.queryFilter('StakeDeposited');
+  const extendedDeposits = await StakingPool.queryFilter('DepositExtended');
+  const depositsPerTranche = deposits.reduce((acc, { args }) => {
+    const [, depositAmount, trancheId, tokenId] = args;
+    let amount = BigNumber.from(depositAmount);
+    let key = trancheId;
+    extendedDeposits.forEach(({ args: [, oldTokenId, , newTrancheId, topUpAmount] }) => {
+      if (oldTokenId === tokenId) {
+        amount = amount.add(topUpAmount);
       }
-      if (!acc[key]) {
-        acc[key] = BigNumber.from(0);
-      }
-      acc[key] = acc.add(amount);
+      key = newTrancheId.gt(trancheId) ? newTrancheId : trancheId;
+    });
+    key = key.toString();
+    if (trancheId.lt(currentTrancheId)) {
       return acc;
-    }, {});
-
-    const withdrawals = await StakingPool.queryFilter('Withdraw');
-    const withdrawalsPerTranche = withdrawals.reduce((acc, { args }) => {
-      const [, , tranchId, amount] = args;
-      const key = tranchId.toString();
-      if (!acc[key]) {
-        acc[key] = BigNumber.from(0);
-      }
-      acc[key] = acc.add(amount);
-      return acc;
-    }, {});
-    const allocations = await StakingPool.getActiveAllocations();
-    const allocationsPerTranche = allocations.reduce((acc, amount, i) => {
-      acc[currentTrancheId + 1] = amount;
-      return acc;
-    }, {});
-    stakingPools[pool.address] = {
-      depositsPerTranche,
-      withdrawalsPerTranche,
-      allocationsPerTranche,
-    };
-    for (let i = currentTrancheId; i <= currentTrancheId + 8; i += 1) {
-      stakingPools[pool.address].capacityPerTranche = depositsPerTranche[i]
-        .sub(withdrawalsPerTranche[i])
-        .sub(allocationsPerTranche[i]);
     }
+    if (!acc[key]) {
+      acc[key] = BigNumber.from(0);
+    }
+    acc[key] = acc.add(amount);
+    return acc;
+  }, {});
+
+  const withdrawals = await StakingPool.queryFilter('Withdraw');
+  const withdrawalsPerTranche = withdrawals.reduce((acc, { args }) => {
+    const [, , tranchId, amount] = args;
+    const key = tranchId.toString();
+    if (!acc[key]) {
+      acc[key] = BigNumber.from(0);
+    }
+    acc[key] = acc.add(amount);
+    return acc;
+  }, {});
+  const allocations = await StakingPool.getActiveAllocations();
+  const allocationsPerTranche = allocations.reduce((acc, amount, i) => {
+    acc[currentTrancheId + 1] = amount;
+    return acc;
+  }, {});
+  const stakingPool = {
+    depositsPerTranche,
+    withdrawalsPerTranche,
+    allocationsPerTranche,
+  };
+  for (let i = currentTrancheId; i <= currentTrancheId + 8; i += 1) {
+    stakingPool.capacityPerTranche = depositsPerTranche[i].sub(withdrawalsPerTranche[i]).sub(allocationsPerTranche[i]);
+  }
+  return stakingPool;
+}
+
+async function fetchAllStakingPoolData() {
+  const pools = await fetchStakingPools();
+  const stakingPools = {};
+
+  for (const pool of pools) {
+    stakingPools[pool.id] = await fetchStakingPoolDataByIAddress(pool.address);
   }
 }
 
