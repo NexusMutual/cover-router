@@ -17,7 +17,11 @@
     "url": "https://github.com/NexusMutual/cover-router/issues"
   },
   "homepage": "https://github.com/NexusMutual/cover-router#readme",
-  "dependencies": {},
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "redux": "^4.2.1"
+  },
   "devDependencies": {
     "eslint": "^8.33.0",
     "eslint-config-prettier": "^8.6.0",
@@ -26,7 +30,6 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-standard": "^5.0.0",
-    "nodemon": "^2.0.20",
-    "prettier": "^2.8.3"
+    "nodemon": "^2.0.20"
   }
 }
