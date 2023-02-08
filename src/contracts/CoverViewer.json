@@ -1,0 +1,233 @@
+[
+  {
+    "type": "constructor",
+    "payable": false,
+    "inputs": [
+      {
+        "type": "address",
+        "name": "masterAddress"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getCover",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "coverId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple",
+        "components": [
+          {
+            "type": "uint24",
+            "name": "productId"
+          },
+          {
+            "type": "uint16",
+            "name": "productType"
+          },
+          {
+            "type": "address",
+            "name": "yieldTokenAddress"
+          },
+          {
+            "type": "uint96",
+            "name": "amountPaidOut"
+          },
+          {
+            "type": "uint256",
+            "name": "amountRemaining"
+          },
+          {
+            "type": "uint256",
+            "name": "coverStart"
+          },
+          {
+            "type": "uint256",
+            "name": "coverEnd"
+          },
+          {
+            "type": "uint8",
+            "name": "coverAsset"
+          },
+          {
+            "type": "string",
+            "name": "coverAssetSymbol"
+          },
+          {
+            "type": "uint8",
+            "name": "claimMethod"
+          },
+          {
+            "type": "uint32",
+            "name": "gracePeriod"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getCoverSegments",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "coverId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "name": "segments",
+        "components": [
+          {
+            "type": "uint96",
+            "name": "amount"
+          },
+          {
+            "type": "uint32",
+            "name": "start"
+          },
+          {
+            "type": "uint32",
+            "name": "period"
+          },
+          {
+            "type": "uint32",
+            "name": "gracePeriod"
+          },
+          {
+            "type": "uint24",
+            "name": "globalRewardsRatio"
+          },
+          {
+            "type": "uint24",
+            "name": "globalCapacityRatio"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getCovers",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256[]",
+        "name": "coverIds"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "components": [
+          {
+            "type": "uint24",
+            "name": "productId"
+          },
+          {
+            "type": "uint16",
+            "name": "productType"
+          },
+          {
+            "type": "address",
+            "name": "yieldTokenAddress"
+          },
+          {
+            "type": "uint96",
+            "name": "amountPaidOut"
+          },
+          {
+            "type": "uint256",
+            "name": "amountRemaining"
+          },
+          {
+            "type": "uint256",
+            "name": "coverStart"
+          },
+          {
+            "type": "uint256",
+            "name": "coverEnd"
+          },
+          {
+            "type": "uint8",
+            "name": "coverAsset"
+          },
+          {
+            "type": "string",
+            "name": "coverAssetSymbol"
+          },
+          {
+            "type": "uint8",
+            "name": "claimMethod"
+          },
+          {
+            "type": "uint32",
+            "name": "gracePeriod"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getPeriods",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "coverId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "components": [
+          {
+            "type": "uint96",
+            "name": "amount"
+          },
+          {
+            "type": "uint32",
+            "name": "start"
+          },
+          {
+            "type": "uint32",
+            "name": "period"
+          },
+          {
+            "type": "uint32",
+            "name": "gracePeriod"
+          },
+          {
+            "type": "uint24",
+            "name": "globalRewardsRatio"
+          },
+          {
+            "type": "uint24",
+            "name": "globalCapacityRatio"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,594 @@
+[
+  {
+    "type": "constructor",
+    "payable": false,
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_master"
+      },
+      {
+        "type": "address",
+        "name": "_stakingNFT"
+      },
+      {
+        "type": "address",
+        "name": "_stakingPoolFactory"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "FIRST_TRANCHE_ID",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "MAX_ACTIVE_TRANCHES",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "MAX_UINT",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "ONE_NXM",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "TRANCHE_DURATION",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getAllStakerDetails",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256[]",
+        "name": "tokenIds"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "stakerDetails",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "totalActiveStake"
+          },
+          {
+            "type": "uint256",
+            "name": "totalExpiredStake"
+          },
+          {
+            "type": "uint256",
+            "name": "totalWithdrawableRewards"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getAllStakingPools",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "name": "stakingPools",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "poolId"
+          },
+          {
+            "type": "bool",
+            "name": "isPrivatePool"
+          },
+          {
+            "type": "address",
+            "name": "manager"
+          },
+          {
+            "type": "uint8",
+            "name": "poolFee"
+          },
+          {
+            "type": "uint8",
+            "name": "maxPoolFee"
+          },
+          {
+            "type": "uint256",
+            "name": "activeStake"
+          },
+          {
+            "type": "uint256",
+            "name": "currentAPY"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getPoolManagerWithdrawableRewards",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "poolId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "managerRewards",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "withdrawableRewards"
+          },
+          {
+            "type": "uint256[]",
+            "name": "trancheIds"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getStakerOverviewByPoolId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256[]",
+        "name": "tokenIds"
+      },
+      {
+        "type": "uint256",
+        "name": "poolId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "stakerOverview",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "poolId"
+          },
+          {
+            "type": "uint256",
+            "name": "activeStake"
+          },
+          {
+            "type": "uint256",
+            "name": "expiredStake"
+          },
+          {
+            "type": "uint256",
+            "name": "withdrawableRewards"
+          },
+          {
+            "type": "tuple[]",
+            "name": "stakingPeriods",
+            "components": [
+              {
+                "type": "uint256",
+                "name": "tokenId"
+              },
+              {
+                "type": "uint256",
+                "name": "trancheId"
+              },
+              {
+                "type": "uint256",
+                "name": "stake"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getStakerOverviewByTokenId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "tokenId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "stakerOverview",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "poolId"
+          },
+          {
+            "type": "uint256",
+            "name": "activeStake"
+          },
+          {
+            "type": "uint256",
+            "name": "expiredStake"
+          },
+          {
+            "type": "uint256",
+            "name": "withdrawableRewards"
+          },
+          {
+            "type": "tuple[]",
+            "name": "stakingPeriods",
+            "components": [
+              {
+                "type": "uint256",
+                "name": "tokenId"
+              },
+              {
+                "type": "uint256",
+                "name": "trancheId"
+              },
+              {
+                "type": "uint256",
+                "name": "stake"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getStakingPoolOverviewByPoolId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "poolId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "stakingPoolOverview",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "poolId"
+          },
+          {
+            "type": "bool",
+            "name": "isPrivatePool"
+          },
+          {
+            "type": "address",
+            "name": "manager"
+          },
+          {
+            "type": "uint8",
+            "name": "poolFee"
+          },
+          {
+            "type": "uint8",
+            "name": "maxPoolFee"
+          },
+          {
+            "type": "uint256",
+            "name": "activeStake"
+          },
+          {
+            "type": "uint256",
+            "name": "currentAPY"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getStakingPoolOverviewByTokenId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "tokenId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "stakingPoolOverview",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "poolId"
+          },
+          {
+            "type": "bool",
+            "name": "isPrivatePool"
+          },
+          {
+            "type": "address",
+            "name": "manager"
+          },
+          {
+            "type": "uint8",
+            "name": "poolFee"
+          },
+          {
+            "type": "uint8",
+            "name": "maxPoolFee"
+          },
+          {
+            "type": "uint256",
+            "name": "activeStake"
+          },
+          {
+            "type": "uint256",
+            "name": "currentAPY"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getStakingPoolWithProductsByPoolId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "poolId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "stakingPoolDetails",
+        "components": [
+          {
+            "type": "tuple",
+            "name": "poolOverview",
+            "components": [
+              {
+                "type": "uint256",
+                "name": "poolId"
+              },
+              {
+                "type": "bool",
+                "name": "isPrivatePool"
+              },
+              {
+                "type": "address",
+                "name": "manager"
+              },
+              {
+                "type": "uint8",
+                "name": "poolFee"
+              },
+              {
+                "type": "uint8",
+                "name": "maxPoolFee"
+              },
+              {
+                "type": "uint256",
+                "name": "activeStake"
+              },
+              {
+                "type": "uint256",
+                "name": "currentAPY"
+              }
+            ]
+          },
+          {
+            "type": "tuple[]",
+            "name": "products",
+            "components": [
+              {
+                "type": "uint256",
+                "name": "productId"
+              },
+              {
+                "type": "uint16",
+                "name": "lastEffectiveWeight"
+              },
+              {
+                "type": "uint8",
+                "name": "targetWeight"
+              },
+              {
+                "type": "uint96",
+                "name": "targetPrice"
+              },
+              {
+                "type": "uint96",
+                "name": "bumpedPrice"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getStakingPoolsByTokenIds",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256[]",
+        "name": "tokenIds"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "name": "stakingPools",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "poolId"
+          },
+          {
+            "type": "bool",
+            "name": "isPrivatePool"
+          },
+          {
+            "type": "address",
+            "name": "manager"
+          },
+          {
+            "type": "uint8",
+            "name": "poolFee"
+          },
+          {
+            "type": "uint8",
+            "name": "maxPoolFee"
+          },
+          {
+            "type": "uint256",
+            "name": "activeStake"
+          },
+          {
+            "type": "uint256",
+            "name": "currentAPY"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "stakingNFT",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "stakingPool",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "poolId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "stakingPoolFactory",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
+  }
+]
