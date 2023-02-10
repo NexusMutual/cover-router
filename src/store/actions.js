@@ -1,4 +1,5 @@
 module.exports = {
+  SET_STATE: 'setState',
   SET_PRODUCTS: 'setProducts',
   ADD_PRODUCT: 'addProduct',
   REMOVE_PRODUCT: 'removeProduct',

@@ -5,7 +5,6 @@ const StakingPoolAbi = require('../contracts/StakingPool.json');
 const CoverAbi = require('../contracts/Cover.json');
 const StakingViewerAbi = require('../contracts/StakingViewer.json');
 
-const { BigNumber } = ethers;
 const { getCreate2Address } = ethers.utils;
 const { INIT_CODE_HASH, CONTRACTS_ADDRESSES, STAKING_POOL_STARTING_ID } = constants;
 const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545/');
@@ -19,7 +18,10 @@ function calculateAddress(id) {
   const initCodeHash = Buffer.from(INIT_CODE_HASH, 'hex');
   return getCreate2Address(CONTRACTS_ADDRESSES.StakingPoolFactory, salt, initCodeHash);
 }
-async function fetchStakingPools() {
+
+/* ================== STAKING POOLS ================================== */
+
+async function fetchStakingPoolIdAndAddress() {
   const StakingPoolFactory = new ethers.Contract(
     CONTRACTS_ADDRESSES.StakingPoolFactory,
     StakingPoolFactoryAbi,
@@ -36,102 +38,67 @@ async function fetchStakingPools() {
   return pools;
 }
 
-async function fetchStakingPoolDataById(poolId) {
-  const address = calculateAddress(poolId);
-  return fetchStakingPoolDataByIAddress(address);
-}
-async function fetchStakingPoolDataByIAddress(address) {
-  const StakingPool = new ethers.Contract(address, StakingPoolAbi, provider);
-
-  const currentTrancheId = calculateCurrentTrancheId();
-
-  const deposits = await StakingPool.queryFilter('StakeDeposited');
-  const extendedDeposits = await StakingPool.queryFilter('DepositExtended');
-  const depositsPerTranche = deposits.reduce((acc, { args }) => {
-    const [, depositAmount, trancheId, tokenId] = args;
-    let amount = BigNumber.from(depositAmount);
-    let key = trancheId;
-    extendedDeposits.forEach(({ args: [, oldTokenId, , newTrancheId, topUpAmount] }) => {
-      if (oldTokenId === tokenId) {
-        amount = amount.add(topUpAmount);
-      }
-      key = newTrancheId.gt(trancheId) ? newTrancheId : trancheId;
-    });
-    key = key.toString();
-    if (trancheId.lt(currentTrancheId)) {
-      return acc;
-    }
-    if (!acc[key]) {
-      acc[key] = BigNumber.from(0);
-    }
-    acc[key] = acc.add(amount);
-    return acc;
-  }, {});
-
-  const withdrawals = await StakingPool.queryFilter('Withdraw');
-  const withdrawalsPerTranche = withdrawals.reduce((acc, { args }) => {
-    const [, , tranchId, amount] = args;
-    const key = tranchId.toString();
-    if (!acc[key]) {
-      acc[key] = BigNumber.from(0);
-    }
-    acc[key] = acc.add(amount);
-    return acc;
-  }, {});
-  const allocations = await StakingPool.getActiveAllocations();
-  const allocationsPerTranche = allocations.reduce((acc, amount, i) => {
-    acc[currentTrancheId + 1] = amount;
-    return acc;
-  }, {});
-  const stakingPool = {
-    depositsPerTranche,
-    withdrawalsPerTranche,
-    allocationsPerTranche,
-  };
-  for (let i = currentTrancheId; i <= currentTrancheId + 8; i += 1) {
-    stakingPool.capacityPerTranche = depositsPerTranche[i].sub(withdrawalsPerTranche[i]).sub(allocationsPerTranche[i]);
-  }
-  return stakingPool;
-}
-
-async function fetchAllStakingPoolData() {
-  const pools = await fetchStakingPools();
-  const stakingPools = {};
-
-  for (const pool of pools) {
-    stakingPools[pool.id] = await fetchStakingPoolDataByIAddress(pool.address);
-  }
-}
-
-async function fetchAllProducts() {
-  const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
-  const allProducts = await Cover.getProducts();
-  const productDates = await fetchProductLatestPurchaseDate();
-  return allProducts.reduce((acc, product) => {
-    acc[product.id] = {
-      lastPurchase: productDates[product.id],
-      ...product,
-    };
+async function fetchStakingPoolsData() {
+  const StakingViewer = new ethers.Contract(CONTRACTS_ADDRESSES.StakingViewer, StakingViewerAbi, provider);
+  const pools = await StakingViewer.getAllPools();
+  return pools.reduce((acc, pool) => {
+    acc[pool.poolId] = pool;
     return acc;
   }, {});
 }
 
-async function fetchAllCovers() {
-  const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
+async function fetchStakingPoolDataById(id) {
   const StakingViewer = new ethers.Contract(CONTRACTS_ADDRESSES.StakingViewer, StakingViewerAbi, provider);
 
-  const coverCount = Cover.coverDataCount();
-  return await StakingViewer.getCovers([...Array(coverCount.toNumber()).keys()]);
+  return StakingViewer.getPool(id);
 }
 
-async function fetchProductLatestPurchaseDate() {
-  const covers = await fetchAllCovers();
-  return covers.reduce((acc, cover) => {
-    if (!acc[cover.productId]) {
-      acc[cover.productId] = cover.coverStart;
-    } else if (cover.coverStart > acc[cover.productId]) {
-      acc[cover.productId] = cover.coverStart;
-    }
-    return acc;
-  }, {});
+/* ================== PRODUCTS ================================== */
+
+async function fetchProductDataById(id, globalCapacityRatio) {
+  const StakingViewer = new ethers.Contract(CONTRACTS_ADDRESSES.StakingViewer, StakingViewerAbi, provider);
+  const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
+
+  if (!globalCapacityRatio) {
+    globalCapacityRatio = await Cover.globalCapacityRatio();
+  }
+  const pools = StakingViewer.getProductPools(id);
+  const { capacityReductionRatio } = await Cover.products(id);
+  const latestBlockNumber = await provider.getBlockNumber();
+  const productData = {};
+
+  for (const pool of pools) {
+    const address = calculateAddress(pool.poolId);
+    const StakingPool = new ethers.Contract(address, StakingPoolAbi, provider);
+    const { trancheCapacities } = await StakingPool.getActiveTrancheCapacities(
+      id,
+      globalCapacityRatio,
+      capacityReductionRatio,
+    );
+    productData[pool.poolId] = {
+      trancheCapacities,
+      blockNumber: latestBlockNumber,
+    };
+  }
+  return productData;
 }
+
+async function fetchAllProductsData() {
+  const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
+
+  const globalCapacityRatio = await Cover.globalCapacityRatio();
+  const products = await Cover.getProducts();
+  const productsData = {};
+
+  for (const product of products) {
+    productsData[product.productId] = await fetchProductDataById(product.productId, globalCapacityRatio);
+  }
+  return productsData;
+}
+
+module.exports = {
+  fetchStakingPoolsData,
+  fetchStakingPoolDataById,
+  fetchAllProductsData,
+  fetchProductDataById,
+};

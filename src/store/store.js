@@ -4,10 +4,11 @@ const actions = require('./actions');
 const initialState = {
   products: {},
   stakingPools: {},
-  lastBlockChecked: 0,
 };
 function reducer(state = initialState, { type, payload }) {
-  if (type === actions.SET_PRODUCTS) {
+  if (type === actions.SET_STATE) {
+    return payload;
+  } else if (type === actions.SET_PRODUCTS) {
     return {
       ...state,
       products: { ...payload },
@@ -22,7 +23,7 @@ function reducer(state = initialState, { type, payload }) {
       ...state,
       products: {
         ...state.products,
-        [payload.id]: { ...payload },
+        [payload.id]: { ...payload.productData },
       },
     };
   } else if (type === actions.REMOVE_PRODUCT) {
@@ -41,7 +42,7 @@ function reducer(state = initialState, { type, payload }) {
       ...state,
       stakingPools: {
         ...state.stakingPools,
-        [payload.id]: { ...payload },
+        [payload.id]: { ...payload.poolData },
       },
     };
   } else if (type === actions.REMOVE_STAKING_POOL) {
