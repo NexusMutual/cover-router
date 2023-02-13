@@ -54,9 +54,6 @@ async function fetchStakingPoolDataById(id) {
   return StakingViewer.getPool(id);
 }
 
-
-
-
 /* ================== PRODUCTS ================================== */
 
 async function fetchProductDataById(id, globalCapacityRatio) {
@@ -72,17 +69,9 @@ async function fetchProductDataById(id, globalCapacityRatio) {
   const productData = {};
 
   for (const pool of pools) {
-    const address = calculateAddress(pool.poolId);
-    const StakingPool = new ethers.Contract(address, StakingPoolAbi, provider);
-    const { trancheCapacities } = await StakingPool.getActiveTrancheCapacities(
-      id,
-      globalCapacityRatio,
-      capacityReductionRatio,
-    );
-    productData[pool.poolId] = {
-      trancheCapacities,
-      blockNumber: latestBlockNumber,
-    };
+    productData[pool.poolId] = await fetchProductDataForPool(id, pool.poolId, {
+      globalCapacityRatio, capacityReductionRatio, latestBlockNumber,
+    });
   }
   return productData;
 }
@@ -111,14 +100,21 @@ async function fetchAllProductDataForPool(poolId) {
   }
 }
 
-async function fetchProductDataForPool(productId, poolId) {
+async function fetchProductDataForPool(productId, poolId, {latestBlockNumber, capacityReductionRatio, globalCapacityRatio} = {}) {
   const address = calculateAddress(poolId);
   const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
   const StakingPool = new ethers.Contract(address, StakingPoolAbi, provider);
 
-  const latestBlockNumber = await provider.getBlockNumber();
-  const { capacityReductionRatio } = await Cover.products(productId);
-  const globalCapacityRatio = await Cover.globalCapacityRatio();
+  if (!latestBlockNumber) {
+    latestBlockNumber = await provider.getBlockNumber();
+  }
+  if (!capacityReductionRatio) {
+    const product = await Cover.products(productId);
+    capacityReductionRatio = product.capacityReductionRatio;
+  }
+  if (!globalCapacityRatio) {
+    globalCapacityRatio = await Cover.globalCapacityRatio();
+  }
 
   const { trancheCapacities } = await StakingPool.getActiveTrancheCapacities(
       productId,
@@ -128,13 +124,17 @@ async function fetchProductDataForPool(productId, poolId) {
         blockTag: latestBlockNumber
       },
   );
+  const allocations = await StakingPool.getActiveAllocations(productId);
+
   return {
     trancheCapacities,
+    allocations,
     blockNumber: latestBlockNumber,
   }
 }
 
 module.exports = {
+  calculateCurrentTrancheId,
   calculateAddress,
   fetchStakingPoolIdAndAddress,
   fetchStakingPoolsData,

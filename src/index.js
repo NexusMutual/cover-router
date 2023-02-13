@@ -1,6 +1,7 @@
 const { ethers } = require('ethers');
 const { store, actions } = require('./store');
 const {
+  calculateCurrentTrancheId,
   fetchStakingPoolsData,
   fetchStakingPoolDataById,
   fetchAllProductsData,
@@ -10,7 +11,6 @@ const {
   fetchAllProductDataForPool
 } = require('./lib/contractInteraction');
 const StakingPoolAbi = require("../contracts/StakingPool.json");
-const CoverAbi = require("../contracts/Cover.json");
 const StakingPoolFactoryAbi = require("../contracts/StakingPoolFactory.json");
 const constants = require("./constants");
 
@@ -19,6 +19,7 @@ const { CONTRACTS_ADDRESSES } = constants;
 const wsProvider = new ethers.providers.WebSocketProvider(process.env.WS_URL);
 
 const stakingPoolContracts = [];
+let trancheId;
 
 async function fetchInitialData() {
   const stakingPools = await fetchStakingPoolsData();
@@ -118,11 +119,19 @@ async function subscribeToNewStakingPools() {
 
 }
 
+const trancheChecker = setInterval(async() => {
+  const activeTrancheId = calculateCurrentTrancheId();
+  if (activeTrancheId === trancheId) {
+    await fetchAllProductsData()
+  }
+}, 10000);
 subscribeToAllStakingPoolDependantEvents();
+
 subscribeToNewStakingPools();
 
 process.on('SIGTERM', () => {
-  for (const contract of poolContracts) {
+  for (const contract of stakingPoolContracts) {
     contract.removeAllListeners();
   }
+  clearInterval(trancheChecker);
 });
