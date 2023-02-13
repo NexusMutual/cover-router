@@ -8,6 +8,7 @@ const StakingViewerAbi = require('../contracts/StakingViewer.json');
 const { getCreate2Address } = ethers.utils;
 const { INIT_CODE_HASH, CONTRACTS_ADDRESSES, STAKING_POOL_STARTING_ID } = constants;
 const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545/');
+const wsProvider = new ethers.providers.WebSocketProvider(process.env.WS_URL);
 
 function calculateCurrentTrancheId() {
   return Math.floor(Date.now() / (constants.TRANCHE_DURATION_DAYS * 24 * 3600 * 1000));
@@ -53,6 +54,9 @@ async function fetchStakingPoolDataById(id) {
   return StakingViewer.getPool(id);
 }
 
+
+
+
 /* ================== PRODUCTS ================================== */
 
 async function fetchProductDataById(id, globalCapacityRatio) {
@@ -96,9 +100,47 @@ async function fetchAllProductsData() {
   return productsData;
 }
 
+async function fetchAllProductDataForPool(poolId) {
+  const StakingViewer = new ethers.Contract(CONTRACTS_ADDRESSES.StakingViewer, StakingViewerAbi, provider);
+
+  const products = StakingViewer.getPoolProducts(poolId);
+  const stakingPoolProducts = [];
+  for (const { productId } of products) {
+    const data = await fetchProductDataForPool(productId, poolId);
+    stakingPoolProducts.push({...data, productId})
+  }
+}
+
+async function fetchProductDataForPool(productId, poolId) {
+  const address = calculateAddress(poolId);
+  const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
+  const StakingPool = new ethers.Contract(address, StakingPoolAbi, provider);
+
+  const latestBlockNumber = await provider.getBlockNumber();
+  const { capacityReductionRatio } = await Cover.products(productId);
+  const globalCapacityRatio = await Cover.globalCapacityRatio();
+
+  const { trancheCapacities } = await StakingPool.getActiveTrancheCapacities(
+      productId,
+      globalCapacityRatio,
+      capacityReductionRatio,
+      {
+        blockTag: latestBlockNumber
+      },
+  );
+  return {
+    trancheCapacities,
+    blockNumber: latestBlockNumber,
+  }
+}
+
 module.exports = {
+  calculateAddress,
+  fetchStakingPoolIdAndAddress,
   fetchStakingPoolsData,
   fetchStakingPoolDataById,
   fetchAllProductsData,
   fetchProductDataById,
+  fetchProductDataForPool,
+  fetchAllProductDataForPool
 };

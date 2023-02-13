@@ -26,6 +26,18 @@ function reducer(state = initialState, { type, payload }) {
         [payload.id]: { ...payload.productData },
       },
     };
+  } else if (type === actions.SET_PRODUCT_STAKING_POOL) {
+    const { productId, poolId, stakingPoolData } = payload;
+    return {
+      ...state,
+      products: {
+        ...state.products,
+        [productId]: {
+          ...state.products[productId],
+          [poolId]: stakingPoolData,
+        },
+      },
+    };
   } else if (type === actions.REMOVE_PRODUCT) {
     const products = Object.values(state.products).reduce((acc, [key, value]) => {
       if (payload.id !== key) {
