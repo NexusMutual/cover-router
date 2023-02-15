@@ -8,17 +8,20 @@ const initialState = {
 function reducer(state = initialState, { type, payload }) {
   if (type === actions.SET_STATE) {
     return payload;
-  } else if (type === actions.SET_PRODUCTS) {
+  }
+  if (type === actions.SET_PRODUCTS) {
     return {
       ...state,
       products: { ...payload },
     };
-  } else if (type === actions.SET_STAKING_POOLS) {
+  }
+  if (type === actions.SET_STAKING_POOLS) {
     return {
       ...state,
       stakingPools: { ...payload },
     };
-  } else if (type === actions.ADD_PRODUCT) {
+  }
+  if (type === actions.ADD_PRODUCT) {
     return {
       ...state,
       products: {
@@ -26,7 +29,8 @@ function reducer(state = initialState, { type, payload }) {
         [payload.id]: { ...payload.productData },
       },
     };
-  } else if (type === actions.SET_PRODUCT_STAKING_POOL) {
+  }
+  if (type === actions.SET_PRODUCT_STAKING_POOL) {
     const { productId, poolId, stakingPoolData } = payload;
     return {
       ...state,
@@ -38,7 +42,8 @@ function reducer(state = initialState, { type, payload }) {
         },
       },
     };
-  } else if (type === actions.REMOVE_PRODUCT) {
+  }
+  if (type === actions.REMOVE_PRODUCT) {
     const products = Object.values(state.products).reduce((acc, [key, value]) => {
       if (payload.id !== key) {
         acc[key] = value;
@@ -49,7 +54,8 @@ function reducer(state = initialState, { type, payload }) {
       ...state,
       products,
     };
-  } else if (type === actions.ADD_STAKING_POOL) {
+  }
+  if (type === actions.ADD_STAKING_POOL) {
     return {
       ...state,
       stakingPools: {
@@ -57,7 +63,8 @@ function reducer(state = initialState, { type, payload }) {
         [payload.id]: { ...payload.poolData },
       },
     };
-  } else if (type === actions.REMOVE_STAKING_POOL) {
+  }
+  if (type === actions.REMOVE_STAKING_POOL) {
     const stakingPools = Object.values(state.products).reduce((acc, [key, value]) => {
       if (payload.id !== key) {
         acc[key] = value;
@@ -68,14 +75,14 @@ function reducer(state = initialState, { type, payload }) {
       ...state,
       stakingPools,
     };
-  } else if (type === actions.UPDATE_LAST_BLOCK_CHECKED) {
+  }
+  if (type === actions.UPDATE_LAST_BLOCK_CHECKED) {
     return {
       ...state,
       lastBlockChecked: payload,
     };
-  } else {
-    return state;
   }
+  return state;
 }
 const store = createStore(reducer);
 

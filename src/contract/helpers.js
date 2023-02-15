@@ -1,14 +1,16 @@
 const { ethers } = require('ethers');
-const constants = require('./constants');
-const StakingPoolFactoryAbi = require('../contracts/StakingPoolFactory.json');
-const StakingPoolAbi = require('../contracts/StakingPool.json');
-const CoverAbi = require('../contracts/Cover.json');
-const StakingViewerAbi = require('../contracts/StakingViewer.json');
+const config = require('../config');
+const constants = require('../lib/constants');
+const StakingPoolFactoryAbi = require('../abis/StakingPoolFactory.json');
+const StakingPoolAbi = require('../abis/StakingPool.json');
+const CoverAbi = require('../abis/Cover.json');
+const StakingViewerAbi = require('../abis/StakingViewer.json');
+const StakingProductAbi = require('../abis/StakingProducts.json');
 
 const { getCreate2Address } = ethers.utils;
 const { INIT_CODE_HASH, CONTRACTS_ADDRESSES, STAKING_POOL_STARTING_ID } = constants;
-const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545/');
-const wsProvider = new ethers.providers.WebSocketProvider(process.env.WS_URL);
+const url = config.get('provider.http');
+const provider = new ethers.providers.JsonRpcProvider(url);
 
 function calculateCurrentTrancheId() {
   return Math.floor(Date.now() / (constants.TRANCHE_DURATION_DAYS * 24 * 3600 * 1000));
@@ -70,7 +72,9 @@ async function fetchProductDataById(id, globalCapacityRatio) {
 
   for (const pool of pools) {
     productData[pool.poolId] = await fetchProductDataForPool(id, pool.poolId, {
-      globalCapacityRatio, capacityReductionRatio, latestBlockNumber,
+      globalCapacityRatio,
+      capacityReductionRatio,
+      latestBlockNumber,
     });
   }
   return productData;
@@ -96,14 +100,20 @@ async function fetchAllProductDataForPool(poolId) {
   const stakingPoolProducts = [];
   for (const { productId } of products) {
     const data = await fetchProductDataForPool(productId, poolId);
-    stakingPoolProducts.push({...data, productId})
+    stakingPoolProducts.push({ ...data, productId });
   }
+  return stakingPoolProducts;
 }
 
-async function fetchProductDataForPool(productId, poolId, {latestBlockNumber, capacityReductionRatio, globalCapacityRatio} = {}) {
+async function fetchProductDataForPool(
+  productId,
+  poolId,
+  { latestBlockNumber, capacityReductionRatio, globalCapacityRatio } = {},
+) {
   const address = calculateAddress(poolId);
   const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
   const StakingPool = new ethers.Contract(address, StakingPoolAbi, provider);
+  const StakingProducts = new ethers.Contract(CONTRACTS_ADDRESSES.StakingProducts, StakingProductAbi, provider);
 
   if (!latestBlockNumber) {
     latestBlockNumber = await provider.getBlockNumber();
@@ -115,22 +125,24 @@ async function fetchProductDataForPool(productId, poolId, {latestBlockNumber, ca
   if (!globalCapacityRatio) {
     globalCapacityRatio = await Cover.globalCapacityRatio();
   }
+  const product = await StakingProducts.getProduct(poolId, productId);
 
   const { trancheCapacities } = await StakingPool.getActiveTrancheCapacities(
-      productId,
-      globalCapacityRatio,
-      capacityReductionRatio,
-      {
-        blockTag: latestBlockNumber
-      },
+    productId,
+    globalCapacityRatio,
+    capacityReductionRatio,
+    {
+      blockTag: latestBlockNumber,
+    },
   );
   const allocations = await StakingPool.getActiveAllocations(productId);
 
   return {
+    ...product,
     trancheCapacities,
     allocations,
     blockNumber: latestBlockNumber,
-  }
+  };
 }
 
 module.exports = {
@@ -142,5 +154,5 @@ module.exports = {
   fetchAllProductsData,
   fetchProductDataById,
   fetchProductDataForPool,
-  fetchAllProductDataForPool
+  fetchAllProductDataForPool,
 };
