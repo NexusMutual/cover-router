@@ -9,6 +9,7 @@ const {
   TRANCHE_DURATION_DAYS,
   MAX_ACTIVE_TRANCHES,
   PRICE_CHANGE_PER_DAY,
+  SURGE_THRESHOLD_RATIO,
 } = require('../lib/constants');
 const PoolAbi = require('../abis/Pool.json');
 
@@ -33,6 +34,16 @@ function sortPools([, a], [, b]) {
   return 0;
 }
 
+function calculateCapacities(trancheCapacities, allocations, startingTrancheIndex) {
+  let initialCapacityUsed = 0;
+  let totalCapacity = 0;
+  for (let i = startingTrancheIndex; i < MAX_ACTIVE_TRANCHES; i += 1) {
+    totalCapacity += trancheCapacities[i];
+    initialCapacityUsed += allocations[i];
+  }
+  return { initialCapacityUsed, totalCapacity };
+}
+
 router.get('/quote', (req, res) => {
   /*
    * coverAsset -> assetId
@@ -47,43 +58,44 @@ router.get('/quote', (req, res) => {
   const currentTranche = Math.floor(Date.now()) / (86_400_000 * TRANCHE_DURATION_DAYS);
   const startingTranche = Math.floor(Date.now() / 86_400_000 + period) / TRANCHE_DURATION_DAYS;
   const product = req.store.getState().products[productId];
-  const poolAllocationRequest = {
-    coverAmountInAsset: 0,
-  };
-  const coveredAmount = 0;
-  Object.values(product)
+  const poolAllocationRequests = [];
+  let coveredAmount = 0;
+  const productPools = Object.values(product)
     .sort(sortPools)
-    .forEach(([poolId, data]) => {
+    .reduce((acc, [poolId, data]) => {
+      if (coveredAmount === amount) {
+        return acc;
+      }
+      acc[poolId] = {};
       const { targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = data;
       // TODO: check if it's floor or ceil
       const daysSinceLastUpdate = Math.floor((Date.now() / 1000 - bumpedPriceUpdateTime.toNumber()) / 86_400);
-      let initialCapacityUsed = 0;
-      let totalCapacity = 0;
-      for (let i = startingTranche - currentTranche; i < MAX_ACTIVE_TRANCHES; i += 1) {
-        totalCapacity += trancheCapacities[i];
-        initialCapacityUsed += allocations[i];
+
+      const capacities = calculateCapacities(trancheCapacities, allocations, startingTranche - currentTranche);
+      acc[poolId].initialCapacityUsed = capacities.initialCapacityUsed;
+      acc[poolId].totalCapacity = capacities.totalCapacity;
+      acc[poolId].surgeStart = acc[poolId].totalCapacity * SURGE_THRESHOLD_RATIO;
+      const coverAmountInAsset =
+        acc[poolId].initialCapacityUsed + amount - coveredAmount < acc[poolId].totalCapacity
+          ? amount - coveredAmount
+          : acc[poolId].totalCapacity - acc[poolId].initialCapacityUsed;
+      if (coverAmountInAsset > 0) {
+        coveredAmount += coverAmountInAsset;
+        const premium = calculatePremium(
+          coverAmountInAsset,
+          period,
+          targetPrice,
+          bumpedPrice,
+          daysSinceLastUpdate,
+          acc[poolId].initialCapacityUsed,
+          acc[poolId].totalCapacity,
+        );
+        premiumInNXM += premium;
+        poolAllocationRequests.push({ poolId, skip: false, coverAmountInAsset });
       }
-      if (initialCapacityUsed + amount > totalCapacity) {
-        return;
-      }
-      const premium = calculatePremium(
-        amount,
-        period,
-        targetPrice,
-        bumpedPrice,
-        daysSinceLastUpdate,
-        initialCapacityUsed,
-        totalCapacity,
-      );
-      if (premium < premiumInNXM) {
-        premiumInNXM = premium;
-        poolAllocationRequest.poolId = poolId;
-      }
-    });
+      return acc;
+    }, {});
   const currencyRate = Pool.getTokenPriceInAsset(coverAsset);
   const premiumInCoverAsset = premiumInNXM * currencyRate;
-  if (paymentAsset === coverAsset) {
-    poolAllocationRequest.coverAmountInAsset = premiumInCoverAsset;
-  }
-  res.send({ premiumInCoverAsset, premiumInNXM, poolAllocationRequest });
+  res.send({ premiumInCoverAsset, premiumInNXM, poolAllocationRequests });
 });
