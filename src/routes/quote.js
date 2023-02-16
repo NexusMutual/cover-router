@@ -44,12 +44,15 @@ function calculateCapacities(trancheCapacities, allocations, startingTrancheInde
   return { initialCapacityUsed, totalCapacity };
 }
 
-router.get('/quote', (req, res) => {
+router.post('/quote', (req, res) => {
   /*
    * coverAsset -> assetId
    * */
   const { productId, amount, period, coverAsset, paymentAsset } = req.body;
   let premiumInNXM = 0;
+  let premiumInCoverAsset = 0;
+  const poolAllocationRequests = [];
+  let coveredAmount = 0;
 
   const url = config.get('provider.http');
   const provider = new ethers.providers.JsonRpcProvider(url);
@@ -58,8 +61,7 @@ router.get('/quote', (req, res) => {
   const currentTranche = Math.floor(Date.now()) / (86_400_000 * TRANCHE_DURATION_DAYS);
   const startingTranche = Math.floor(Date.now() / 86_400_000 + period) / TRANCHE_DURATION_DAYS;
   const product = req.store.getState().products[productId];
-  const poolAllocationRequests = [];
-  let coveredAmount = 0;
+  // will be used for best allocations options
   const productPools = Object.values(product)
     .sort(sortPools)
     .reduce((acc, [poolId, data]) => {
@@ -95,7 +97,15 @@ router.get('/quote', (req, res) => {
       }
       return acc;
     }, {});
-  const currencyRate = Pool.getTokenPriceInAsset(coverAsset);
-  const premiumInCoverAsset = premiumInNXM * currencyRate;
+
+  if (coveredAmount !== amount) {
+    res.status(500).send('Not enough capacity for the coverAmount');
+  }
+
+  if (paymentAsset === coverAsset) {
+    const currencyRate = Pool.getTokenPriceInAsset(coverAsset);
+    premiumInCoverAsset = premiumInNXM * currencyRate;
+  }
+
   res.send({ premiumInCoverAsset, premiumInNXM, poolAllocationRequests });
 });
