@@ -4,49 +4,14 @@ const router = express.Router();
 
 const config = require('../config');
 const { calculatePremium } = require('../lib/pricing');
-const {
-  CONTRACTS_ADDRESSES,
-  TRANCHE_DURATION_DAYS,
-  MAX_ACTIVE_TRANCHES,
-  PRICE_CHANGE_PER_DAY,
-  SURGE_THRESHOLD_RATIO,
-} = require('../lib/constants');
+const { calculateCapacities, calculateTranche, sortPools } = require('../lib/helpers');
+const { CONTRACTS_ADDRESSES, SURGE_THRESHOLD_RATIO } = require('../lib/constants');
 const PoolAbi = require('../abis/Pool.json');
-
-function sortPools([, a], [, b]) {
-  const daysSinceLastUpdateA = Math.floor((Date.now() / 1000 - a.bumpedPriceUpdateTime.toNumber()) / 86_400);
-  const daysSinceLastUpdateB = Math.floor((Date.now() / 1000 - b.bumpedPriceUpdateTime.toNumber()) / 86_400);
-
-  const basePriceA = Math.max(
-    a.targetPrice.toNumber(),
-    a.bumpedPrice.toNumber() - daysSinceLastUpdateA * PRICE_CHANGE_PER_DAY,
-  );
-  const basePriceB = Math.max(
-    b.targetPrice.toNumber(),
-    b.bumpedPrice.toNumber() - daysSinceLastUpdateB * PRICE_CHANGE_PER_DAY,
-  );
-  if (basePriceA < basePriceB) {
-    return -1;
-  }
-  if (basePriceA > basePriceB) {
-    return 1;
-  }
-  return 0;
-}
-
-function calculateCapacities(trancheCapacities, allocations, startingTrancheIndex) {
-  let initialCapacityUsed = 0;
-  let totalCapacity = 0;
-  for (let i = startingTrancheIndex; i < MAX_ACTIVE_TRANCHES; i += 1) {
-    totalCapacity += trancheCapacities[i];
-    initialCapacityUsed += allocations[i];
-  }
-  return { initialCapacityUsed, totalCapacity };
-}
 
 router.post('/quote', (req, res) => {
   /*
    * coverAsset -> assetId
+   * period -> days
    * */
   const { productId, amount, period, coverAsset, paymentAsset } = req.body;
   let premiumInNXM = 0;
@@ -58,9 +23,10 @@ router.post('/quote', (req, res) => {
   const provider = new ethers.providers.JsonRpcProvider(url);
   const Pool = new ethers.Contract(CONTRACTS_ADDRESSES.Pool, PoolAbi, provider);
 
-  const currentTranche = Math.floor(Date.now()) / (86_400_000 * TRANCHE_DURATION_DAYS);
-  const startingTranche = Math.floor(Date.now() / 86_400_000 + period) / TRANCHE_DURATION_DAYS;
+  const currentTranche = calculateTranche();
+  const startingTranche = calculateTranche(period);
   const product = req.store.getState().products[productId];
+
   // will be used for best allocations options
   const productPools = Object.values(product)
     .sort(sortPools)
