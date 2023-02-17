@@ -43,23 +43,21 @@ function calculatePremium(
   period,
   targetPrice,
   bumpedPrice,
-  daysSinceLastUpdate,
+  secondsSinceLastUpdate,
   initialCapacityUsed,
   totalCapacity,
 ) {
-  const priceDrop = PRICE_CHANGE_PER_DAY * daysSinceLastUpdate;
-  const basePrice = Math.max(targetPrice, bumpedPrice - priceDrop) / TARGET_PRICE_DENOMINATOR;
-
-  //    TODO: add logic for new bumpedPrice
+  const priceDrop = Math.floor((PRICE_CHANGE_PER_DAY * secondsSinceLastUpdate) / 86_400);
+  const basePrice = Math.max(targetPrice, bumpedPrice - priceDrop);
 
   // const basePremium = (coverAmount * NXM_PER_ALLOCATION_UNIT * basePrice) / TARGET_PRICE_DENOMINATOR;
-  const basePremium = coverAmount * basePrice;
-  const finalCapacityUsed = initialCapacityUsed + coverAmount;
+  const basePremium = (coverAmount * basePrice * NXM_PER_ALLOCATION_UNIT) / TARGET_PRICE_DENOMINATOR;
+  const finalCapacityUsed = initialCapacityUsed.toNumber() + coverAmount;
 
-  const surgeStartPoint = totalCapacity * SURGE_THRESHOLD_RATIO;
+  const surgeStartPoint = totalCapacity.toNumber() * SURGE_THRESHOLD_RATIO;
 
   if (surgeStartPoint >= finalCapacityUsed) {
-    return basePremium;
+    return (basePremium * period) / 365;
   }
 
   const amountOnSurgeSkipped = initialCapacityUsed - surgeStartPoint > 0 ? initialCapacityUsed - surgeStartPoint : 0;
@@ -69,7 +67,7 @@ function calculatePremium(
   if (amountOnSurge > 0) {
     surgePremium = calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkipped);
   }
-  return ((basePremium + surgePremium) / 365) * period;
+  return ((basePremium + surgePremium) * period) / 365;
 }
 
 module.exports = {

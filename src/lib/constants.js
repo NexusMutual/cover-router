@@ -60,7 +60,10 @@ module.exports = {
 
   MAX_ACTIVE_TRANCHES: 8, // 7 whole quarters + 1 partial quarter
   WEIGHT_DENOMINATOR: 100,
-  NXM_PER_ALLOCATION_UNIT: ethers.utils.parseEther('0.01'),
+  ONE_NXM: ethers.utils.parseEther('1'),
+  ALLOCATION_UNITS_PER_NXM: 100,
+
+  NXM_PER_ALLOCATION_UNIT: ethers.utils.parseEther('1').div(100),
 
   MIN_COVER_PERIOD: 28, // days
   ASSET_ID: {
