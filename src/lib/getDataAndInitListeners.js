@@ -14,6 +14,7 @@ const {
 const StakingPoolAbi = require('../abis/StakingPool.json');
 const StakingPoolFactoryAbi = require('../abis/StakingPoolFactory.json');
 const constants = require('./constants');
+const CoverAbi = require('../abis/Cover.json');
 
 const { CONTRACTS_ADDRESSES } = constants;
 
@@ -82,6 +83,7 @@ function subscribeToStakingPoolDependantEvents(poolId, address) {
   contract.on('DepositExtended', () => updateProductsByStakingPool(poolId));
   contract.on('StakeDeposited', () => updateProductsByStakingPool(poolId));
   contract.on('PoolFeeChanged', () => updateProductsByStakingPool(poolId));
+  contract.on('StakeBurned', () => updateProductsByStakingPool(poolId));
 
   stakingPoolContracts.push(contract);
 }
@@ -93,6 +95,24 @@ async function subscribeToAllStakingPoolDependantEvents() {
     const { address, id } = pool;
     subscribeToStakingPoolDependantEvents(id, address);
   }
+}
+
+async function subscribeToPoolAllocationChanges() {
+  const stakingPools = await fetchStakingPoolIdAndAddress();
+
+  for (const pool of stakingPools) {
+    const { address, id } = pool;
+    subscribeToStakingPoolDependantEvents(id, address);
+  }
+}
+
+async function subscribeToCoverEvents() {
+  const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, wsProvider);
+
+  Cover.on('ProductSet', productId => fetchProductDataById(productId));
+  Cover.on('CoverEdited', (coverId, productId) => fetchProductDataById(productId));
+
+  // TODO: add global capacity factor listener
 }
 
 async function subscribeToNewStakingPools() {
@@ -139,10 +159,14 @@ module.exports = async function (app) {
     }
   }, 10000);
 
-  // subscribe to events
+  // subscribe to Pool events
   await subscribeToAllStakingPoolDependantEvents();
-
   await subscribeToNewStakingPools();
+
+  await subscribeToPoolAllocationChanges();
+
+  // subscribe to Cover Events
+  await subscribeToCoverEvents();
 
   process.on('SIGTERM', () => {
     for (const contract of stakingPoolContracts) {
