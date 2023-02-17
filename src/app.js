@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 
+const router = require('./routes');
 const { useStore } = require('./store');
 const getDataAndInitListeners = require('./lib/getDataAndInitListeners');
 
@@ -24,7 +25,11 @@ app.use(cors());
 
 // initiate store before any interaction
 useStore(app);
+
 // TODO: find better name
 getDataAndInitListeners(app);
+
+// initiate routes
+router(app);
 
 module.exports = app;

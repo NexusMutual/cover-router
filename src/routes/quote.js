@@ -37,7 +37,7 @@ router.post('/quote', (req, res) => {
       acc[poolId] = {};
       const { targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = data;
       // TODO: check if it's floor or ceil
-      const daysSinceLastUpdate = Math.floor((Date.now() / 1000 - bumpedPriceUpdateTime.toNumber()) / 86_400);
+      const secondsSinceLastUpdate = Date.now() / 1000 - bumpedPriceUpdateTime.toNumber();
 
       const capacities = calculateCapacities(trancheCapacities, allocations, startingTranche - currentTranche);
       acc[poolId].initialCapacityUsed = capacities.initialCapacityUsed;
@@ -54,7 +54,7 @@ router.post('/quote', (req, res) => {
           period,
           targetPrice,
           bumpedPrice,
-          daysSinceLastUpdate,
+          secondsSinceLastUpdate,
           acc[poolId].initialCapacityUsed,
           acc[poolId].totalCapacity,
         );
@@ -75,3 +75,5 @@ router.post('/quote', (req, res) => {
 
   res.send({ premiumInCoverAsset, premiumInNXM, poolAllocationRequests });
 });
+
+module.exports = router;
