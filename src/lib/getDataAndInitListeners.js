@@ -35,15 +35,7 @@ async function fetchInitialData() {
       stakingPools,
     },
   });
-}
-
-async function fetchProduct(id) {
-  const productData = await fetchProductDataById(id);
-
-  store.dispatch({
-    type: actions.ADD_PRODUCT,
-    payload: { id, productData },
-  });
+  console.info('Initial Data set');
 }
 
 async function fetchStakingPoolData(id) {

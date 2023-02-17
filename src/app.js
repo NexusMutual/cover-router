@@ -26,7 +26,6 @@ app.use(cors());
 // initiate store before any interaction
 useStore(app);
 
-// TODO: find better name
 getDataAndInitListeners(app);
 
 // initiate routes

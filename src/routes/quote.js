@@ -3,7 +3,7 @@ const { ethers, BigNumber } = require('ethers');
 const router = express.Router();
 
 const config = require('../config');
-const { calculatePremium } = require('../lib/pricing');
+const { calculatePremium } = require('../lib/helpers');
 const { calculateCapacities, calculateTranche, sortPools } = require('../lib/helpers');
 const { CONTRACTS_ADDRESSES, SURGE_THRESHOLD_RATIO } = require('../lib/constants');
 const PoolAbi = require('../abis/Pool.json');
@@ -40,8 +40,7 @@ router.post('/quote', async (req, res) => {
       }
       acc[poolId] = {};
       const { targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = data;
-      // TODO: check if it's floor or ceil
-      const secondsSinceLastUpdate = Date.now() / 1000 - bumpedPriceUpdateTime.toNumber();
+      const secondsSinceLastUpdate = Math.floor(Date.now() / 1000 - bumpedPriceUpdateTime.toNumber());
 
       const capacities = calculateCapacities(trancheCapacities, allocations, startingTranche - currentTranche);
       acc[poolId].initialCapacityUsed = capacities.initialCapacityUsed;
