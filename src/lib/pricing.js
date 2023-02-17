@@ -57,7 +57,7 @@ function calculatePremium(
   const surgeStartPoint = totalCapacity.toNumber() * SURGE_THRESHOLD_RATIO;
 
   if (surgeStartPoint >= finalCapacityUsed) {
-    return (basePremium * period) / 365;
+    return Math.floor((basePremium * period) / (365 * 86_400));
   }
 
   const amountOnSurgeSkipped = initialCapacityUsed - surgeStartPoint > 0 ? initialCapacityUsed - surgeStartPoint : 0;
@@ -67,7 +67,7 @@ function calculatePremium(
   if (amountOnSurge > 0) {
     surgePremium = calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkipped);
   }
-  return ((basePremium + surgePremium) * period) / 365;
+  return Math.floor(((basePremium + surgePremium) * period) / (365 * 86_400));
 }
 
 module.exports = {

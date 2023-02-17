@@ -8,7 +8,8 @@ const { calculateCapacities, calculateTranche, sortPools } = require('../lib/hel
 const { CONTRACTS_ADDRESSES, SURGE_THRESHOLD_RATIO } = require('../lib/constants');
 const PoolAbi = require('../abis/Pool.json');
 const StakingProductsAbi = require('../abis/StakingProducts.json');
-const { NXM_PER_ALLOCATION_UNIT, ALLOCATION_UNITS_PER_NXM, TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
+const { NXM_PER_ALLOCATION_UNIT, TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
+const { parseEther } = require('ethers/lib/utils');
 
 router.post('/quote', async (req, res) => {
   /*
@@ -94,10 +95,9 @@ router.post('/quote', async (req, res) => {
   console.log(premiumInNXM);
   if (paymentAsset === coverAsset) {
     const currencyRate = await Pool.getTokenPriceInAsset(coverAsset);
-    premiumInCoverAsset = currencyRate.mul(premiumInCoverAsset);
+    premiumInCoverAsset = Math.floor((premiumInNXM * currencyRate) / parseEther('1'));
   }
 
-  console.log(premiumInCoverAsset.toString());
   res.send({ premiumInCoverAsset, premiumInNXM, poolAllocationRequests });
 });
 
