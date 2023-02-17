@@ -45,7 +45,7 @@ async function fetchStakingPoolsData() {
   const StakingViewer = new ethers.Contract(CONTRACTS_ADDRESSES.StakingViewer, StakingViewerAbi, provider);
   const pools = await StakingViewer.getAllPools();
   return pools.reduce((acc, pool) => {
-    acc[pool.poolId] = pool;
+    acc[pool.poolId.toString()] = pool;
     return acc;
   }, {});
 }
@@ -65,13 +65,13 @@ async function fetchProductDataById(id, globalCapacityRatio) {
   if (!globalCapacityRatio) {
     globalCapacityRatio = await Cover.globalCapacityRatio();
   }
-  const pools = StakingViewer.getProductPools(id);
+  const pools = await StakingViewer.getProductPools(id);
   const { capacityReductionRatio } = await Cover.products(id);
   const latestBlockNumber = await provider.getBlockNumber();
   const productData = {};
 
   for (const pool of pools) {
-    productData[pool.poolId] = await fetchProductDataForPool(id, pool.poolId, {
+    productData[pool.poolId] = await fetchProductDataForPool(id, pool.poolId.toNumber(), {
       globalCapacityRatio,
       capacityReductionRatio,
       latestBlockNumber,
@@ -87,8 +87,8 @@ async function fetchAllProductsData() {
   const products = await Cover.getProducts();
   const productsData = {};
 
-  for (const product of products) {
-    productsData[product.productId] = await fetchProductDataById(product.productId, globalCapacityRatio);
+  for (const productId in products) {
+    productsData[productId] = await fetchProductDataById(productId, globalCapacityRatio);
   }
   return productsData;
 }
