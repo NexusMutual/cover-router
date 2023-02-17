@@ -244,6 +244,20 @@
   },
   {
     "type": "function",
+    "name": "ALLOCATION_UNITS_PER_NXM",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
     "name": "BUCKET_SIZE",
     "constant": true,
     "stateMutability": "view",
@@ -315,6 +329,20 @@
   {
     "type": "function",
     "name": "NXM_ASSET_ID",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "NXM_PER_ALLOCATION_UNIT",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -958,6 +986,42 @@
   },
   {
     "type": "function",
+    "name": "productNames",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "productTypeNames",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "type": "function",
     "name": "productTypes",
     "constant": true,
     "stateMutability": "view",
@@ -982,6 +1046,20 @@
             "name": "gracePeriod"
           }
         ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "productTypesCount",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
       }
     ]
   },
@@ -1060,6 +1138,10 @@
         "name": "productTypeParams",
         "components": [
           {
+            "type": "string",
+            "name": "productTypeName"
+          },
+          {
             "type": "uint256",
             "name": "productTypeId"
           },
@@ -1097,6 +1179,10 @@
         "type": "tuple[]",
         "name": "productParams",
         "components": [
+          {
+            "type": "string",
+            "name": "productName"
+          },
           {
             "type": "uint256",
             "name": "productId"
@@ -1227,50 +1313,6 @@
         "type": "uint256"
       }
     ]
-  },
-  {
-    "type": "function",
-    "name": "transferCovers",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address",
-        "name": "from"
-      },
-      {
-        "type": "address",
-        "name": "to"
-      },
-      {
-        "type": "uint256[]",
-        "name": "tokenIds"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "transferStakingPoolTokens",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address",
-        "name": "from"
-      },
-      {
-        "type": "address",
-        "name": "to"
-      },
-      {
-        "type": "uint256[]",
-        "name": "tokenIds"
-      }
-    ],
-    "outputs": []
   },
   {
     "type": "function",

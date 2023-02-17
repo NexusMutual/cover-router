@@ -22,6 +22,10 @@
       {
         "type": "address",
         "name": "_master"
+      },
+      {
+        "type": "address",
+        "name": "_stakingProducts"
       }
     ]
   },
@@ -37,6 +41,11 @@
   },
   {
     "type": "error",
+    "name": "InvalidStakingPoolForToken",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InvalidTokenId",
     "inputs": []
   },
@@ -48,21 +57,6 @@
   {
     "type": "error",
     "name": "MaxPoolFeeAbove100",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "MustRecalculateEffectiveWeight",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "MustSetPriceForNewProducts",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "MustSetWeightForNewProducts",
     "inputs": []
   },
   {
@@ -97,7 +91,7 @@
   },
   {
     "type": "error",
-    "name": "PoolNotAllowedForThisProduct",
+    "name": "PoolHalted",
     "inputs": []
   },
   {
@@ -133,31 +127,6 @@
   {
     "type": "error",
     "name": "SystemPaused",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TargetPriceBelowMin",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TargetPriceTooHigh",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TargetWeightTooHigh",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TotalEffectiveWeightExceeded",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TotalTargetWeightExceeded",
     "inputs": []
   },
   {
@@ -197,11 +166,6 @@
     "anonymous": false,
     "name": "PoolDescriptionSet",
     "inputs": [
-      {
-        "type": "uint256",
-        "name": "poolId",
-        "indexed": false
-      },
       {
         "type": "string",
         "name": "ipfsDescriptionHash",
@@ -246,6 +210,18 @@
   {
     "type": "event",
     "anonymous": false,
+    "name": "StakeBurned",
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "amount",
+        "indexed": false
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
     "name": "StakeDeposited",
     "inputs": [
       {
@@ -277,7 +253,7 @@
     "inputs": [
       {
         "type": "address",
-        "name": "src",
+        "name": "user",
         "indexed": true
       },
       {
@@ -388,49 +364,7 @@
   },
   {
     "type": "function",
-    "name": "INITIAL_PRICE_DENOMINATOR",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "MAX_ACTIVE_TRANCHES",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "MAX_TOTAL_WEIGHT",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "MAX_UINT",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -486,34 +420,6 @@
   },
   {
     "type": "function",
-    "name": "PRICE_BUMP_RATIO",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "PRICE_CHANGE_PER_DAY",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "REWARDS_DENOMINATOR",
     "constant": true,
     "stateMutability": "view",
@@ -556,62 +462,6 @@
   },
   {
     "type": "function",
-    "name": "SURGE_PRICE_RATIO",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "SURGE_THRESHOLD_DENOMINATOR",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "SURGE_THRESHOLD_RATIO",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "TARGET_PRICE_DENOMINATOR",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "TRANCHE_DURATION",
     "constant": true,
     "stateMutability": "view",
@@ -640,34 +490,6 @@
   },
   {
     "type": "function",
-    "name": "accNxmPerRewardsShare",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "activeStake",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "burnStake",
     "constant": false,
     "payable": false,
@@ -676,36 +498,35 @@
       {
         "type": "uint256",
         "name": "amount"
+      },
+      {
+        "type": "tuple",
+        "name": "params",
+        "components": [
+          {
+            "type": "uint256",
+            "name": "allocationId"
+          },
+          {
+            "type": "uint256",
+            "name": "productId"
+          },
+          {
+            "type": "uint256",
+            "name": "start"
+          },
+          {
+            "type": "uint256",
+            "name": "period"
+          },
+          {
+            "type": "uint256",
+            "name": "deallocationAmount"
+          }
+        ]
       }
     ],
     "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "calculateFixedPricePremium",
-    "constant": true,
-    "stateMutability": "pure",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "coverAmount"
-      },
-      {
-        "type": "uint256",
-        "name": "period"
-      },
-      {
-        "type": "uint256",
-        "name": "fixedPrice"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
   },
   {
     "type": "function",
@@ -734,151 +555,6 @@
       {
         "type": "uint256",
         "name": "blockTimestamp"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "calculatePremium",
-    "constant": true,
-    "stateMutability": "pure",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "tuple",
-        "name": "product",
-        "components": [
-          {
-            "type": "uint16",
-            "name": "lastEffectiveWeight"
-          },
-          {
-            "type": "uint8",
-            "name": "targetWeight"
-          },
-          {
-            "type": "uint96",
-            "name": "targetPrice"
-          },
-          {
-            "type": "uint96",
-            "name": "bumpedPrice"
-          },
-          {
-            "type": "uint32",
-            "name": "bumpedPriceUpdateTime"
-          }
-        ]
-      },
-      {
-        "type": "uint256",
-        "name": "period"
-      },
-      {
-        "type": "uint256",
-        "name": "coverAmount"
-      },
-      {
-        "type": "uint256",
-        "name": "initialCapacityUsed"
-      },
-      {
-        "type": "uint256",
-        "name": "totalCapacity"
-      },
-      {
-        "type": "uint256",
-        "name": "targetPrice"
-      },
-      {
-        "type": "uint256",
-        "name": "currentBlockTimestamp"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "premium"
-      },
-      {
-        "type": "tuple",
-        "components": [
-          {
-            "type": "uint16",
-            "name": "lastEffectiveWeight"
-          },
-          {
-            "type": "uint8",
-            "name": "targetWeight"
-          },
-          {
-            "type": "uint96",
-            "name": "targetPrice"
-          },
-          {
-            "type": "uint96",
-            "name": "bumpedPrice"
-          },
-          {
-            "type": "uint32",
-            "name": "bumpedPriceUpdateTime"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "calculatePremiumPerYear",
-    "constant": true,
-    "stateMutability": "pure",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "basePrice"
-      },
-      {
-        "type": "uint256",
-        "name": "coverAmount"
-      },
-      {
-        "type": "uint256",
-        "name": "initialCapacityUsed"
-      },
-      {
-        "type": "uint256",
-        "name": "totalCapacity"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "calculateSurgePremium",
-    "constant": true,
-    "stateMutability": "pure",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "amountOnSurge"
-      },
-      {
-        "type": "uint256",
-        "name": "totalCapacity"
       }
     ],
     "outputs": [
@@ -967,47 +643,20 @@
     ],
     "outputs": [
       {
-        "type": "uint256",
+        "type": "uint96",
         "name": "lastAccNxmPerRewardShare"
       },
       {
-        "type": "uint256",
+        "type": "uint96",
         "name": "pendingRewards"
       },
       {
-        "type": "uint256",
+        "type": "uint128",
         "name": "stakeShares"
       },
       {
-        "type": "uint256",
+        "type": "uint128",
         "name": "rewardsShares"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "expiredTranches",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "accNxmPerRewardShareAtExpiry"
-      },
-      {
-        "type": "uint256",
-        "name": "stakeAmountAtExpiry"
-      },
-      {
-        "type": "uint256",
-        "name": "stakeShareSupplyAtExpiry"
       }
     ]
   },
@@ -1063,21 +712,7 @@
   },
   {
     "type": "function",
-    "name": "firstActiveBucketId",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "firstActiveTrancheId",
+    "name": "getAccNxmPerRewardsShare",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -1106,6 +741,20 @@
       {
         "type": "uint256[]",
         "name": "trancheAllocations"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getActiveStake",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
       }
     ]
   },
@@ -1143,6 +792,270 @@
   },
   {
     "type": "function",
+    "name": "getDeposit",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "tokenId"
+      },
+      {
+        "type": "uint256",
+        "name": "trancheId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "lastAccNxmPerRewardShare"
+      },
+      {
+        "type": "uint256",
+        "name": "pendingRewards"
+      },
+      {
+        "type": "uint256",
+        "name": "stakeShares"
+      },
+      {
+        "type": "uint256",
+        "name": "rewardsShares"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getExpiredTranche",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "trancheId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "accNxmPerRewardShareAtExpiry"
+      },
+      {
+        "type": "uint256",
+        "name": "stakeAmountAtExpiry"
+      },
+      {
+        "type": "uint256",
+        "name": "stakeSharesSupplyAtExpiry"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getFirstActiveBucketId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getFirstActiveTrancheId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getLastAccNxmUpdate",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getMaxPoolFee",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getNextAllocationId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getPoolFee",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getPoolId",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getRewardPerSecond",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getRewardsSharesSupply",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getStakeSharesSupply",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getTranche",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "trancheId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "stakeShares"
+      },
+      {
+        "type": "uint256",
+        "name": "rewardsShares"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getTrancheCapacities",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "productId"
+      },
+      {
+        "type": "uint256",
+        "name": "firstTrancheId"
+      },
+      {
+        "type": "uint256",
+        "name": "trancheCount"
+      },
+      {
+        "type": "uint256",
+        "name": "capacityRatio"
+      },
+      {
+        "type": "uint256",
+        "name": "reductionRatio"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256[]",
+        "name": "trancheCapacities"
+      }
+    ]
+  },
+  {
+    "type": "function",
     "name": "initialize",
     "constant": false,
     "payable": false,
@@ -1165,28 +1078,6 @@
         "name": "_maxPoolFee"
       },
       {
-        "type": "tuple[]",
-        "name": "params",
-        "components": [
-          {
-            "type": "uint256",
-            "name": "productId"
-          },
-          {
-            "type": "uint8",
-            "name": "weight"
-          },
-          {
-            "type": "uint96",
-            "name": "initialPrice"
-          },
-          {
-            "type": "uint96",
-            "name": "targetPrice"
-          }
-        ]
-      },
-      {
         "type": "uint256",
         "name": "_poolId"
       },
@@ -1199,7 +1090,7 @@
   },
   {
     "type": "function",
-    "name": "isPrivatePool",
+    "name": "isHalted",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -1213,7 +1104,7 @@
   },
   {
     "type": "function",
-    "name": "lastAccNxmUpdate",
+    "name": "isPrivatePool",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -1221,7 +1112,7 @@
     "inputs": [],
     "outputs": [
       {
-        "type": "uint256"
+        "type": "bool"
       }
     ]
   },
@@ -1255,20 +1146,6 @@
   },
   {
     "type": "function",
-    "name": "maxPoolFee",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint8"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "multicall",
     "constant": false,
     "payable": false,
@@ -1288,20 +1165,6 @@
   },
   {
     "type": "function",
-    "name": "nextAllocationId",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint24"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "nxm",
     "constant": true,
     "stateMutability": "view",
@@ -1316,20 +1179,6 @@
   },
   {
     "type": "function",
-    "name": "poolFee",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint8"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "processExpirations",
     "constant": false,
     "payable": false,
@@ -1338,55 +1187,6 @@
       {
         "type": "bool",
         "name": "updateUntilCurrentTimestamp"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "products",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint16",
-        "name": "lastEffectiveWeight"
-      },
-      {
-        "type": "uint8",
-        "name": "targetWeight"
-      },
-      {
-        "type": "uint96",
-        "name": "targetPrice"
-      },
-      {
-        "type": "uint96",
-        "name": "bumpedPrice"
-      },
-      {
-        "type": "uint32",
-        "name": "bumpedPriceUpdateTime"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "recalculateEffectiveWeights",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256[]",
-        "name": "productIds"
       }
     ],
     "outputs": []
@@ -1478,7 +1278,7 @@
   },
   {
     "type": "function",
-    "name": "rewardBuckets",
+    "name": "rewardPerSecondCut",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -1488,35 +1288,6 @@
         "type": "uint256"
       }
     ],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "rewardPerSecondCut"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "rewardPerSecond",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "rewardsSharesSupply",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
     "outputs": [
       {
         "type": "uint256"
@@ -1567,47 +1338,7 @@
   },
   {
     "type": "function",
-    "name": "setProducts",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "tuple[]",
-        "name": "params",
-        "components": [
-          {
-            "type": "uint256",
-            "name": "productId"
-          },
-          {
-            "type": "bool",
-            "name": "recalculateEffectiveWeight"
-          },
-          {
-            "type": "bool",
-            "name": "setTargetWeight"
-          },
-          {
-            "type": "uint8",
-            "name": "targetWeight"
-          },
-          {
-            "type": "bool",
-            "name": "setTargetPrice"
-          },
-          {
-            "type": "uint96",
-            "name": "targetPrice"
-          }
-        ]
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "stakeSharesSupply",
+    "name": "stakingNFT",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -1615,13 +1346,13 @@
     "inputs": [],
     "outputs": [
       {
-        "type": "uint256"
+        "type": "address"
       }
     ]
   },
   {
     "type": "function",
-    "name": "stakingNFT",
+    "name": "stakingProducts",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -1649,34 +1380,6 @@
   },
   {
     "type": "function",
-    "name": "totalEffectiveWeight",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint32"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "totalTargetWeight",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint32"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "trancheAllocationGroups",
     "constant": true,
     "stateMutability": "view",
@@ -1693,29 +1396,6 @@
     "outputs": [
       {
         "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "tranches",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "stakeShares"
-      },
-      {
-        "type": "uint256",
-        "name": "rewardsShares"
       }
     ]
   },

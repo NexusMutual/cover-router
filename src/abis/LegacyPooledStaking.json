@@ -667,6 +667,25 @@
   },
   {
     "type": "function",
+    "name": "getV1PriceForProduct",
+    "constant": true,
+    "stateMutability": "pure",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "id"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint96"
+      }
+    ]
+  },
+  {
+    "type": "function",
     "name": "hasPendingActions",
     "constant": true,
     "stateMutability": "view",
@@ -821,39 +840,11 @@
     "gas": 29000000,
     "inputs": [
       {
-        "type": "tuple",
-        "name": "migrationData",
-        "components": [
-          {
-            "type": "address",
-            "name": "stakerAddress"
-          },
-          {
-            "type": "uint256",
-            "name": "trancheId"
-          },
-          {
-            "type": "string",
-            "name": "ipfsDescriptionHash"
-          }
-        ]
+        "type": "address",
+        "name": "stakerAddress"
       }
     ],
     "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "migrationDeadline",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
   },
   {
     "type": "function",

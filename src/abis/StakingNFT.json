@@ -22,6 +22,51 @@
     ]
   },
   {
+    "type": "error",
+    "name": "AlreadyMinted",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidNewOperatorAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidRecipient",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotAuthorized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotMinted",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotOperator",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotStakingPool",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnsafeRecipient",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "WrongFrom",
+    "inputs": []
+  },
+  {
     "type": "event",
     "anonymous": false,
     "name": "Approval",
@@ -253,28 +298,6 @@
   },
   {
     "type": "function",
-    "name": "operatorTransferFrom",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address",
-        "name": "from"
-      },
-      {
-        "type": "address",
-        "name": "to"
-      },
-      {
-        "type": "uint256",
-        "name": "id"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
     "name": "ownerOf",
     "constant": true,
     "stateMutability": "view",
@@ -459,8 +482,7 @@
     "gas": 29000000,
     "inputs": [
       {
-        "type": "uint256",
-        "name": "id"
+        "type": "uint256"
       }
     ],
     "outputs": [

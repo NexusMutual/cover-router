@@ -1,5 +1,15 @@
 [
   {
+    "type": "constructor",
+    "payable": false,
+    "inputs": [
+      {
+        "type": "address",
+        "name": "tokenAddress"
+      }
+    ]
+  },
+  {
     "type": "event",
     "anonymous": false,
     "name": "MemberJoined",
@@ -511,7 +521,12 @@
     "constant": false,
     "payable": false,
     "gas": 29000000,
-    "inputs": [],
+    "inputs": [
+      {
+        "type": "address[]",
+        "name": "payoutAddresses"
+      }
+    ],
     "outputs": []
   },
   {
@@ -585,6 +600,20 @@
       }
     ],
     "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "token",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
   },
   {
     "type": "function",
