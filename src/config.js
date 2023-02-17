@@ -33,4 +33,9 @@ module.exports = convict({
       env: 'PROVIDER_HTTP',
     },
   },
+  contractsUrl: {
+    doc: 'URL of the contracts',
+    default: 'https://api.nexusmutual.io/version-data/data.json',
+    env: 'CONTRACTS_URL',
+  },
 });

@@ -1,3 +1,7 @@
+const { BigNumber, ethers } = require('ethers');
+const axios = require('axios');
+
+const config = require('../config');
 const {
   TRANCHE_DURATION_DAYS,
   MAX_ACTIVE_TRANCHES,
@@ -7,7 +11,30 @@ const {
   SURGE_THRESHOLD_RATIO,
   SURGE_PRICE_RATIO,
 } = require('./constants');
-const { BigNumber } = require('ethers');
+
+async function getContractFactory(provider) {
+  const url = config.get('contractsUrl');
+  const {
+    data: {
+      mainnet: { abis },
+    },
+  } = await axios.get(url);
+
+  const data = abis.reduce((acc, contract) => {
+    const { code, address, contractName, contractAbi } = contract;
+    acc[code] = {
+      address,
+      contractName,
+      abi: JSON.parse(contractAbi),
+    };
+    return acc;
+  }, {});
+
+  return async code => {
+    const { abi, address } = data[code];
+    return new ethers.Contract(address, abi, provider);
+  };
+}
 
 // offest in days
 function calculateTranche(offset = 0) {
@@ -90,6 +117,7 @@ function calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkippe
   return surgePremium / NXM_PER_ALLOCATION_UNIT;
 }
 
+getContractFactory();
 module.exports = {
   calculateTranche,
   calculateCapacities,
