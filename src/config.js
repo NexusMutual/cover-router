@@ -2,6 +2,7 @@ require('dotenv').config();
 const convict = require('convict');
 
 module.exports = convict({
+  // remove env
   env: {
     doc: 'The application environment.',
     format: ['production', 'development', 'test'],
@@ -15,12 +16,14 @@ module.exports = convict({
     env: 'PORT',
     arg: 'port',
   },
+  // remove host
   host: {
     doc: 'The host to bind.',
     default: 'localhost',
     env: 'HOST',
     arg: 'host',
   },
+  // remove defaults from providers
   provider: {
     ws: {
       doc: 'Providers WS URL',

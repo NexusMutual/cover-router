@@ -24,6 +24,23 @@ function calculateAddress(id) {
 
 /* ================== STAKING POOLS ================================== */
 
+// example
+// const dataFetchers = async provider => {
+//   // initialize contract instances at the top except staking pools
+//
+//   const fetchStakingPoolIdAndAddress = async () => {};
+//
+//   const fetchStakingPoolsData = async () => {};
+//
+//   return {
+//     fetchStakingPoolIdAndAddress,
+//     fetchStakingPoolsData,
+//   };
+// };
+//
+// module.exports = dataFetcherFactory;
+
+// TODO: probably not needed anymore
 async function fetchStakingPoolIdAndAddress() {
   const StakingPoolFactory = new ethers.Contract(
     CONTRACTS_ADDRESSES.StakingPoolFactory,
@@ -36,6 +53,7 @@ async function fetchStakingPoolIdAndAddress() {
   const pools = [];
   for (let id = STAKING_POOL_STARTING_ID; id < STAKING_POOL_STARTING_ID + Number(count); id += 1) {
     const address = calculateAddress(id);
+    // TODO: address does not seem to be used anywhere
     pools.push({ id, address });
   }
   return pools;
@@ -51,6 +69,7 @@ async function fetchStakingPoolsData() {
 }
 
 async function fetchStakingPoolDataById(id) {
+  // TODO: use lowercase for all contract instances
   const StakingViewer = new ethers.Contract(CONTRACTS_ADDRESSES.StakingViewer, StakingViewerAbi, provider);
 
   return StakingViewer.getPool(id);
@@ -58,39 +77,15 @@ async function fetchStakingPoolDataById(id) {
 
 /* ================== PRODUCTS ================================== */
 
-async function fetchProductDataById(id, globalCapacityRatio) {
+async function fetchProductPools(productId) {
   const StakingViewer = new ethers.Contract(CONTRACTS_ADDRESSES.StakingViewer, StakingViewerAbi, provider);
-  const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
-
-  if (!globalCapacityRatio) {
-    globalCapacityRatio = await Cover.globalCapacityRatio();
-  }
-  const pools = await StakingViewer.getProductPools(id);
-  const { capacityReductionRatio } = await Cover.products(id);
-  const latestBlockNumber = await provider.getBlockNumber();
-  const productData = {};
-
-  for (const pool of pools) {
-    productData[pool.poolId] = await fetchProductDataForPool(id, pool.poolId.toNumber(), {
-      globalCapacityRatio,
-      capacityReductionRatio,
-      latestBlockNumber,
-    });
-  }
-  return productData;
+  const pools = await StakingViewer.getProductPools(productId);
+  return pools.map(({ id }) => id);
 }
 
-async function fetchAllProductsData() {
+async function fetchCoverProducts() {
   const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
-
-  const globalCapacityRatio = await Cover.globalCapacityRatio();
-  const products = await Cover.getProducts();
-  const productsData = {};
-
-  for (const productId in products) {
-    productsData[productId] = await fetchProductDataById(productId, globalCapacityRatio);
-  }
-  return productsData;
+  return await Cover.getProducts();
 }
 
 async function fetchAllProductDataForPool(poolId) {
@@ -105,43 +100,25 @@ async function fetchAllProductDataForPool(poolId) {
   return stakingPoolProducts;
 }
 
-async function fetchProductDataForPool(
-  productId,
-  poolId,
-  { latestBlockNumber, capacityReductionRatio, globalCapacityRatio } = {},
-) {
+async function fetchProductDataForPool(productId, poolId, capacityReductionRatio, globalCapacityRatio) {
   const address = calculateAddress(poolId);
-  const Cover = new ethers.Contract(CONTRACTS_ADDRESSES.Cover, CoverAbi, provider);
   const StakingPool = new ethers.Contract(address, StakingPoolAbi, provider);
   const StakingProducts = new ethers.Contract(CONTRACTS_ADDRESSES.StakingProducts, StakingProductAbi, provider);
 
-  if (!latestBlockNumber) {
-    latestBlockNumber = await provider.getBlockNumber();
-  }
-  if (!capacityReductionRatio) {
-    const product = await Cover.products(productId);
-    capacityReductionRatio = product.capacityReductionRatio;
-  }
-  if (!globalCapacityRatio) {
-    globalCapacityRatio = await Cover.globalCapacityRatio();
-  }
   const product = await StakingProducts.getProduct(poolId, productId);
 
   const { trancheCapacities } = await StakingPool.getActiveTrancheCapacities(
     productId,
     globalCapacityRatio,
     capacityReductionRatio,
-    {
-      blockTag: latestBlockNumber,
-    },
   );
+
   const allocations = await StakingPool.getActiveAllocations(productId);
 
   return {
     ...product,
     trancheCapacities,
     allocations,
-    blockNumber: latestBlockNumber,
   };
 }
 

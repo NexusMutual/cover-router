@@ -2,9 +2,11 @@ const { createStore } = require('redux');
 const actions = require('./actions');
 
 const initialState = {
+  stakingPoolCount: 0,
   products: {},
   stakingPools: {},
 };
+
 function reducer(state = initialState, { type, payload }) {
   if (type === actions.SET_STATE) {
     return payload;
@@ -84,6 +86,9 @@ function reducer(state = initialState, { type, payload }) {
   }
   return state;
 }
+// TODO:
+//   option 1: export reducers
+//   option 2: export a function that creates the store
 const store = createStore(reducer);
 
 module.exports = store;

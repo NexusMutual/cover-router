@@ -11,12 +11,12 @@ const {
   fetchProductDataForPool,
   fetchAllProductDataForPool,
 } = require('../contract/helpers');
+
 const StakingPoolAbi = require('../abis/StakingPool.json');
 const StakingPoolFactoryAbi = require('../abis/StakingPoolFactory.json');
-const constants = require('./constants');
 const CoverAbi = require('../abis/Cover.json');
 
-const { CONTRACTS_ADDRESSES } = constants;
+const { CONTRACTS_ADDRESSES } = require('./constants');
 
 const url = config.get('provider.ws');
 const wsProvider = new ethers.providers.WebSocketProvider(url);
@@ -71,12 +71,14 @@ async function updateProductsByStakingPool(poolId) {
 function subscribeToStakingPoolDependantEvents(poolId, address) {
   const contract = new ethers.Contract(address, StakingPoolAbi, wsProvider);
 
+  // todo: group as a single filter
   contract.on('StakeBurned', () => updateProductsByStakingPool(poolId));
   contract.on('DepositExtended', () => updateProductsByStakingPool(poolId));
   contract.on('StakeDeposited', () => updateProductsByStakingPool(poolId));
   contract.on('PoolFeeChanged', () => updateProductsByStakingPool(poolId));
   contract.on('StakeBurned', () => updateProductsByStakingPool(poolId));
 
+  // todo: remove
   stakingPoolContracts.push(contract);
 }
 
@@ -136,7 +138,9 @@ async function subscribeToNewStakingPools() {
 }
 
 module.exports = async function (app) {
+  // TODO: pass the store directly
   store = app.get('store');
+  // initialization check not needed
   if (!store) {
     throw Error('Store not initialized');
   }
@@ -144,8 +148,11 @@ module.exports = async function (app) {
   await fetchInitialData();
 
   // tranche expiration checker
+  // TODO: make sure only one runs at a time
+  // TODO: consider using setTimeout
   const trancheChecker = setInterval(async () => {
     const activeTrancheId = calculateCurrentTrancheId();
+    // TODO !==
     if (activeTrancheId === trancheId) {
       await fetchAllProductsData();
     }
@@ -160,6 +167,7 @@ module.exports = async function (app) {
   // subscribe to Cover Events
   await subscribeToCoverEvents();
 
+  // TODO: redundant
   process.on('SIGTERM', () => {
     for (const contract of stakingPoolContracts) {
       contract.removeAllListeners();

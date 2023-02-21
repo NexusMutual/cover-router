@@ -13,6 +13,12 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.set('store', store);
+app.use(function (req, res, next) {
+  req.store = store;
+  next();
+});
+
 // initiate store before any interaction
 useStore(app);
 
