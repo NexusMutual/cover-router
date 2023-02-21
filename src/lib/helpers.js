@@ -117,7 +117,6 @@ function calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkippe
   return surgePremium / NXM_PER_ALLOCATION_UNIT;
 }
 
-getContractFactory();
 module.exports = {
   calculateTranche,
   calculateCapacities,
