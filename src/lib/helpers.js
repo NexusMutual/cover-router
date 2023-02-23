@@ -1,7 +1,5 @@
-const { BigNumber, ethers } = require('ethers');
-const axios = require('axios');
+const { BigNumber } = require('ethers');
 
-const config = require('../config');
 const {
   TRANCHE_DURATION_DAYS,
   MAX_ACTIVE_TRANCHES,
@@ -12,33 +10,9 @@ const {
   SURGE_PRICE_RATIO,
 } = require('./constants');
 
-async function getContractFactory(provider) {
-  const url = config.get('contractsUrl');
-  const {
-    data: {
-      mainnet: { abis },
-    },
-  } = await axios.get(url);
-
-  const data = abis.reduce((acc, contract) => {
-    const { code, address, contractName, contractAbi } = contract;
-    acc[code] = {
-      address,
-      contractName,
-      abi: JSON.parse(contractAbi),
-    };
-    return acc;
-  }, {});
-
-  return async code => {
-    const { abi, address } = data[code];
-    return new ethers.Contract(address, abi, provider);
-  };
-}
-
-// offest in days
-function calculateTranche(offset = 0) {
-  return Math.floor((Date.now() / 86_400_000 + offset) / TRANCHE_DURATION_DAYS);
+// offset in seconds
+function calculateCurrentTrancheId(offset = 0) {
+  return Math.floor((Date.now() / 1000 + offset) / 86_400 / TRANCHE_DURATION_DAYS);
 }
 
 function calculateCapacities(trancheCapacities, allocations, startingTrancheIndex) {
@@ -51,18 +25,18 @@ function calculateCapacities(trancheCapacities, allocations, startingTrancheInde
   return { initialCapacityUsed, totalCapacity };
 }
 
-function sortPools([, a], [, b]) {
-  const daysSinceLastUpdateA = Math.floor((Date.now() / 1000 - a.bumpedPriceUpdateTime.toNumber()) / 86_400);
-  const daysSinceLastUpdateB = Math.floor((Date.now() / 1000 - b.bumpedPriceUpdateTime.toNumber()) / 86_400);
+function basePriceSelector(pool, secondsSinceLastUpdate) {
+  const priceDrop = Math.floor((PRICE_CHANGE_PER_DAY * secondsSinceLastUpdate) / 86_400);
+  return Math.max(pool.targetPrice.toNumber(), pool.bumpedPrice.toNumber() - priceDrop);
+}
 
-  const basePriceA = Math.max(
-    a.targetPrice.toNumber(),
-    a.bumpedPrice.toNumber() - daysSinceLastUpdateA * PRICE_CHANGE_PER_DAY,
-  );
-  const basePriceB = Math.max(
-    b.targetPrice.toNumber(),
-    b.bumpedPrice.toNumber() - daysSinceLastUpdateB * PRICE_CHANGE_PER_DAY,
-  );
+function sortPools([, a], [, b]) {
+  const secondsSinceLastUpdateA = Math.floor(Date.now() / 1000 - a.bumpedPriceUpdateTime.toNumber());
+  const secondsSinceLastUpdateB = Math.floor(Date.now() / 1000 - b.bumpedPriceUpdateTime.toNumber());
+
+  const basePriceA = basePriceSelector(a, secondsSinceLastUpdateA);
+  const basePriceB = basePriceSelector(b, secondsSinceLastUpdateB);
+
   if (basePriceA < basePriceB) {
     return -1;
   }
@@ -82,8 +56,7 @@ function calculatePremium(
   initialCapacityUsed,
   totalCapacity,
 ) {
-  const priceDrop = Math.floor((PRICE_CHANGE_PER_DAY * secondsSinceLastUpdate) / 86_400);
-  const basePrice = Math.max(targetPrice, bumpedPrice - priceDrop);
+  const basePrice = basePriceSelector({ targetPrice, bumpedPrice }, secondsSinceLastUpdate);
 
   // const basePremium = (coverAmount * NXM_PER_ALLOCATION_UNIT * basePrice) / TARGET_PRICE_DENOMINATOR;
   const basePremium = (coverAmount * basePrice * NXM_PER_ALLOCATION_UNIT) / TARGET_PRICE_DENOMINATOR;
@@ -118,7 +91,7 @@ function calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkippe
 }
 
 module.exports = {
-  calculateTranche,
+  calculateCurrentTrancheId,
   calculateCapacities,
   sortPools,
   calculatePremium,

@@ -1,8 +1,8 @@
 const express = require('express');
 
 const router = require('./routes');
-const { useStore } = require('./store');
-const getDataAndInitListeners = require('./lib/getDataAndInitListeners');
+const { store } = require('./store');
+const initializeSynchronizer = require('./lib/synchronizer');
 
 /**
  * Express instance
@@ -13,16 +13,21 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.set('store', store);
+// initiate store before any interaction
 app.use(function (req, res, next) {
   req.store = store;
   next();
 });
 
-// initiate store before any interaction
-useStore(app);
+const sync = initializeSynchronizer(store);
 
-getDataAndInitListeners(app);
+// fetch all the data
+sync.fetchAllData();
+// listeners
+sync.trancheCheck();
+sync.subscribeToNewStakingPools();
+sync.subscribeToStakingPoolEvents();
+sync.subscribeToCoverEvents();
 
 // initiate routes
 router(app);

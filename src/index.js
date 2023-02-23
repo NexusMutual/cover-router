@@ -1,5 +1,3 @@
-// TODO: remove eslint disable
-/* eslint-disable no-console */
 const app = require('./app');
 const config = require('./config');
 

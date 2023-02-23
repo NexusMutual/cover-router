@@ -1,11 +1,10 @@
 const ethers = require('ethers');
 
 module.exports = {
-  // TODO: update hash
+  // TODO: update hash when new version is deployed
   INIT_CODE_HASH: '203b477dc328f1ceb7187b20e5b1b0f0bc871114ada7e9020c9ac112bbfb6920',
   STAKING_POOL_STARTING_ID: 0,
-  // TODO: no days
-  TRANCHE_DURATION_DAYS: 91,
+  TRANCHE_DURATION_DAYS: 7862400, // seconds
   SURGE_PRICE_RATIO: 2, // ether,
   SURGE_THRESHOLD_RATIO: 0.9, // 90.00%
   SURGE_THRESHOLD_DENOMINATOR: 100, // 100.00%
@@ -26,11 +25,5 @@ module.exports = {
 
   NXM_PER_ALLOCATION_UNIT: ethers.utils.parseEther('1').div(100),
 
-  // TODO: no days
-  MIN_COVER_PERIOD: 28, // days
-
-  ASSET_ID: {
-    ETH: 0,
-    DAI: 1,
-  },
+  MIN_COVER_PERIOD: 2419200, // seconds
 };

@@ -5,12 +5,12 @@ const { calculateTranche, calculateCapacities } = require('../lib/helpers');
 const { MIN_COVER_PERIOD } = require('../lib/constants');
 
 router.get('/capacity', (req, res) => {
-  const { products } = req.store.getState();
+  const { stakingPools } = req.store.getState();
 
   const currentTranche = calculateTranche();
   const startingTranche = calculateTranche(MIN_COVER_PERIOD);
 
-  const result = Object.entries(products).reduce((acc, [productId, productData]) => {
+  const result = Object.entries(stakingPools).reduce((acc, [productId, productData]) => {
     acc[productId] = {};
     acc[productId].totalCapacity = BigNumber.from(0);
     acc[productId].initialCapacityUsed = BigNumber.from(0);
@@ -33,7 +33,7 @@ router.get('/capacity', (req, res) => {
 
 router.get('/capacity/:productId', (req, res) => {
   const { productId } = req.params;
-  const product = req.store.getState().products[productId];
+  const product = req.store.getState().stakingPools[productId];
   if (!product) {
     res.status(400).send('Bad product ID');
   }
