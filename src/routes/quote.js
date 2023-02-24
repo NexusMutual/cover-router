@@ -1,12 +1,9 @@
 const express = require('express');
-const { ethers } = require('ethers');
 const router = express.Router();
+const { BigNumber } = require('ethers');
 
-const config = require('../config');
-const { calculatePremium } = require('../lib/helpers');
-const { calculateCapacities, calculateTranche, sortPools } = require('../lib/helpers');
-const { CONTRACTS_ADDRESSES, SURGE_THRESHOLD_RATIO } = require('../lib/constants');
-const PoolAbi = require('../abis/Pool.json');
+const { calculateCapacities, calculatePremium, calculateCurrentTrancheId, sortPools } = require('../lib/helpers');
+const { SURGE_THRESHOLD_RATIO, SURGE_THRESHOLD_DENOMINATOR } = require('../lib/constants');
 const { parseEther } = require('ethers/lib/utils');
 
 router.post('/quote', async (req, res) => {
@@ -15,40 +12,45 @@ router.post('/quote', async (req, res) => {
    * period -> days
    * */
   const { productId, amount, period, coverAsset, paymentAsset } = req.body;
-  let premiumInNXM = 0;
-  let premiumInCoverAsset = 0;
+  let premiumInNXM = BigNumber.from(0);
+  let premiumInCoverAsset = BigNumber.from(0);
   const poolAllocationRequests = [];
-  let coveredAmount = 0;
+  let coveredAmount = BigNumber.from(0);
+  const periodInSeconds = BigNumber.from(period).mul(86_400);
 
-  const url = config.get('provider.http');
-  const provider = new ethers.providers.JsonRpcProvider(url);
-  const Pool = new ethers.Contract(CONTRACTS_ADDRESSES.Pool, PoolAbi, provider);
-
-  const currentTranche = calculateTranche();
-  const startingTranche = calculateTranche(period);
+  const currentTranche = calculateCurrentTrancheId();
+  const startingTranche = calculateCurrentTrancheId(periodInSeconds);
   const productPools = req.store.getState().stakingPools[productId];
 
   // will be used for best allocations options
   const productSortedData = Object.entries(productPools)
     .sort(sortPools)
     .reduce((acc, [poolId, data]) => {
-      if (coveredAmount === amount) {
+      if (coveredAmount.eq(amount)) {
         return acc;
       }
       acc[poolId] = {};
       const { targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = data;
-      const secondsSinceLastUpdate = Math.floor(Date.now() / 1000 - bumpedPriceUpdateTime.toNumber());
+      const secondsSinceLastUpdate = BigNumber.from(Date.now()).div(1000).sub(bumpedPriceUpdateTime);
 
       const capacities = calculateCapacities(trancheCapacities, allocations, startingTranche - currentTranche);
       acc[poolId].initialCapacityUsed = capacities.initialCapacityUsed;
       acc[poolId].totalCapacity = capacities.totalCapacity;
-      acc[poolId].surgeStart = acc[poolId].totalCapacity * SURGE_THRESHOLD_RATIO;
-      const coverAmountInAsset =
-        acc[poolId].initialCapacityUsed + amount - coveredAmount < acc[poolId].totalCapacity
-          ? amount - coveredAmount
-          : acc[poolId].totalCapacity - acc[poolId].initialCapacityUsed;
-      if (coverAmountInAsset > 0) {
-        coveredAmount += coverAmountInAsset;
+      acc[poolId].surgeStart = acc[poolId].totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
+
+      console.log(acc[poolId].initialCapacityUsed.add(amount).sub(coveredAmount).lt(acc[poolId].totalCapacity));
+      console.log(
+        acc[poolId].initialCapacityUsed.toNumber() + amount - coveredAmount.toNumber() <
+          acc[poolId].totalCapacity.toNumber(),
+      );
+      const coverAmountInAsset = acc[poolId].initialCapacityUsed
+        .add(amount)
+        .sub(coveredAmount)
+        .lt(acc[poolId].totalCapacity)
+        ? BigNumber.from(amount).sub(coveredAmount)
+        : acc[poolId].totalCapacity.sub(acc[poolId].initialCapacityUsed);
+      if (coverAmountInAsset.gt(0)) {
+        coveredAmount = coveredAmount.add(coverAmountInAsset);
         const premium = calculatePremium(
           coverAmountInAsset,
           period,
@@ -58,19 +60,19 @@ router.post('/quote', async (req, res) => {
           acc[poolId].initialCapacityUsed,
           acc[poolId].totalCapacity,
         );
-        premiumInNXM += premium;
+        premiumInNXM = premiumInNXM.add(premium);
         poolAllocationRequests.push({ poolId, skip: false, coverAmountInAsset });
       }
       return acc;
     }, {});
 
-  if (coveredAmount !== amount) {
-    res.status(500).send('Not enough capacity for the coverAmount');
+  if (!coveredAmount.eq(amount)) {
+    return res.status(500).send('Not enough capacity for the coverAmount');
   }
 
   if (paymentAsset === coverAsset) {
-    const currencyRate = await Pool.getTokenPriceInAsset(coverAsset);
-    premiumInCoverAsset = Math.floor((premiumInNXM * currencyRate) / parseEther('1'));
+    const currencyRate = await req.chainAPI.fetchCurrencyRate(coverAsset);
+    premiumInCoverAsset = premiumInNXM.mul(currencyRate).div(parseEther('1'));
   }
 
   res.send({ premiumInCoverAsset, premiumInNXM, poolAllocationRequests });

@@ -1,14 +1,14 @@
 const express = require('express');
 const { BigNumber } = require('ethers');
 const router = express.Router();
-const { calculateTranche, calculateCapacities } = require('../lib/helpers');
+const { calculateCurrentTrancheId, calculateCapacities } = require('../lib/helpers');
 const { MIN_COVER_PERIOD } = require('../lib/constants');
 
 router.get('/capacity', (req, res) => {
   const { stakingPools } = req.store.getState();
 
-  const currentTranche = calculateTranche();
-  const startingTranche = calculateTranche(MIN_COVER_PERIOD);
+  const currentTranche = calculateCurrentTrancheId();
+  const startingTranche = calculateCurrentTrancheId(MIN_COVER_PERIOD);
 
   const result = Object.entries(stakingPools).reduce((acc, [productId, productData]) => {
     acc[productId] = {};
@@ -38,8 +38,8 @@ router.get('/capacity/:productId', (req, res) => {
     res.status(400).send('Bad product ID');
   }
 
-  const currentTranche = calculateTranche();
-  const startingTranche = calculateTranche(MIN_COVER_PERIOD);
+  const currentTranche = calculateCurrentTrancheId();
+  const startingTranche = calculateCurrentTrancheId(MIN_COVER_PERIOD);
 
   const result = Object.entries(product).reduce(
     (acc, [poolId, poolData]) => {

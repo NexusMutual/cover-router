@@ -1,15 +1,16 @@
-const EventEmitter = require('events')
+const EventEmitter = require('events');
 const { ethers } = require('ethers');
 
 const constants = require('./constants');
 const contractAddresses = require('./contracts.json');
+const { calculateCurrentTrancheId } = require('./helpers');
 
 const StakingPoolFactoryAbi = require('../abis/StakingPoolFactory.json');
 const StakingPoolAbi = require('../abis/StakingPool.json');
 const CoverAbi = require('../abis/Cover.json');
 const StakingViewerAbi = require('../abis/StakingViewer.json');
 const StakingProductAbi = require('../abis/StakingProducts.json');
-const { calculateCurrentTrancheId } = require("./helpers");
+const PoolAbi = require('../abis/Pool.json');
 
 const { getCreate2Address } = ethers.utils;
 const { INIT_CODE_HASH } = constants;
@@ -35,6 +36,7 @@ module.exports = provider => {
   const cover = new ethers.Contract(contractAddresses.Cover, CoverAbi, provider);
   const stakingViewer = new ethers.Contract(contractAddresses.StakingViewer, StakingViewerAbi, provider);
   const stakingProducts = new ethers.Contract(contractAddresses.StakingProducts, StakingProductAbi, provider);
+  const pool = new ethers.Contract(contractAddresses.Pool, PoolAbi, provider);
 
   async function fetchGlobalCapacityRatio() {
     return cover.globalCapacityRatio();
@@ -80,14 +82,17 @@ module.exports = provider => {
 
   async function fetchProductPools(productId) {
     const pools = await stakingViewer.getProductPools(productId);
-    return pools.map(({ id }) => id);
+    return pools.map(({ poolId }) => poolId.toNumber());
+  }
+
+  async function fetchCurrencyRate(assetId) {
+    return pool.getTokenPriceInAsset(assetId);
   }
 
   // listeners
   function initiateListener(stakingPoolCount) {
     const emitter = new EventEmitter();
     const trancheId = calculateCurrentTrancheId();
-
 
     function trancheCheck() {
       const activeTrancheId = calculateCurrentTrancheId();
@@ -129,6 +134,7 @@ module.exports = provider => {
     fetchGlobalCapacityRatio,
     fetchStakingPoolCount,
     fetchProductDataForPool,
+    fetchCurrencyRate,
     initiateListener,
   };
 };

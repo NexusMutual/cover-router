@@ -691,7 +691,7 @@
   },
   {
     "type": "function",
-    "name": "coverSegments",
+    "name": "coverSegmentWithRemainingAmount",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -709,6 +709,51 @@
     "outputs": [
       {
         "type": "tuple",
+        "components": [
+          {
+            "type": "uint96",
+            "name": "amount"
+          },
+          {
+            "type": "uint32",
+            "name": "start"
+          },
+          {
+            "type": "uint32",
+            "name": "period"
+          },
+          {
+            "type": "uint32",
+            "name": "gracePeriod"
+          },
+          {
+            "type": "uint24",
+            "name": "globalRewardsRatio"
+          },
+          {
+            "type": "uint24",
+            "name": "globalCapacityRatio"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "coverSegments",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "coverId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "tuple[]",
         "components": [
           {
             "type": "uint96",

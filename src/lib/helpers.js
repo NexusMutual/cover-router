@@ -1,18 +1,19 @@
 const { BigNumber } = require('ethers');
 
 const {
-  TRANCHE_DURATION_DAYS,
+  TRANCHE_DURATION,
   MAX_ACTIVE_TRANCHES,
   PRICE_CHANGE_PER_DAY,
   NXM_PER_ALLOCATION_UNIT,
   TARGET_PRICE_DENOMINATOR,
   SURGE_THRESHOLD_RATIO,
+  SURGE_THRESHOLD_DENOMINATOR,
   SURGE_PRICE_RATIO,
 } = require('./constants');
 
 // offset in seconds
 function calculateCurrentTrancheId(offset = 0) {
-  return Math.floor((Date.now() / 1000 + offset) / 86_400 / TRANCHE_DURATION_DAYS);
+  return BigNumber.from(Date.now()).div(1000).add(offset).div(TRANCHE_DURATION).toNumber();
 }
 
 function calculateCapacities(trancheCapacities, allocations, startingTrancheIndex) {
@@ -59,35 +60,41 @@ function calculatePremium(
   const basePrice = basePriceSelector({ targetPrice, bumpedPrice }, secondsSinceLastUpdate);
 
   // const basePremium = (coverAmount * NXM_PER_ALLOCATION_UNIT * basePrice) / TARGET_PRICE_DENOMINATOR;
-  const basePremium = (coverAmount * basePrice * NXM_PER_ALLOCATION_UNIT) / TARGET_PRICE_DENOMINATOR;
-  const finalCapacityUsed = initialCapacityUsed.toNumber() + coverAmount;
+  const basePremium = BigNumber.from(coverAmount)
+    .mul(basePrice)
+    .mul(NXM_PER_ALLOCATION_UNIT)
+    .div(TARGET_PRICE_DENOMINATOR);
+  const finalCapacityUsed = initialCapacityUsed.add(coverAmount);
 
-  const surgeStartPoint = totalCapacity.toNumber() * SURGE_THRESHOLD_RATIO;
+  const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
 
   if (surgeStartPoint >= finalCapacityUsed) {
-    return Math.floor((basePremium * period) / (365 * 86_400));
+    return basePremium.mul(period).div(31_536_000);
   }
 
-  const amountOnSurgeSkipped = initialCapacityUsed - surgeStartPoint > 0 ? initialCapacityUsed - surgeStartPoint : 0;
+  const amountOnSurgeSkipped = initialCapacityUsed.sub(surgeStartPoint).gt(0)
+    ? initialCapacityUsed.sub(surgeStartPoint)
+    : 0;
 
-  const amountOnSurge = finalCapacityUsed - surgeStartPoint;
-  let surgePremium = 0;
-  if (amountOnSurge > 0) {
+  const amountOnSurge = finalCapacityUsed.sub(surgeStartPoint);
+  let surgePremium = BigNumber.from(0);
+  if (amountOnSurge.gt(0)) {
     surgePremium = calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkipped);
   }
-  return Math.floor(((basePremium + surgePremium) * period) / (365 * 86_400));
+  return basePremium.add(surgePremium).mul(period).div(31_536_000);
 }
 
 function calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkipped = 0) {
-  let surgePremium = (amountOnSurge * SURGE_PRICE_RATIO * (amountOnSurge / totalCapacity)) / 2;
+  let surgePremium = amountOnSurge.mul(SURGE_PRICE_RATIO).mul(amountOnSurge.div(totalCapacity)).mul(2);
 
-  if (amountOnSurgeSkipped > 0) {
-    surgePremium =
-      surgePremium - (amountOnSurgeSkipped * SURGE_PRICE_RATIO * (amountOnSurgeSkipped / totalCapacity)) / 2;
+  if (amountOnSurgeSkipped.gt(0)) {
+    surgePremium = surgePremium
+      .sub(amountOnSurgeSkipped.mul(SURGE_PRICE_RATIO).mul(amountOnSurgeSkipped.div(totalCapacity)))
+      .div(2);
   }
   // amountOnSurge has two decimals
   // dividing by ALLOCATION_UNITS_PER_NXM (=100) to normalize the result
-  return surgePremium / NXM_PER_ALLOCATION_UNIT;
+  return surgePremium.div(NXM_PER_ALLOCATION_UNIT);
 }
 
 module.exports = {

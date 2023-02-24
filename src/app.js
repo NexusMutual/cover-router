@@ -3,7 +3,7 @@ const { ethers } = require('ethers');
 
 const config = require('./config');
 const router = require('./routes');
-const { store } = require('./store');
+const { store: createStore } = require('./store');
 const createSynchronizer = require('./lib/synchronizer');
 
 /**
@@ -24,10 +24,16 @@ app.use(function (req, res, next) {
 const url = config.get('provider.ws');
 const provider = new ethers.providers.WebSocketProvider(url);
 
+const store = createStore();
 const synchronizer = createSynchronizer(store, provider);
 
 // initialize synchronizer
 synchronizer.initialize();
+
+app.use(function (req, res, next) {
+  req.chainAPI = synchronizer.chainAPI;
+  next();
+});
 
 // initiate routes
 router(app);

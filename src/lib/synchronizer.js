@@ -2,7 +2,7 @@ const { actions } = require('../store');
 const initializeChainAPI = require('./chainAPI.js');
 const { calculateCurrentTrancheId } = require('./helpers');
 
-module.exports = async function (store, provider) {
+module.exports = function (store, provider) {
   const chainAPI = initializeChainAPI(provider);
 
   async function _fetchAllData() {
@@ -17,10 +17,10 @@ module.exports = async function (store, provider) {
       const poolIds = await chainAPI.fetchProductPools(productId);
       for (const poolId of poolIds) {
         stakingPools[productId][poolId] = await chainAPI.fetchProductDataForPool(
-            productId,
-            poolId,
-            products[productId].capacityReductionRatio,
-            globalCapacityRatio,
+          productId,
+          poolId,
+          products[productId].capacityReductionRatio,
+          globalCapacityRatio,
         );
       }
     }
@@ -46,13 +46,13 @@ module.exports = async function (store, provider) {
     if (productId < products.length) {
       poolIds = Object.keys(stakingPools[productId]);
     } else {
-      poolIds = await contracts.fetchProductPools(productId);
+      poolIds = await chainAPI.fetchProductPools(productId);
     }
 
     const productPools = {};
-    const product = await contracts.fetchProduct(productId);
+    const product = await chainAPI.fetchProduct(productId);
     for (const poolId of poolIds) {
-      productPools[poolId] = await contracts.fetchProductDataForPool(
+      productPools[poolId] = await chainAPI.fetchProductDataForPool(
         productId,
         poolId,
         product.capacityReductionRatio,
@@ -78,7 +78,7 @@ module.exports = async function (store, provider) {
     let stakingPoolProducts;
 
     if (poolId > stakingPoolCount) {
-      stakingPoolProducts = await contracts.fetchPoolsProducts(poolId);
+      stakingPoolProducts = await chainAPI.fetchPoolsProducts(poolId);
     } else {
       stakingPoolProducts = Object.entries(stakingPools).reduce((acc, [productId, stakingPools = []]) => {
         if (Object.keys(stakingPools).includes(poolId)) {
@@ -89,7 +89,7 @@ module.exports = async function (store, provider) {
     }
 
     for (const productId of stakingPoolProducts) {
-      const stakingPoolData = await contracts.fetchProductDataForPool(
+      const stakingPoolData = await chainAPI.fetchProductDataForPool(
         productId,
         poolId,
         products[productId].capacityReductionRatio,
@@ -130,5 +130,6 @@ module.exports = async function (store, provider) {
 
   return {
     initialize,
+    chainAPI,
   };
 };
