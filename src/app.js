@@ -1,8 +1,10 @@
 const express = require('express');
+const { ethers } = require('ethers');
 
+const config = require('./config');
 const router = require('./routes');
 const { store } = require('./store');
-const initializeSynchronizer = require('./lib/synchronizer');
+const createSynchronizer = require('./lib/synchronizer');
 
 /**
  * Express instance
@@ -19,15 +21,13 @@ app.use(function (req, res, next) {
   next();
 });
 
-const sync = initializeSynchronizer(store);
+const url = config.get('provider.ws');
+const provider = new ethers.providers.WebSocketProvider(url);
 
-// fetch all the data
-sync.fetchAllData();
-// listeners
-sync.trancheCheck();
-sync.subscribeToNewStakingPools();
-sync.subscribeToStakingPoolEvents();
-sync.subscribeToCoverEvents();
+const synchronizer = createSynchronizer(store, provider);
+
+// initialize synchronizer
+synchronizer.initialize();
 
 // initiate routes
 router(app);

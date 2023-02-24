@@ -1,3 +1,4 @@
+const EventEmitter = require('events')
 const { ethers } = require('ethers');
 
 const constants = require('./constants');
@@ -8,6 +9,7 @@ const StakingPoolAbi = require('../abis/StakingPool.json');
 const CoverAbi = require('../abis/Cover.json');
 const StakingViewerAbi = require('../abis/StakingViewer.json');
 const StakingProductAbi = require('../abis/StakingProducts.json');
+const { calculateCurrentTrancheId } = require("./helpers");
 
 const { getCreate2Address } = ethers.utils;
 const { INIT_CODE_HASH } = constants;
@@ -82,26 +84,41 @@ module.exports = provider => {
   }
 
   // listeners
-  function subscribeToAllStakingPoolDependantEvents(stakingPoolCount, cb) {
+  function initiateListener(stakingPoolCount) {
+    const emitter = new EventEmitter();
+    const trancheId = calculateCurrentTrancheId();
+
+
+    function trancheCheck() {
+      const activeTrancheId = calculateCurrentTrancheId();
+      if (activeTrancheId !== trancheId) {
+        emitter.emit('tranche:change');
+      }
+      setTimeout(trancheCheck, 1000);
+    }
+
+    // listen events for all existing pools
     for (let poolId = 1; poolId <= stakingPoolCount; poolId++) {
       const address = calculateAddress(poolId);
       const contract = new ethers.Contract(address, StakingPoolAbi, provider);
 
-      contract.on({ topics }, () => cb(poolId));
+      contract.on({ topics }, () => emitter.emit('pool:changed', poolId));
     }
-  }
 
-  function subscribeToNewStakingPools(cb) {
+    // listen for new staking pool
     stakingPoolFactory.on('StakingPoolCreated', async (id, address) => {
-      await cb(id);
+      emitter.emit('pool:change', id);
       const contract = new ethers.Contract(address, StakingPoolAbi, provider);
-      contract.on({ topics }, () => cb(id));
+      contract.on({ topics }, () => emitter.emit('pool:change', id));
     });
-  }
 
-  function subscribeToCoverEvents(cb) {
-    cover.on('ProductSet', cb);
-    cover.on('CoverEdited', (coverId, productId) => cb(productId));
+    // listen for cover events
+    cover.on('ProductSet', productId => emitter.emit('product:change', productId));
+    cover.on('CoverEdited', (coverId, productId) => emitter.emit('product:change', productId));
+
+    trancheCheck();
+
+    return emitter;
   }
 
   return {
@@ -112,9 +129,6 @@ module.exports = provider => {
     fetchGlobalCapacityRatio,
     fetchStakingPoolCount,
     fetchProductDataForPool,
-
-    subscribeToAllStakingPoolDependantEvents,
-    subscribeToNewStakingPools,
-    subscribeToCoverEvents,
+    initiateListener,
   };
 };

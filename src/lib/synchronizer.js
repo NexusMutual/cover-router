@@ -1,14 +1,43 @@
-const { ethers } = require('ethers');
 const { actions } = require('../store');
-const config = require('../config');
-const contractsFetcher = require('./contracts.js');
+const initializeChainAPI = require('./chainAPI.js');
 const { calculateCurrentTrancheId } = require('./helpers');
 
-const url = config.get('provider.ws');
-const provider = new ethers.providers.WebSocketProvider(url);
+module.exports = async function (store, provider) {
+  const chainAPI = initializeChainAPI(provider);
 
-module.exports = async function (store) {
-  const contracts = contractsFetcher(provider);
+  async function _fetchAllData() {
+    const trancheId = calculateCurrentTrancheId();
+    const globalCapacityRatio = await chainAPI.fetchGlobalCapacityRatio();
+    const poolsCount = await chainAPI.fetchStakingPoolCount();
+    const products = await chainAPI.fetchProducts();
+    const stakingPools = {};
+
+    for (const productId in products) {
+      stakingPools[productId] = {};
+      const poolIds = await chainAPI.fetchProductPools(productId);
+      for (const poolId of poolIds) {
+        stakingPools[productId][poolId] = await chainAPI.fetchProductDataForPool(
+            productId,
+            poolId,
+            products[productId].capacityReductionRatio,
+            globalCapacityRatio,
+        );
+      }
+    }
+
+    store.dispatch({
+      type: actions.SET_STATE,
+      payload: {
+        trancheId,
+        globalCapacityRatio,
+        poolsCount,
+        products,
+        stakingPools,
+      },
+    });
+
+    console.info('All data fetched and preserved');
+  }
 
   async function _updateProduct(productId) {
     const { stakingPools, globalCapacityRatio, products } = store.getState();
@@ -43,7 +72,8 @@ module.exports = async function (store) {
       },
     });
   }
-  async function _updateProductsByStakingPool(poolId) {
+
+  async function _updatePool(poolId) {
     const { stakingPools, globalCapacityRatio, products, stakingPoolCount } = store.getState();
     let stakingPoolProducts;
 
@@ -77,75 +107,28 @@ module.exports = async function (store) {
     }
   }
 
-  async function fetchAllData() {
-    const trancheId = calculateCurrentTrancheId();
-    const globalCapacityRatio = await contracts.fetchGlobalCapacityRatio();
-    const poolsCount = await contracts.fetchStakingPoolCount();
-    const products = await contracts.fetchProducts();
-    const stakingPools = {};
-
-    for (const productId in products) {
-      stakingPools[productId] = {};
-      const poolIds = await contracts.fetchProductPools(productId);
-      for (const poolId of poolIds) {
-        stakingPools[productId][poolId] = await contracts.fetchProductDataForPool(
-          productId,
-          poolId,
-          products[productId].capacityReductionRatio,
-          globalCapacityRatio,
-        );
-      }
+  async function _updateTrancheId(trancheId) {
+    const { products } = store.getState();
+    for (let productId = 0; productId < products.length; productId++) {
+      await _updateProduct(productId);
     }
-
     store.dispatch({
-      type: actions.SET_STATE,
-      payload: {
-        trancheId,
-        globalCapacityRatio,
-        poolsCount,
-        products,
-        stakingPools,
-      },
+      type: actions.SET_TRANCHE_ID,
+      payload: trancheId,
     });
-
-    console.info('All data fetched and preserved');
   }
 
-  async function trancheCheck() {
-    const { trancheId, products } = store.getState();
-    const activeTrancheId = calculateCurrentTrancheId();
-    if (activeTrancheId !== trancheId) {
-      for (let productId = 0; productId < products.length; productId++) {
-        await _updateProduct(productId);
-      }
-      store.dispatch({
-        type: actions.SET_TRANCHE_ID,
-        payload: activeTrancheId,
-      });
-    }
-    setTimeout(trancheCheck, 1000);
-  }
+  async function initialize() {
+    await _fetchAllData();
 
-  // subscribe to Pool events
-  function subscribeToStakingPoolEvents() {
-    const { stakingPoolCount } = store.getState();
-    contracts.subscribeToAllStakingPoolDependantEvents(stakingPoolCount, _updateProductsByStakingPool);
-  }
+    const chainListener = chainAPI.initiateListener();
 
-  function subscribeToNewStakingPools() {
-    contracts.subscribeToNewStakingPools(_updateProductsByStakingPool);
-  }
-
-  // subscribe to Cover Events
-  function subscribeToCoverEvents() {
-    contracts.subscribeToCoverEvents(_updateProduct);
+    chainListener.on('pool:change', _updatePool);
+    chainListener.on('product:change', _updateProduct);
+    chainListener.on('tranche:change', _updateTrancheId);
   }
 
   return {
-    fetchAllData,
-    trancheCheck,
-    subscribeToNewStakingPools,
-    subscribeToStakingPoolEvents,
-    subscribeToCoverEvents,
+    initialize,
   };
 };
