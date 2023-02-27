@@ -7,17 +7,16 @@ module.exports = convict({
     format: 'port',
     default: 3000,
     env: 'PORT',
-    arg: 'port',
   },
   provider: {
-    ws: {
-      doc: 'Providers WS URL',
-      env: 'PROVIDER_WS',
-    },
-    http: {
-      doc: 'Providers HTTP URL',
-      env: 'PROVIDER_HTTP',
-    },
+    doc: 'Providers URL',
+    env: 'PROVIDER_URL',
+    default: 'ws://127.0.0.1:8545/',
+  },
+  contractsPath: {
+    doc: 'URL of the contracts',
+    env: 'CONTRACTS_ADDRESSES',
+    default: '/tmp/contracts.js',
   },
   contractsUrl: {
     doc: 'URL of the contracts',

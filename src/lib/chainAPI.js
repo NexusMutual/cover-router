@@ -1,5 +1,6 @@
 const EventEmitter = require('events');
 const { ethers } = require('ethers');
+const config = require('../config');
 
 const constants = require('./constants');
 const contractAddresses = require('./contracts.json');
@@ -32,6 +33,9 @@ const topics = [
 
 module.exports = provider => {
   // initiate contracts
+  const contractAddressesPath = config.get('contractsPath');
+  const { CONTRACTS_ADDRESSES: contractAddresses } = require(contractAddressesPath);
+
   const stakingPoolFactory = new ethers.Contract(contractAddresses.StakingPoolFactory, StakingPoolFactoryAbi, provider);
   const cover = new ethers.Contract(contractAddresses.Cover, CoverAbi, provider);
   const stakingViewer = new ethers.Contract(contractAddresses.StakingViewer, StakingViewerAbi, provider);

@@ -38,11 +38,6 @@ router.post('/quote', async (req, res) => {
       acc[poolId].totalCapacity = capacities.totalCapacity;
       acc[poolId].surgeStart = acc[poolId].totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
 
-      console.log(acc[poolId].initialCapacityUsed.add(amount).sub(coveredAmount).lt(acc[poolId].totalCapacity));
-      console.log(
-        acc[poolId].initialCapacityUsed.toNumber() + amount - coveredAmount.toNumber() <
-          acc[poolId].totalCapacity.toNumber(),
-      );
       const coverAmountInAsset = acc[poolId].initialCapacityUsed
         .add(amount)
         .sub(coveredAmount)

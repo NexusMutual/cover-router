@@ -21,7 +21,7 @@ app.use(function (req, res, next) {
   next();
 });
 
-const url = config.get('provider.ws');
+const url = config.get('provider');
 const provider = new ethers.providers.WebSocketProvider(url);
 
 const store = createStore();
