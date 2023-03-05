@@ -7,11 +7,15 @@ const initialState = {
   stakingPoolCount: 0,
   products: {},
   stakingPools: {},
+  assetId: {
+    ETH: 0,
+    DAI: 1,
+  },
 };
 
 function reducer(state = initialState, { type, payload }) {
   if (type === actions.SET_STATE) {
-    return payload;
+    return { ...state, ...payload };
   }
 
   if (type === actions.SET_PRODUCTS) {
