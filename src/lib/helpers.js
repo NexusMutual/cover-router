@@ -10,6 +10,7 @@ const {
   SURGE_THRESHOLD_DENOMINATOR,
   SURGE_PRICE_RATIO,
 } = require('./constants');
+const { parseEther, parseUnits } = require('ethers/lib/utils');
 
 // offset in seconds
 function calculateCurrentTrancheId(offset = 0) {
@@ -59,8 +60,10 @@ function calculatePremium(
 ) {
   const basePrice = basePriceSelector({ targetPrice, bumpedPrice }, secondsSinceLastUpdate);
 
+  console.log('coverAmount', coverAmount);
   // const basePremium = (coverAmount * NXM_PER_ALLOCATION_UNIT * basePrice) / TARGET_PRICE_DENOMINATOR;
-  const basePremium = BigNumber.from(coverAmount)
+  // BigNumber.from(coverAmount)
+  const basePremium = parseUnits(coverAmount.toString(), 9)
     .mul(basePrice)
     .mul(NXM_PER_ALLOCATION_UNIT)
     .div(TARGET_PRICE_DENOMINATOR);

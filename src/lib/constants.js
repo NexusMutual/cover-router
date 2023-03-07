@@ -2,7 +2,7 @@ const ethers = require('ethers');
 
 module.exports = {
   // TODO: update hash when new version is deployed
-  INIT_CODE_HASH: '203b477dc328f1ceb7187b20e5b1b0f0bc871114ada7e9020c9ac112bbfb6920',
+  INIT_CODE_HASH: '1eb804b66941a2e8465fa0951be9c8b855b7794ee05b0789ab22a02ee1298ebe',
   STAKING_POOL_STARTING_ID: 0,
   TRANCHE_DURATION: 7862400, // seconds
   SURGE_PRICE_RATIO: 2, // ether,

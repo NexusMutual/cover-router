@@ -61,11 +61,16 @@ module.exports = provider => {
 
     const product = await stakingProducts.getProduct(poolId, productId);
 
+    // console.log('PRODUCT', product);
+    // console.log('PRODUCT ID', productId);
+
     const { trancheCapacities } = await stakingPool.getActiveTrancheCapacities(
       productId,
       globalCapacityRatio,
       capacityReductionRatio,
     );
+
+    // console.log('TRANCHE CAPACITIES', trancheCapacities);
 
     const allocations = await stakingPool.getActiveAllocations(productId);
 
