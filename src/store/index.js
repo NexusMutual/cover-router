@@ -1,7 +1,11 @@
-const store = require('./store');
+const { createStore } = require('redux');
+
 const actions = require('./actions');
+const reducer = require('./reducer');
+const selectors = require('./selectors');
 
 module.exports = {
-  store,
   actions,
+  createStore: () => createStore(reducer),
+  selectors,
 };

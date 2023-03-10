@@ -1,135 +1,82 @@
-const { actions } = require('../store');
-const initializeChainAPI = require('./chainAPI.js');
-const { calculateCurrentTrancheId } = require('./helpers');
+const { calculateTrancheId } = require('./helpers');
+const {
+  SET_ASSET_RATE,
+  SET_GLOBAL_CAPACITY_RATIO,
+  SET_PRODUCT,
+  SET_POOL_PRODUCT,
+  SET_TRANCHE_ID,
+} = require('../store/actions');
 
-module.exports = function (store, provider) {
-  const chainAPI = initializeChainAPI(provider);
+module.exports = async (store, chainApi, eventsApi) => {
+  const updateProduct = async productId => {
+    const { globalCapacityRatio } = store.getState();
 
-  async function _fetchAllData() {
-    const trancheId = calculateCurrentTrancheId();
-    const globalCapacityRatio = await chainAPI.fetchGlobalCapacityRatio();
-    const poolsCount = await chainAPI.fetchStakingPoolCount();
-    const products = await chainAPI.fetchProducts();
-    const stakingPools = {};
+    const product = await chainApi.fetchProduct(productId);
+    store.dispatch({ type: SET_PRODUCT, payload: { ...product, id: productId } });
 
-    for (const productId in products) {
-      stakingPools[productId] = {};
-      const poolIds = await chainAPI.fetchProductPools(productId);
-      for (const poolId of poolIds) {
-        stakingPools[productId][poolId] = await chainAPI.fetchProductDataForPool(
-          productId,
-          poolId,
-          products[productId].capacityReductionRatio,
-          globalCapacityRatio,
-        );
-      }
-    }
+    const { capacityReductionRatio } = product;
+    const poolIds = await chainApi.fetchProductPoolsIds(productId);
 
-    store.dispatch({
-      type: actions.SET_STATE,
-      payload: {
-        trancheId,
-        globalCapacityRatio,
-        poolsCount,
-        products,
-        stakingPools,
-      },
-    });
-
-    console.info('All data fetched and preserved');
-  }
-
-  async function _updateProduct(productId) {
-    const { stakingPools, globalCapacityRatio, products } = store.getState();
-    let poolIds;
-
-    if (productId < products.length) {
-      poolIds = Object.keys(stakingPools[productId]);
-    } else {
-      poolIds = await chainAPI.fetchProductPools(productId);
-    }
-
-    const productPools = {};
-    const product = await chainAPI.fetchProduct(productId);
     for (const poolId of poolIds) {
-      productPools[poolId] = await chainAPI.fetchProductDataForPool(
+      const poolProduct = await chainApi.fetchPoolProduct(
         productId,
         poolId,
-        product.capacityReductionRatio,
         globalCapacityRatio,
+        capacityReductionRatio,
       );
-    }
-
-    store.dispatch({
-      type: actions.SET_PRODUCT,
-      payload: { ...product, id: productId },
-    });
-    store.dispatch({
-      type: actions.SET_ALL_PRODUCT_STAKING_POOLS,
-      payload: {
-        productId,
-        productPools,
-      },
-    });
-  }
-
-  async function _updatePool(poolId) {
-    const { stakingPools, globalCapacityRatio, products, stakingPoolCount } = store.getState();
-    let stakingPoolProducts;
-
-    if (poolId > stakingPoolCount) {
-      stakingPoolProducts = await chainAPI.fetchPoolsProducts(poolId);
-    } else {
-      stakingPoolProducts = Object.entries(stakingPools).reduce((acc, [productId, stakingPools = []]) => {
-        if (Object.keys(stakingPools).includes(poolId)) {
-          acc.push(productId);
-        }
-        return acc;
-      }, []);
-    }
-
-    for (const productId of stakingPoolProducts) {
-      const stakingPoolData = await chainAPI.fetchProductDataForPool(
-        productId,
-        poolId,
-        products[productId].capacityReductionRatio,
-        globalCapacityRatio,
-      );
-
       store.dispatch({
-        type: actions.SET_PRODUCT_STAKING_POOL,
-        payload: {
-          productId,
-          poolId,
-          stakingPoolData,
-        },
+        type: SET_POOL_PRODUCT,
+        payload: { productId, poolId, poolProduct },
+      });
+    }
+  };
+
+  async function updatePool(poolId) {
+    const { globalCapacityRatio, products } = store.getState();
+    const productIds = await chainApi.fetchPoolProductIds(poolId);
+    for (const productId of productIds) {
+      const poolProduct = await chainApi.fetchPoolProduct(
+        productId,
+        poolId,
+        globalCapacityRatio,
+        products[productId].capacityReductionRatio,
+      );
+      store.dispatch({
+        type: SET_POOL_PRODUCT,
+        payload: { productId, poolId, poolProduct },
       });
     }
   }
 
-  async function _updateTrancheId(trancheId) {
-    const { products } = store.getState();
-    for (let productId = 0; productId < products.length; productId++) {
-      await _updateProduct(productId);
+  const updateAll = async () => {
+    const trancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
+    store.dispatch({ type: SET_TRANCHE_ID, payload: trancheId });
+
+    const globalCapacityRatio = await chainApi.fetchGlobalCapacityRatio();
+    store.dispatch({ type: SET_GLOBAL_CAPACITY_RATIO, payload: globalCapacityRatio });
+
+    const productCount = await chainApi.fetchProductCount();
+
+    for (let productId = 0; productId < productCount; productId++) {
+      await updateProduct(productId);
     }
-    store.dispatch({
-      type: actions.SET_TRANCHE_ID,
-      payload: trancheId,
-    });
-  }
-
-  async function initialize() {
-    await _fetchAllData();
-
-    const chainListener = chainAPI.initiateListener();
-
-    chainListener.on('pool:change', _updatePool);
-    chainListener.on('product:change', _updateProduct);
-    chainListener.on('tranche:change', _updateTrancheId);
-  }
-
-  return {
-    initialize,
-    chainAPI,
   };
+
+  const updateAssetRates = async () => {
+    const { assets } = store.getState();
+    const assetIds = Object.values(assets);
+    for (const assetId of assetIds) {
+      const rate = await chainApi.fetchTokenPriceInAsset(assetId);
+      store.dispatch({ type: SET_ASSET_RATE, payload: { assetId, rate } });
+    }
+  };
+
+  await updateAll();
+  await updateAssetRates();
+  console.info('All data fetched and stored');
+
+  eventsApi.on('pool:change', updatePool);
+  eventsApi.on('product:change', updateProduct);
+  eventsApi.on('tranche:change', updateAll);
+  eventsApi.on('block', updateAssetRates);
 };

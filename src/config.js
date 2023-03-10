@@ -1,4 +1,3 @@
-require('dotenv').config();
 const convict = require('convict');
 
 module.exports = convict({
@@ -11,12 +10,12 @@ module.exports = convict({
   provider: {
     doc: 'Providers URL',
     env: 'PROVIDER_URL',
-    default: 'ws://127.0.0.1:8545/',
+    default: '',
   },
-  contractsPath: {
+  contractAddresses: {
     doc: 'URL of the contracts',
     env: 'CONTRACTS_ADDRESSES',
-    default: '/tmp/contracts.js',
+    default: '',
   },
   contractsUrl: {
     doc: 'URL of the contracts',
