@@ -236,6 +236,10 @@
               },
               {
                 "type": "uint256",
+                "name": "stakeShares"
+              },
+              {
+                "type": "uint256",
                 "name": "reward"
               }
             ]
@@ -522,6 +526,10 @@
               },
               {
                 "type": "uint256",
+                "name": "stakeShares"
+              },
+              {
+                "type": "uint256",
                 "name": "reward"
               }
             ]
@@ -583,6 +591,10 @@
               {
                 "type": "uint256",
                 "name": "stake"
+              },
+              {
+                "type": "uint256",
+                "name": "stakeShares"
               },
               {
                 "type": "uint256",

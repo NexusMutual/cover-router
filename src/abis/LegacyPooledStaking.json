@@ -10,6 +10,10 @@
       {
         "type": "address",
         "name": "productsV1Address"
+      },
+      {
+        "type": "address",
+        "name": "stakingNFTAddress"
       }
     ]
   },
@@ -364,17 +368,16 @@
   {
     "type": "function",
     "name": "accumulateReward",
-    "constant": false,
+    "constant": true,
+    "stateMutability": "pure",
     "payable": false,
     "gas": 29000000,
     "inputs": [
       {
-        "type": "address",
-        "name": "contractAddress"
+        "type": "address"
       },
       {
-        "type": "uint256",
-        "name": "amount"
+        "type": "uint256"
       }
     ],
     "outputs": []
@@ -401,15 +404,6 @@
         "name": "lastDistributionRound"
       }
     ]
-  },
-  {
-    "type": "function",
-    "name": "blockV1",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": []
   },
   {
     "type": "function",
@@ -618,21 +612,19 @@
   {
     "type": "function",
     "name": "depositAndStake",
-    "constant": false,
+    "constant": true,
+    "stateMutability": "pure",
     "payable": false,
     "gas": 29000000,
     "inputs": [
       {
-        "type": "uint256",
-        "name": "amount"
+        "type": "uint256"
       },
       {
-        "type": "address[]",
-        "name": "_contracts"
+        "type": "address[]"
       },
       {
-        "type": "uint256[]",
-        "name": "_stakes"
+        "type": "uint256[]"
       }
     ],
     "outputs": []
@@ -822,8 +814,8 @@
     "gas": 29000000,
     "inputs": [
       {
-        "type": "address",
-        "name": "stakingPool"
+        "type": "uint256",
+        "name": "stakingPoolId"
       },
       {
         "type": "uint256",
@@ -919,17 +911,16 @@
   {
     "type": "function",
     "name": "pushBurn",
-    "constant": false,
+    "constant": true,
+    "stateMutability": "pure",
     "payable": false,
     "gas": 29000000,
     "inputs": [
       {
-        "type": "address",
-        "name": "contractAddress"
+        "type": "address"
       },
       {
-        "type": "uint256",
-        "name": "amount"
+        "type": "uint256"
       }
     ],
     "outputs": []
@@ -951,21 +942,19 @@
   {
     "type": "function",
     "name": "requestUnstake",
-    "constant": false,
+    "constant": true,
+    "stateMutability": "pure",
     "payable": false,
     "gas": 29000000,
     "inputs": [
       {
-        "type": "address[]",
-        "name": "_contracts"
+        "type": "address[]"
       },
       {
-        "type": "uint256[]",
-        "name": "_amounts"
+        "type": "uint256[]"
       },
       {
-        "type": "uint256",
-        "name": "_insertAfter"
+        "type": "uint256"
       }
     ],
     "outputs": []
@@ -1186,6 +1175,20 @@
   },
   {
     "type": "function",
+    "name": "stakingNFT",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "function",
     "name": "unstakeRequestAtIndex",
     "constant": true,
     "stateMutability": "view",
@@ -1272,20 +1275,6 @@
       }
     ],
     "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "v1Blocked",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "bool"
-      }
-    ]
   },
   {
     "type": "function",

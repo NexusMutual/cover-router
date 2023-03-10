@@ -28,6 +28,10 @@
         "components": [
           {
             "type": "uint256",
+            "name": "segmentId"
+          },
+          {
+            "type": "uint256",
             "name": "amount"
           },
           {
@@ -69,6 +73,10 @@
         "components": [
           {
             "type": "uint256",
+            "name": "coverId"
+          },
+          {
+            "type": "uint256",
             "name": "productId"
           },
           {
@@ -83,6 +91,10 @@
             "type": "tuple[]",
             "name": "segments",
             "components": [
+              {
+                "type": "uint256",
+                "name": "segmentId"
+              },
               {
                 "type": "uint256",
                 "name": "amount"

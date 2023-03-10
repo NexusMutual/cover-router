@@ -1,28 +1,11 @@
 [
   {
-    "type": "event",
-    "anonymous": false,
-    "name": "ClaimSubmitted",
+    "type": "constructor",
+    "payable": false,
     "inputs": [
       {
-        "type": "uint256",
-        "name": "claimId",
-        "indexed": true
-      },
-      {
-        "type": "uint256",
-        "name": "coverId",
-        "indexed": true
-      },
-      {
         "type": "address",
-        "name": "submitter",
-        "indexed": true
-      },
-      {
-        "type": "bytes",
-        "name": "data",
-        "indexed": false
+        "name": "_quotationData"
       }
     ]
   },
@@ -496,6 +479,20 @@
   {
     "type": "function",
     "name": "master",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "quotationData",
     "constant": true,
     "stateMutability": "view",
     "payable": false,

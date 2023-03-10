@@ -15,11 +15,6 @@
   },
   {
     "type": "error",
-    "name": "InvalidStakingPool",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "MustRecalculateEffectiveWeight",
     "inputs": []
   },

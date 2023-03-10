@@ -1062,10 +1062,6 @@
     "gas": 29000000,
     "inputs": [
       {
-        "type": "address",
-        "name": "_manager"
-      },
-      {
         "type": "bool",
         "name": "_isPrivatePool"
       },

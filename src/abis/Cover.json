@@ -244,48 +244,6 @@
   },
   {
     "type": "function",
-    "name": "ALLOCATION_UNITS_PER_NXM",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "BUCKET_SIZE",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "ETH_ASSET_ID",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
     "name": "GLOBAL_MIN_PRICE_RATIO",
     "constant": true,
     "stateMutability": "view",
@@ -301,34 +259,6 @@
   {
     "type": "function",
     "name": "MAX_COMMISSION_RATIO",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "MAX_COVER_PERIOD",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "NXM_ASSET_ID",
     "constant": true,
     "stateMutability": "view",
     "payable": false,
@@ -374,27 +304,6 @@
       {
         "type": "uint64",
         "name": "lastBucketUpdateId"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "activeCoverExpirationBuckets",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      },
-      {
-        "type": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
       }
     ]
   },
@@ -810,10 +719,6 @@
     "gas": 29000000,
     "inputs": [
       {
-        "type": "address",
-        "name": "manager"
-      },
-      {
         "type": "bool",
         "name": "isPrivatePool"
       },
@@ -941,13 +846,13 @@
     "type": "function",
     "name": "globalCapacityRatio",
     "constant": true,
-    "stateMutability": "view",
+    "stateMutability": "pure",
     "payable": false,
     "gas": 29000000,
     "inputs": [],
     "outputs": [
       {
-        "type": "uint24"
+        "type": "uint256"
       }
     ]
   },
@@ -955,24 +860,15 @@
     "type": "function",
     "name": "globalRewardsRatio",
     "constant": true,
-    "stateMutability": "view",
+    "stateMutability": "pure",
     "payable": false,
     "gas": 29000000,
     "inputs": [],
     "outputs": [
       {
-        "type": "uint24"
+        "type": "uint256"
       }
     ]
-  },
-  {
-    "type": "function",
-    "name": "initialize",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": []
   },
   {
     "type": "function",
@@ -1358,23 +1254,5 @@
         "type": "uint256"
       }
     ]
-  },
-  {
-    "type": "function",
-    "name": "updateUintParameters",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint8[]",
-        "name": "paramNames"
-      },
-      {
-        "type": "uint256[]",
-        "name": "values"
-      }
-    ],
-    "outputs": []
   }
 ]

@@ -5,21 +5,30 @@
     "inputs": [
       {
         "type": "string",
-        "name": "name_"
+        "name": "_name"
       },
       {
         "type": "string",
-        "name": "symbol_"
+        "name": "_symbol"
       },
       {
         "type": "address",
         "name": "_operator"
+      },
+      {
+        "type": "address",
+        "name": "_nftDescriptor"
       }
     ]
   },
   {
     "type": "error",
     "name": "AlreadyMinted",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidNewNFTDescriptorAddress",
     "inputs": []
   },
   {
@@ -162,6 +171,20 @@
   },
   {
     "type": "function",
+    "name": "changeNFTDescriptor",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_newNFTDescriptor"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
     "name": "changeOperator",
     "constant": false,
     "payable": false,
@@ -266,6 +289,20 @@
     "outputs": [
       {
         "type": "string"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "nftDescriptor",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
       }
     ]
   },
@@ -411,12 +448,14 @@
     "gas": 29000000,
     "inputs": [
       {
-        "type": "uint256"
+        "type": "uint256",
+        "name": "id"
       }
     ],
     "outputs": [
       {
-        "type": "string"
+        "type": "string",
+        "name": "uri"
       }
     ]
   },

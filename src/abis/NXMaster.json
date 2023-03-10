@@ -216,6 +216,20 @@
   },
   {
     "type": "function",
+    "name": "dAppLocker",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "function",
     "name": "emergencyAdmin",
     "constant": true,
     "stateMutability": "view",

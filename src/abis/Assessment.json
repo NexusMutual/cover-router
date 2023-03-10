@@ -414,15 +414,6 @@
   },
   {
     "type": "function",
-    "name": "initialize",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": []
-  },
-  {
-    "type": "function",
     "name": "internalContracts",
     "constant": true,
     "stateMutability": "view",

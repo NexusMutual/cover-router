@@ -1,760 +1,5 @@
 [
   {
-    "type": "function",
-    "name": "closeProposal",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "memberProposalVote",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address"
-      },
-      {
-        "type": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "proposalRejectedByAB",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      },
-      {
-        "type": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "bool"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "changeDependentContractAddress",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "voteTallyData",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      },
-      {
-        "type": "uint256",
-        "name": "_solution"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      },
-      {
-        "type": "uint256"
-      },
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "proposalDetails",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      },
-      {
-        "type": "uint256"
-      },
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "createProposalwithSolution",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "string",
-        "name": "_proposalTitle"
-      },
-      {
-        "type": "string",
-        "name": "_proposalSD"
-      },
-      {
-        "type": "string",
-        "name": "_proposalDescHash"
-      },
-      {
-        "type": "uint256",
-        "name": "_categoryId"
-      },
-      {
-        "type": "string",
-        "name": "_solutionHash"
-      },
-      {
-        "type": "bytes",
-        "name": "_action"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "claimReward",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address",
-        "name": "_memberAddress"
-      },
-      {
-        "type": "uint256",
-        "name": "_maxRecords"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "pendingDAppReward"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "proposalActionStatus",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "unDelegate",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "rejectAction",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "getSolutionAction",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      },
-      {
-        "type": "uint256",
-        "name": "_solution"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      },
-      {
-        "type": "bytes"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "proposal",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "proposalId"
-      },
-      {
-        "type": "uint256",
-        "name": "category"
-      },
-      {
-        "type": "uint256",
-        "name": "status"
-      },
-      {
-        "type": "uint256",
-        "name": "finalVerdict"
-      },
-      {
-        "type": "uint256",
-        "name": "totalReward"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "tokenHoldingTime",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "createProposal",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "string",
-        "name": "_proposalTitle"
-      },
-      {
-        "type": "string",
-        "name": "_proposalSD"
-      },
-      {
-        "type": "string",
-        "name": "_proposalDescHash"
-      },
-      {
-        "type": "uint256",
-        "name": "_categoryId"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "getPendingReward",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address",
-        "name": "_memberAddress"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "pendingDAppReward"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "rewardClaimed",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      },
-      {
-        "type": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "bool"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "getUintParameters",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "bytes8",
-        "name": "code"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "bytes8",
-        "name": "codeVal"
-      },
-      {
-        "type": "uint256",
-        "name": "val"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "categorizeProposal",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      },
-      {
-        "type": "uint256",
-        "name": "_categoryId"
-      },
-      {
-        "type": "uint256",
-        "name": "_incentive"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "submitVote",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      },
-      {
-        "type": "uint256",
-        "name": "_solutionChosen"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "submitProposalWithSolution",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      },
-      {
-        "type": "string",
-        "name": "_solutionHash"
-      },
-      {
-        "type": "bytes",
-        "name": "_action"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "followerDelegation",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "getProposalLength",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "updateUintParameters",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "bytes8",
-        "name": "code"
-      },
-      {
-        "type": "uint256",
-        "name": "val"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "allowedToCreateProposal",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "category"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "bool",
-        "name": "check"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "ms",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "address"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "allowedToCatgorize",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "roleId"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "allDelegation",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "address",
-        "name": "follower"
-      },
-      {
-        "type": "address",
-        "name": "leader"
-      },
-      {
-        "type": "uint256",
-        "name": "lastUpd"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "canCloseProposal",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "getFollowers",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address",
-        "name": "_add"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256[]"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "triggerAction",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "changeMasterAddress",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address",
-        "name": "_masterAddress"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "isOpenForDelegation",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "bool"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "submitVoteWithStakingPoolIds",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      },
-      {
-        "type": "uint256",
-        "name": "_solutionChosen"
-      },
-      {
-        "type": "uint256[]",
-        "name": "managedStakingPoolIds"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "lastRewardClaimed",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "updateProposal",
-    "constant": false,
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "_proposalId"
-      },
-      {
-        "type": "string",
-        "name": "_proposalTitle"
-      },
-      {
-        "type": "string",
-        "name": "_proposalSD"
-      },
-      {
-        "type": "string",
-        "name": "_proposalDescHash"
-      }
-    ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "proposalVoteTally",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [
-      {
-        "type": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "type": "uint256",
-        "name": "voters"
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "nxMasterAddress",
-    "constant": true,
-    "stateMutability": "view",
-    "payable": false,
-    "gas": 29000000,
-    "inputs": [],
-    "outputs": [
-      {
-        "type": "address"
-      }
-    ]
-  },
-  {
     "type": "event",
     "anonymous": false,
     "name": "ActionFailed",
@@ -786,7 +31,19 @@
   {
     "type": "event",
     "anonymous": false,
-    "name": "ProposalCategorized",
+    "name": "ActionSuccess",
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "proposalId",
+        "indexed": false
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "CloseProposalOnTime",
     "inputs": [
       {
         "type": "uint256",
@@ -794,13 +51,8 @@
         "indexed": true
       },
       {
-        "type": "address",
-        "name": "categorizedBy",
-        "indexed": true
-      },
-      {
         "type": "uint256",
-        "name": "categoryId",
+        "name": "time",
         "indexed": false
       }
     ]
@@ -838,6 +90,57 @@
       {
         "type": "string",
         "name": "proposalDescHash",
+        "indexed": false
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "ProposalAccepted",
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "proposalId",
+        "indexed": false
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "ProposalCategorized",
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "proposalId",
+        "indexed": true
+      },
+      {
+        "type": "address",
+        "name": "categorizedBy",
+        "indexed": true
+      },
+      {
+        "type": "uint256",
+        "name": "categoryId",
+        "indexed": false
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "RewardClaimed",
+    "inputs": [
+      {
+        "type": "address",
+        "name": "member",
+        "indexed": true
+      },
+      {
+        "type": "uint256",
+        "name": "gbtReward",
         "indexed": false
       }
     ]
@@ -909,23 +212,6 @@
   {
     "type": "event",
     "anonymous": false,
-    "name": "RewardClaimed",
-    "inputs": [
-      {
-        "type": "address",
-        "name": "member",
-        "indexed": true
-      },
-      {
-        "type": "uint256",
-        "name": "gbtReward",
-        "indexed": false
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "anonymous": false,
     "name": "VoteCast",
     "inputs": [
       {
@@ -936,43 +222,753 @@
     ]
   },
   {
-    "type": "event",
-    "anonymous": false,
-    "name": "ProposalAccepted",
+    "type": "function",
+    "name": "allDelegation",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
     "inputs": [
       {
-        "type": "uint256",
-        "name": "proposalId",
-        "indexed": false
+        "type": "uint256"
       }
-    ]
-  },
-  {
-    "type": "event",
-    "anonymous": false,
-    "name": "CloseProposalOnTime",
-    "inputs": [
+    ],
+    "outputs": [
       {
-        "type": "uint256",
-        "name": "proposalId",
-        "indexed": true
+        "type": "address",
+        "name": "follower"
+      },
+      {
+        "type": "address",
+        "name": "leader"
       },
       {
         "type": "uint256",
-        "name": "time",
-        "indexed": false
+        "name": "lastUpd"
       }
     ]
   },
   {
-    "type": "event",
-    "anonymous": false,
-    "name": "ActionSuccess",
+    "type": "function",
+    "name": "allowedToCatgorize",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "roleId"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "allowedToCreateProposal",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
     "inputs": [
       {
         "type": "uint256",
-        "name": "proposalId",
-        "indexed": false
+        "name": "category"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "bool",
+        "name": "check"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "canCloseProposal",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "categorizeProposal",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      },
+      {
+        "type": "uint256",
+        "name": "_categoryId"
+      },
+      {
+        "type": "uint256",
+        "name": "_incentive"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "changeDependentContractAddress",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "changeMasterAddress",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_masterAddress"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "claimReward",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_memberAddress"
+      },
+      {
+        "type": "uint256",
+        "name": "_maxRecords"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "pendingDAppReward"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "closeProposal",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "createProposal",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "string",
+        "name": "_proposalTitle"
+      },
+      {
+        "type": "string",
+        "name": "_proposalSD"
+      },
+      {
+        "type": "string",
+        "name": "_proposalDescHash"
+      },
+      {
+        "type": "uint256",
+        "name": "_categoryId"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "createProposalwithSolution",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "string",
+        "name": "_proposalTitle"
+      },
+      {
+        "type": "string",
+        "name": "_proposalSD"
+      },
+      {
+        "type": "string",
+        "name": "_proposalDescHash"
+      },
+      {
+        "type": "uint256",
+        "name": "_categoryId"
+      },
+      {
+        "type": "string",
+        "name": "_solutionHash"
+      },
+      {
+        "type": "bytes",
+        "name": "_action"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "followerDelegation",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getFollowers",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_add"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256[]"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getPendingReward",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_memberAddress"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "pendingDAppReward"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getProposalLength",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getSolutionAction",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      },
+      {
+        "type": "uint256",
+        "name": "_solution"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256"
+      },
+      {
+        "type": "bytes"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getUintParameters",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "bytes8",
+        "name": "code"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "bytes8",
+        "name": "codeVal"
+      },
+      {
+        "type": "uint256",
+        "name": "val"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "isOpenForDelegation",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "bool"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "lastRewardClaimed",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "memberProposalVote",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "address"
+      },
+      {
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "ms",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "nxMasterAddress",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "proposal",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "proposalId"
+      },
+      {
+        "type": "uint256",
+        "name": "category"
+      },
+      {
+        "type": "uint256",
+        "name": "status"
+      },
+      {
+        "type": "uint256",
+        "name": "finalVerdict"
+      },
+      {
+        "type": "uint256",
+        "name": "totalReward"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "proposalActionStatus",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "proposalDetails",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256"
+      },
+      {
+        "type": "uint256"
+      },
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "proposalRejectedByAB",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256"
+      },
+      {
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "bool"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "proposalVoteTally",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "voters"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "rejectAction",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "rewardClaimed",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256"
+      },
+      {
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "bool"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "submitProposalWithSolution",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      },
+      {
+        "type": "string",
+        "name": "_solutionHash"
+      },
+      {
+        "type": "bytes",
+        "name": "_action"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "submitVote",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      },
+      {
+        "type": "uint256",
+        "name": "_solutionChosen"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "submitVoteWithoutDelegations",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      },
+      {
+        "type": "uint256",
+        "name": "_solutionChosen"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "tokenHoldingTime",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": [
+      {
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "triggerAction",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "unDelegate",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "updateProposal",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      },
+      {
+        "type": "string",
+        "name": "_proposalTitle"
+      },
+      {
+        "type": "string",
+        "name": "_proposalSD"
+      },
+      {
+        "type": "string",
+        "name": "_proposalDescHash"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "updateUintParameters",
+    "constant": false,
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "bytes8",
+        "name": "code"
+      },
+      {
+        "type": "uint256",
+        "name": "val"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "voteTallyData",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "gas": 29000000,
+    "inputs": [
+      {
+        "type": "uint256",
+        "name": "_proposalId"
+      },
+      {
+        "type": "uint256",
+        "name": "_solution"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "uint256"
+      },
+      {
+        "type": "uint256"
+      },
+      {
+        "type": "uint256"
       }
     ]
   }
