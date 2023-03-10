@@ -38,6 +38,12 @@ const main = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // add cors header to all requests
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    next();
+  });
+
   app.set('store', store);
 
   // initiate routes
