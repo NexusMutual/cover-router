@@ -20,7 +20,7 @@ const main = async () => {
 
   // provider
   const providerURL = config.get('provider');
-  const provider = new ethers.providers.WebSocketProvider(providerURL);
+  const provider = new ethers.providers.JsonRpcProvider(providerURL);
 
   // contract factory
   const addresses = require(config.get('contractAddresses')).CONTRACTS_ADDRESSES;
