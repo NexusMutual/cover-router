@@ -1,0 +1,39 @@
+{
+  "name": "cover-router",
+  "version": "2.0.0",
+  "description": "Cover Router",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint --max-warnings 0 .",
+    "dev": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NexusMutual/cover-router.git"
+  },
+  "author": "nexusmutual.io",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NexusMutual/cover-router/issues"
+  },
+  "homepage": "https://github.com/NexusMutual/cover-router#readme",
+  "dependencies": {
+    "convict": "^6.2.4",
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.9",
+    "redux": "^4.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.33.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-config-semistandard": "^17.0.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-standard": "^5.0.0",
+    "nodemon": "^2.0.20"
+  }
+}

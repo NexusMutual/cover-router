@@ -1,0 +1,27 @@
+{
+  "env": {
+    "commonjs": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": [
+    "semistandard",
+    "eslint:recommended",
+    "plugin:prettier/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "ignorePatterns": ["node_modules/"],
+  "rules": {
+    "comma-dangle": ["warn", "always-multiline"],
+    "curly": ["error", "all"],
+    "max-len": ["error", { "code": 120 }],
+    "indent": ["error", 2],
+    "no-nested-ternary": "error",
+    "no-unused-vars": "warn",
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "padded-blocks": "off"
+  }
+}
