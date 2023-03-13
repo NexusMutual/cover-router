@@ -1,4 +1,4 @@
-const { BigNumber, ethers } = require('ethers');
+const { ethers } = require('ethers');
 const { WeiPerEther } = ethers.constants;
 
 const createChainApi = async contracts => {
@@ -9,18 +9,8 @@ const createChainApi = async contracts => {
   const stakingProducts = contracts('StakingProducts');
   const stakingViewer = contracts('StakingViewer');
 
-  // const fetchTokenPriceInAsset = async assetId => {
-  //   return assetId === 255 ? WeiPerEther : pool.getTokenPriceInAsset(assetId);
-  // };
   const fetchTokenPriceInAsset = async assetId => {
-    if (assetId === 255) {
-      return WeiPerEther;
-    }
-    return BigNumber.from(
-      assetId === 0
-        ? '28908055829734371' // eth
-        : '45191857955243002886', // dai
-    );
+    return assetId === 255 ? WeiPerEther : pool.getTokenPriceInAsset(assetId);
   };
 
   const fetchGlobalCapacityRatio = async () => cover.globalCapacityRatio();
