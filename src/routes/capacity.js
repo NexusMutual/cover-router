@@ -1,31 +1,44 @@
 const express = require('express');
 const capacityEngine = require('../lib/capacityEngine');
 const { BigNumber } = require('ethers');
+const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();
 
-const parseCapacityResult = ({ productId, capacity }) => ({
+const formatCapacityResult = ({ productId, capacity }) => ({
   productId,
   capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
 });
 
-router.get('/capacity', async (req, res) => {
-  const store = req.app.get('store');
-  const now = BigNumber.from(Date.now()).div(1000);
+router.get(
+  '/capacity',
+  asyncRoute(async (req, res) => {
+    const store = req.app.get('store');
+    const now = BigNumber.from(Date.now()).div(1000);
 
-  const response = capacityEngine(store, [], now);
+    const response = capacityEngine(store, [], now);
 
-  res.send(response.map(capacity => parseCapacityResult(capacity)));
-});
+    res.json({
+      error: false,
+      response: response.map(capacity => formatCapacityResult(capacity)),
+    });
+  }),
+);
 
-router.get('/capacity/:productId', async (req, res) => {
-  const productId = Number(req.params.productId);
-  const store = req.app.get('store');
-  const now = BigNumber.from(Date.now()).div(1000);
+router.get(
+  '/capacity/:productId',
+  asyncRoute(async (req, res) => {
+    const productId = Number(req.params.productId);
+    const store = req.app.get('store');
+    const now = BigNumber.from(Date.now()).div(1000);
 
-  const [capacity] = capacityEngine(store, [productId], now);
+    const [capacity] = capacityEngine(store, [productId], now);
 
-  res.send(parseCapacityResult(capacity));
-});
+    res.json({
+      error: false,
+      response: formatCapacityResult(capacity),
+    });
+  }),
+);
 
 module.exports = router;

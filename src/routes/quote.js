@@ -1,16 +1,10 @@
 const express = require('express');
 const { BigNumber, ethers } = require('ethers');
 const quoteEngine = require('../lib/quoteEngine');
+const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();
 const { Zero } = ethers.constants;
-
-const asyncRoute = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(err => {
-    console.error(err);
-    res.status(500).send({ error: 'Internal Server Error' });
-  });
-};
 
 router.get(
   '/quote',
@@ -49,7 +43,7 @@ router.get(
       poolAllocationRequests: quote.poolAllocationRequests,
     };
 
-    res.send(quoteResponse);
+    res.json({ error: false, response: quoteResponse });
   }),
 );
 
