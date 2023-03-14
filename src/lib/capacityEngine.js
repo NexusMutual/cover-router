@@ -6,49 +6,64 @@ const { calculateTrancheId } = require('./helpers');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
-function calculateCapacity(store, productId, time) {
+function capacityEngine(store, productIds, time) {
   const { assets, assetRates } = store.getState();
-  const productPools = selectProductPools(store, productId);
-  const { gracePeriod } = selectProduct(store, productId);
+  const capacities = [];
+  console.log(store.getState().products);
+  const ids = productIds.length === 0 ? Object.keys(store.getState().products) : [...productIds];
 
-  const firstActiveTrancheId = calculateTrancheId(time);
-  const gracePeriodExpiration = time.add(MIN_COVER_PERIOD).add(gracePeriod);
-  const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
-  const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
+  for (const productId of ids) {
+    const productPools = selectProductPools(store, productId);
+    const product = selectProduct(store, productId);
 
-  const capacityNXM = productPools.reduce((capacity, pool) => {
-    const { allocations, trancheCapacities } = pool;
+    const productCapacity = { productId, capacity: [] };
 
-    const totalCapacity = trancheCapacities
-      .slice(firstUsableTrancheIndex)
-      .reduce((total, capacity) => total.add(capacity), Zero)
-      .mul(NXM_PER_ALLOCATION_UNIT);
-
-    const initiallyUsedCapacity = allocations
-      .slice(firstUsableTrancheIndex)
-      .reduce((total, allocation) => total.add(allocation), Zero)
-      .mul(NXM_PER_ALLOCATION_UNIT);
-
-    if (totalCapacity.gt(initiallyUsedCapacity)) {
-      return capacity.add(totalCapacity).sub(initiallyUsedCapacity);
+    if (!product) {
+      for (const assetId of Object.values(assets)) {
+        productCapacity.capacity.push({
+          assetId,
+          amount: BigNumber.from(0),
+        });
+      }
+      capacities.push(productCapacity);
+      continue;
     }
-    return capacity;
-  }, Zero);
 
-  const capacity = { productId };
+    const firstActiveTrancheId = calculateTrancheId(time);
+    const gracePeriodExpiration = time.add(MIN_COVER_PERIOD).add(product.gracePeriod);
+    const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
+    const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
 
-  for (const [symbol, assetId] of Object.entries(assets)) {
-    // TODO: use asset decimals instead of generic 18 decimals
-    capacity[`capacity${symbol}`] = capacityNXM.mul(WeiPerEther).div(assetRates[assetId]);
+    const capacityNXM = productPools.reduce((capacity, pool) => {
+      const { allocations, trancheCapacities } = pool;
+
+      const totalCapacity = trancheCapacities
+        .slice(firstUsableTrancheIndex)
+        .reduce((total, capacity) => total.add(capacity), Zero)
+        .mul(NXM_PER_ALLOCATION_UNIT);
+
+      const initiallyUsedCapacity = allocations
+        .slice(firstUsableTrancheIndex)
+        .reduce((total, allocation) => total.add(allocation), Zero)
+        .mul(NXM_PER_ALLOCATION_UNIT);
+
+      if (totalCapacity.gt(initiallyUsedCapacity)) {
+        return capacity.add(totalCapacity).sub(initiallyUsedCapacity);
+      }
+      return capacity;
+    }, Zero);
+
+    for (const assetId of Object.values(assets)) {
+      productCapacity.capacity.push({
+        assetId,
+        // TODO: use asset decimals instead of generic 18 decimals
+        amount: capacityNXM.mul(WeiPerEther).div(assetRates[assetId]),
+      });
+    }
+    capacities.push(productCapacity);
   }
-  return capacity;
+
+  return capacities;
 }
 
-module.exports = (store, productIds = [], time = BigNumber.from(Date.now()).div(1000)) => {
-  if (productIds.length === 0) {
-    const { products } = store.getState();
-    return Object.keys(products).map(productId => calculateCapacity(store, productId, time));
-  }
-  const [productId] = productIds;
-  return calculateCapacity(store, productId, time);
-};
+module.exports = capacityEngine;
