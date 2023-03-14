@@ -9,7 +9,6 @@ const { WeiPerEther, Zero } = ethers.constants;
 function capacityEngine(store, productIds, time) {
   const { assets, assetRates } = store.getState();
   const capacities = [];
-  console.log(store.getState().products);
   const ids = productIds.length === 0 ? Object.keys(store.getState().products) : [...productIds];
 
   for (const productId of ids) {
