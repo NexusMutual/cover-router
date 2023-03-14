@@ -18,10 +18,7 @@ router.get(
 
     const response = capacityEngine(store, [], now);
 
-    res.json({
-      error: false,
-      response: response.map(capacity => formatCapacityResult(capacity)),
-    });
+    res.json(response.map(capacity => formatCapacityResult(capacity)));
   }),
 );
 
@@ -34,10 +31,7 @@ router.get(
 
     const [capacity] = capacityEngine(store, [productId], now);
 
-    res.json({
-      error: false,
-      response: formatCapacityResult(capacity),
-    });
+    res.json(formatCapacityResult(capacity));
   }),
 );
 
