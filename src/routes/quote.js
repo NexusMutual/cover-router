@@ -24,7 +24,6 @@ router.get(
     };
 
     const quote = route.reduce((quote, pool) => {
-      console.log('reduce:', { quote, pool });
       const allocationRequest = {
         poolId: pool.poolId.toString(),
         coverAmountInAsset: pool.coverAmountInAsset.toString(),
@@ -42,6 +41,8 @@ router.get(
       premiumInAsset: quote.premiumInAsset.toString(),
       poolAllocationRequests: quote.poolAllocationRequests,
     };
+
+    console.log(JSON.stringify(quoteResponse, null, 2));
 
     res.json({ error: false, response: quoteResponse });
   }),

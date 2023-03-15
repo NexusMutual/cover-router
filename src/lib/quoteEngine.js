@@ -1,9 +1,9 @@
 const { BigNumber, ethers } = require('ethers');
 const { bnMax, calculateTrancheId, divCeil } = require('./helpers');
-const { selectAssetRate, selectAssetSymbol, selectProductPools, selectProduct } = require('../store/selectors');
+const { selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
 
 const { MaxUint256, WeiPerEther, Zero } = ethers.constants;
-const { formatUnits, formatEther } = ethers.utils;
+const { formatEther, formatUnits } = ethers.utils;
 
 const {
   NXM_PER_ALLOCATION_UNIT,
@@ -25,12 +25,6 @@ const calculateFixedPricePremiumPerYear = (coverAmount, price) => {
   return coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
 };
 
-const calculateSurgePremium = (amount, totalCapacity, amountSkipped = Zero) => {
-  const totalSurgePremium = amount.mul(amount).mul(SURGE_PRICE_RATIO).div(totalCapacity).mul(2);
-  const skippedSurgePremium = amountSkipped.mul(SURGE_PRICE_RATIO).mul(amountSkipped.div(totalCapacity));
-  return totalSurgePremium.sub(skippedSurgePremium);
-};
-
 const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, totalCapacity) => {
   const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
   const finalCapacityUsed = initialCapacityUsed.add(coverAmount);
@@ -40,12 +34,22 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
     return basePremium;
   }
 
-  const amountOnSurgeSkipped = initialCapacityUsed.sub(surgeStartPoint).gt(0)
+  const amountOnSurgeSkip = initialCapacityUsed.sub(surgeStartPoint).gt(0)
     ? initialCapacityUsed.sub(surgeStartPoint)
     : Zero;
 
   const amountOnSurge = finalCapacityUsed.sub(surgeStartPoint);
-  const surgePremium = calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkipped);
+  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).mul(2);
+  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).mul(totalCapacity).div(2);
+  const surgePremium = totalSurgePremium.sub(skipSurgePremium);
+
+  console.log('Cover amount   :', formatEther(coverAmount), 'nxm');
+  console.log('Amount on surge:', formatEther(amountOnSurge), 'nxm');
+
+  console.log('Base price     :', formatUnits(basePrice, 4), 'nxm');
+  console.log('Base premium   :', formatEther(basePremium), 'nxm');
+  console.log('Surge skipped  :', formatEther(skipSurgePremium), 'nxm');
+  console.log('Surge premium  :', formatEther(surgePremium), 'nxm');
 
   return basePremium.add(surgePremium);
 };
@@ -67,7 +71,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 
   // rounding up to nearest allocation unit
   const amountToAllocate = divCeil(coverAmountInNxm, NXM_PER_ALLOCATION_UNIT).mul(NXM_PER_ALLOCATION_UNIT);
-  console.log('Amount to allocate:', formatEther(amountToAllocate), ' nxm');
+  console.log('Amount to allocate:', formatEther(amountToAllocate), 'nxm');
 
   const zeroPool = {
     poolId: 0,
@@ -91,8 +95,8 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       .mul(NXM_PER_ALLOCATION_UNIT);
 
     console.log('Pool:', poolId);
-    console.log('Initially used capacity:', formatEther(initiallyUsedCapacity), ' nxm');
-    console.log('Total pool capacity    :', formatEther(totalCapacity), ' nxm');
+    console.log('Initially used capacity:', formatEther(initiallyUsedCapacity), 'nxm');
+    console.log('Total pool capacity    :', formatEther(totalCapacity), 'nxm');
 
     if (initiallyUsedCapacity.add(amountToAllocate).gt(totalCapacity)) {
       return { ...zeroPool, poolId };
@@ -127,7 +131,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     return [];
   }
 
-  console.log('Cheapest pool:', cheapestPool);
   return [cheapestPool];
 };
 
