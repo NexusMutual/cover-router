@@ -56,7 +56,7 @@ function capacityEngine(store, productIds, time) {
       productCapacity.capacity.push({
         assetId,
         // TODO: use asset decimals instead of generic 18 decimals
-        amount: capacityNXM.mul(WeiPerEther).div(assetRates[assetId]),
+        amount: capacityNXM.mul(assetRates[assetId]).div(WeiPerEther),
       });
     }
     capacities.push(productCapacity);
