@@ -31,6 +31,10 @@ router.get(
 
     const [capacity] = capacityEngine(store, [productId], now);
 
+    if (!capacity) {
+      return res.status(400).send({ error: 'Invalid Product Id', response: null });
+    }
+
     res.json(formatCapacityResult(capacity));
   }),
 );

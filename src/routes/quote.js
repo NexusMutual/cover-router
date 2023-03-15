@@ -17,6 +17,10 @@ router.get(
     const store = req.app.get('store');
     const route = await quoteEngine(store, productId, amount, period, coverAsset);
 
+    if (!route) {
+      return res.status(400).send({ error: 'Invalid Product Id', response: null });
+    }
+
     const initialQuote = {
       premiumInNXM: Zero,
       premiumInAsset: Zero,

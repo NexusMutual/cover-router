@@ -18,13 +18,7 @@ function capacityEngine(store, productIds, time) {
     const productCapacity = { productId, capacity: [] };
 
     if (!product) {
-      for (const assetId of Object.values(assets)) {
-        productCapacity.capacity.push({
-          assetId,
-          amount: BigNumber.from(0),
-        });
-      }
-      capacities.push(productCapacity);
+      capacities.push(null);
       continue;
     }
 
