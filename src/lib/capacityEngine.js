@@ -1,4 +1,4 @@
-const { ethers, BigNumber } = require('ethers');
+const { ethers } = require('ethers');
 
 const { selectProductPools, selectProduct } = require('../store/selectors');
 const { NXM_PER_ALLOCATION_UNIT, MIN_COVER_PERIOD } = require('./constants');
@@ -12,15 +12,14 @@ function capacityEngine(store, productIds, time) {
   const ids = productIds.length === 0 ? Object.keys(store.getState().products) : [...productIds];
 
   for (const productId of ids) {
-    const productPools = selectProductPools(store, productId);
     const product = selectProduct(store, productId);
 
-    const productCapacity = { productId, capacity: [] };
-
     if (!product) {
-      capacities.push(null);
       continue;
     }
+
+    const productPools = selectProductPools(store, productId);
+    const productCapacity = { productId, capacity: [] };
 
     const firstActiveTrancheId = calculateTrancheId(time);
     const gracePeriodExpiration = time.add(MIN_COVER_PERIOD).add(product.gracePeriod);
