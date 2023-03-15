@@ -21,9 +21,14 @@ router.get(
       return res.status(400).send({ error: 'Invalid Product Id', response: null });
     }
 
+    if (route.length === 0) {
+      return res.status(400).send({ error: 'Not enough capacity for the cover amount', response: null });
+    }
+
     const initialQuote = {
       premiumInNXM: Zero,
       premiumInAsset: Zero,
+      capacities: [],
       poolAllocationRequests: [],
     };
 
@@ -36,6 +41,7 @@ router.get(
       return {
         premiumInNXM: quote.premiumInNXM.add(pool.premiumInNxm),
         premiumInAsset: quote.premiumInAsset.add(pool.premiumInAsset),
+        capacities: [...quote.capacities, pool.capacities],
         poolAllocationRequests: [...quote.poolAllocationRequests, allocationRequest],
       };
     }, initialQuote);
@@ -44,6 +50,12 @@ router.get(
       premiumInNXM: quote.premiumInNXM.toString(),
       premiumInAsset: quote.premiumInAsset.toString(),
       poolAllocationRequests: quote.poolAllocationRequests,
+      capacities: quote.capacities.map(({ poolId, capacity }) => {
+        return {
+          poolId,
+          capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
+        };
+      }),
     };
 
     console.log(JSON.stringify(quoteResponse, null, 2));
