@@ -25,7 +25,7 @@ const calculateFixedPricePremiumPerYear = (coverAmount, price) => {
   return coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
 };
 
-const calculateSurgePremium = (amount, totalCapacity, amountSkipped = 0) => {
+const calculateSurgePremium = (amount, totalCapacity, amountSkipped = Zero) => {
   const totalSurgePremium = amount.mul(SURGE_PRICE_RATIO).mul(amount.div(totalCapacity)).mul(2);
   const skippedSurgePremium = amountSkipped.mul(SURGE_PRICE_RATIO).mul(amountSkipped.div(totalCapacity));
   return totalSurgePremium.sub(skippedSurgePremium);
@@ -42,7 +42,7 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
 
   const amountOnSurgeSkipped = initialCapacityUsed.sub(surgeStartPoint).gt(0)
     ? initialCapacityUsed.sub(surgeStartPoint)
-    : 0;
+    : Zero;
 
   const amountOnSurge = finalCapacityUsed.sub(surgeStartPoint);
   const surgePremium = calculateSurgePremium(amountOnSurge, totalCapacity, amountOnSurgeSkipped);
