@@ -21,6 +21,7 @@ module.exports = async (provider, contracts) => {
   // contract instances
   const stakingPoolFactory = contracts('StakingPoolFactory');
   const cover = contracts('Cover');
+  const stakingProducts = contracts('StakingProducts');
 
   // tranche id checker
   let currentTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
@@ -49,6 +50,7 @@ module.exports = async (provider, contracts) => {
     stakingPool.on({ topics }, () => emitter.emit('pool:change', poolId));
   });
 
+  stakingProducts.on('ProductUpdated', productId => emitter.emit('product:change', productId));
   cover.on('ProductSet', productId => emitter.emit('product:change', productId));
   cover.on('CoverEdited', (coverId, productId) => emitter.emit('product:change', productId));
 
