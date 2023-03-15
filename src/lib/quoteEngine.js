@@ -39,8 +39,8 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
     : Zero;
 
   const amountOnSurge = finalCapacityUsed.sub(surgeStartPoint);
-  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).mul(2);
-  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).mul(totalCapacity).div(2);
+  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
+  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
   const surgePremium = totalSurgePremium.sub(skipSurgePremium);
 
   console.log('Cover amount   :', formatEther(coverAmount), 'nxm');
