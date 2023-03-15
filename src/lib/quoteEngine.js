@@ -56,6 +56,10 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
 
 const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const product = selectProduct(store, productId);
+
+  if (!product) {
+    return null;
+  }
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
 
