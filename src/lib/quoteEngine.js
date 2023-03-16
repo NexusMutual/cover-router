@@ -62,6 +62,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   }
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
+  const assetRates = store.getState().assetRates;
 
   const now = BigNumber.from(Date.now()).div(1000);
   const gracePeriodExpiration = now.add(period).add(product.gracePeriod);
@@ -98,9 +99,16 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       .reduce((total, allocation) => total.add(allocation), Zero)
       .mul(NXM_PER_ALLOCATION_UNIT);
 
+    const capacityInNxm = totalCapacity.sub(initiallyUsedCapacity);
+    const capacity = Object.entries(assetRates).map(([assetId, rate]) => ({
+      assetId,
+      amount: capacityInNxm.mul(rate).div(WeiPerEther),
+    }));
+
     console.log('Pool:', poolId);
     console.log('Initially used capacity:', formatEther(initiallyUsedCapacity), 'nxm');
     console.log('Total pool capacity    :', formatEther(totalCapacity), 'nxm');
+    console.log('Pool capacity          :', formatEther(capacityInNxm), 'nxm');
 
     if (initiallyUsedCapacity.add(amountToAllocate).gt(totalCapacity)) {
       return { ...zeroPool, poolId };
@@ -120,7 +128,14 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     // TODO: use asset decimals instead of generic 18 decimals
     const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);
 
-    return { poolId, premiumInNxm, premiumInAsset, coverAmountInNxm, coverAmountInAsset: amount };
+    return {
+      poolId,
+      premiumInNxm,
+      premiumInAsset,
+      coverAmountInNxm,
+      coverAmountInAsset: amount,
+      capacities: { poolId, capacity },
+    };
   });
 
   // TODO: add support for multiple pools
