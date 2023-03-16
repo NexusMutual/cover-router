@@ -52,12 +52,10 @@ router.get(
         premiumInAsset: quote.premiumInAsset.toString(),
         poolAllocationRequests: quote.poolAllocationRequests,
       },
-      capacities: quote.capacities.map(({ poolId, capacity }) => {
-        return {
-          poolId,
-          capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
-        };
-      }),
+      capacities: quote.capacities.map(({ poolId, capacity }) => ({
+        poolId,
+        capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
+      })),
     };
 
     console.log(JSON.stringify(response, null, 2));
