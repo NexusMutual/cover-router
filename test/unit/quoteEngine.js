@@ -3,18 +3,13 @@ const {
   utils: { parseEther },
 } = require('ethers');
 const { expect } = require('chai');
-const { createStore } = require('../../src/store');
 const quoteEngine = require('../../src/lib/quoteEngine');
 const mockStore = require('../mocks/store');
 const { BigNumber } = require('ethers');
 const { MIN_COVER_PERIOD } = require('../../src/lib/constants');
 
 describe('Quote Engine tests', () => {
-  let store;
-
-  before(() => {
-    store = createStore();
-  });
+  const store = { getState: () => null };
 
   afterEach(function () {
     sinon.restore();
