@@ -46,10 +46,12 @@ router.get(
       };
     }, initialQuote);
 
-    const quoteResponse = {
-      premiumInNXM: quote.premiumInNXM.toString(),
-      premiumInAsset: quote.premiumInAsset.toString(),
-      poolAllocationRequests: quote.poolAllocationRequests,
+    const response = {
+      quote: {
+        premiumInNXM: quote.premiumInNXM.toString(),
+        premiumInAsset: quote.premiumInAsset.toString(),
+        poolAllocationRequests: quote.poolAllocationRequests,
+      },
       capacities: quote.capacities.map(({ poolId, capacity }) => {
         return {
           poolId,
@@ -58,9 +60,9 @@ router.get(
       }),
     };
 
-    console.log(JSON.stringify(quoteResponse, null, 2));
+    console.log(JSON.stringify(response, null, 2));
 
-    res.json({ error: false, response: quoteResponse });
+    res.json(response);
   }),
 );
 
