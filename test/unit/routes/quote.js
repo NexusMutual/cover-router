@@ -1,44 +1,13 @@
 const { expect } = require('chai');
 const supertest = require('supertest');
-const initApp = require('../../mocks/server');
 const {
   ethers: {
     utils: { parseEther },
   },
 } = require('ethers');
 
-const quoteResponse = {
-  quote: {
-    premiumInNXM: '200000000000000',
-    premiumInAsset: '2056008060905',
-    poolAllocationRequests: [
-      {
-        poolId: '1',
-        coverAmountInAsset: '30000',
-        skip: false,
-      },
-    ],
-  },
-  capacities: [
-    {
-      poolId: 1,
-      capacity: [
-        {
-          assetId: '0',
-          amount: '1011555965965397760',
-        },
-        {
-          assetId: '1',
-          amount: '2826484798959880487553',
-        },
-        {
-          assetId: '255',
-          amount: '98400000000000000000',
-        },
-      ],
-    },
-  ],
-};
+const initApp = require('../../mocks/server');
+const { quote } = require('../responses');
 
 describe('GET /quote', async () => {
   let server;
@@ -59,7 +28,7 @@ describe('GET /quote', async () => {
       })
       .expect('Content-Type', /json/)
       .expect(200);
-    expect(response).to.be.deep.equal(quoteResponse);
+    expect(response).to.be.deep.equal(quote);
   });
 
   it('should fail get a quote for cover over the capacity', async function () {
