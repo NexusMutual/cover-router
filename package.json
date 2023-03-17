@@ -4,8 +4,8 @@
   "description": "Cover Router",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test",
-    "test-with-coverage": "nyc --reporter=html mocha test",
+    "test": "mocha test  --exit",
+    "test-with-coverage": "nyc --reporter=html mocha test --exit",
     "lint": "eslint --max-warnings 0 .",
     "dev": "nodemon src/index.js"
   },
@@ -40,6 +40,7 @@
     "mocha": "^10.2.0",
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
-    "sinon": "^15.0.2"
+    "sinon": "^15.0.2",
+    "supertest": "^6.3.3"
   }
 }

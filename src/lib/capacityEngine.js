@@ -19,7 +19,7 @@ function capacityEngine(store, productIds, time) {
     }
 
     const productPools = selectProductPools(store, productId);
-    const productCapacity = { productId, capacity: [] };
+    const productCapacity = { productId: Number(productId), capacity: [] };
 
     const firstActiveTrancheId = calculateTrancheId(time);
     const gracePeriodExpiration = time.add(MIN_COVER_PERIOD).add(product.gracePeriod);

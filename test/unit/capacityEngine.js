@@ -6,7 +6,7 @@ const { BigNumber } = require('ethers');
 
 const capacities = [
   {
-    productId: '0',
+    productId: 0,
     capacity: [
       {
         assetId: 0,
@@ -23,7 +23,7 @@ const capacities = [
     ],
   },
   {
-    productId: '1',
+    productId: 1,
     capacity: [
       {
         assetId: 0,
@@ -40,7 +40,7 @@ const capacities = [
     ],
   },
   {
-    productId: '2',
+    productId: 2,
     capacity: [
       {
         assetId: 0,
