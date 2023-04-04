@@ -53,7 +53,7 @@ router.get(
         poolAllocationRequests: quote.poolAllocationRequests,
       },
       capacities: quote.capacities.map(({ poolId, capacity }) => ({
-        poolId,
+        poolId: poolId.toString(),
         capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
       })),
     };
