@@ -1,4 +1,4 @@
-name: Build and deploy coverk router
+name: Deploy cover router
 
 on:
     push:
