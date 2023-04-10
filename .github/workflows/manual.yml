@@ -1,0 +1,29 @@
+name: Build and deploy coverk router
+
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    build:
+        name: deploy-cover-router
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+            
+            - name: Deploy using ssh
+              uses: appleboy/ssh-action@master
+              with:
+                host: ${{ secrets.HOST }}
+                username: ${{ secrets.USERNAME }}
+                key: ${{ secrets.PRIVATE_KEY }}
+                port: 22
+                script: |
+                  cd ${{ secrets.APP_PATH }}
+                  git stash
+                  git pull origin master
+                  git status
+                  npm install --only=prod
+                  pm2 restart
