@@ -8,7 +8,9 @@ const { BigNumber } = require('ethers');
 const { MIN_COVER_PERIOD } = require('../../src/lib/constants');
 const { calculateOptimalPoolAllocation } = require('../../src/lib/premium-computations');
 
-describe.only('Premium computations tests', () => {
+describe.only('Premium computations tests', function () {
+  this.timeout(0);
+
   const store = { getState: () => null };
 
   afterEach(function() {
@@ -45,6 +47,12 @@ describe.only('Premium computations tests', () => {
     const amount = parseEther('1000');
     const optimalAllocation = calculateOptimalPoolAllocation(amount, pools);
 
-    console.log(optimalAllocation);
+    console.log({
+
+
+      optimalAllocation,
+      combination: optimalAllocation.lowestCostAllocation.combination,
+      amountSplit: optimalAllocation.lowestCostAllocation.amountSplit.toString()
+    });
   });
 });
