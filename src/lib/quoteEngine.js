@@ -10,7 +10,7 @@ const {
   ONE_YEAR,
 } = require('./constants');
 
-const { calculateBasePrice, calculateFixedPricePremiumPerYear, calculatePremiumPerYear } = require('premium-computations');
+const { calculateBasePrice, calculateFixedPricePremiumPerYear, calculatePremiumPerYear } = require('./premium-computations');
 
 const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const product = selectProduct(store, productId);
