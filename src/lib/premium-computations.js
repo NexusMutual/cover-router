@@ -96,7 +96,7 @@ console.log(getAmountSplits(3, 10));
 
 
 const calculateCost = (combination, amountSplit) => {
-  const totalPremium = BigNumber.from(0);
+  let totalPremium = BigNumber.from(0);
   for (let i = 0; i < combination.length; i++) {
     const pool = combination[i];
 
@@ -106,7 +106,7 @@ const calculateCost = (combination, amountSplit) => {
 
     const premium = calculatePremiumPerYear(amountInWei, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
 
-    totalPremium.add(premium);
+    totalPremium = totalPremium.add(premium);
   }
 
   return totalPremium;
@@ -120,7 +120,15 @@ const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools) => {
   let lowestCostAllocation = undefined;
   for (const splitCount of [1, 2, 3]) {
     const combinations = getCombinations(splitCount, pools);
+
+
     const amountSplits = getAmountSplits(splitCount, amountInUnits);
+
+    console.log({
+      splitCount,
+      combinationsLength: combinations.length,
+      amountSplitsLength: amountSplits.length
+    })
 
     for (const combination of combinations) {
       for (const amountSplit of amountSplits) {
@@ -137,13 +145,10 @@ const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools) => {
     }
   }
 
-  return {
-    lowestCostAllocation,
-    lowestCost
-  };
+  return { lowestCostAllocation, lowestCost };
 }
 const calculateOptimalPoolAllocation = (coverAmount, pools) => {
-  calculateOptimalPoolAllocationBruteForce(coverAmount, pools);
+  return calculateOptimalPoolAllocationBruteForce(coverAmount, pools);
 }
 
 module.exports = {
