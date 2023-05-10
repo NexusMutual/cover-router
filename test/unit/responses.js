@@ -66,7 +66,7 @@ const quote = {
   },
   capacities: [
     {
-      poolId: 1,
+      poolId: '1',
       capacity: [
         {
           assetId: '0',
