@@ -112,13 +112,68 @@ const calculateCost = (combination, amountSplit) => {
   return totalPremium;
 }
 
+
+/**
+ * This function allocates each unit to the cheapest opportunity available for that unit
+ * at that time given the allocations at the previous points.
+ * @param coverAmount
+ * @param pools
+ * @returns {{lowestCostAllocation: undefined, lowestCost: *}}
+ */
+const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
+
+  const amountInUnits = coverAmount.div(UNIT_SIZE);
+
+  let lowestCost = BigNumber.from(0);
+  let lowestCostAllocation = { };
+
+  // by poolId
+  const poolCapacityUsed = {};
+
+  for (const pool of pools) {
+    poolCapacityUsed[pool.poolId] = pool.initialCapacityUsed;
+  }
+
+  for (let i = 0; i < amountInUnits; i++) {
+
+    let lowestCostPerPool = MaxUint256;
+    let lowestCostPool;
+    for (const pool of pools) {
+
+      // we advance one unit size at a time
+      const amountInWei = UNIT_SIZE;
+
+      const premium = calculatePremiumPerYear(
+        amountInWei, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity
+      );
+
+      if (premium.lt(lowestCostPerPool)) {
+        lowestCostPerPool = premium;
+        lowestCostPool = pool;
+      }
+    }
+
+    lowestCost = lowestCost.add(lowestCostPerPool);
+
+    if (!lowestCostAllocation[lowestCostPool.poolId]) {
+      lowestCostAllocation[lowestCostPool.poolId] = BigNumber.from(0);
+    }
+
+    lowestCostAllocation[lowestCostPool.poolId] = lowestCostAllocation[lowestCostPool.poolId].add(UNIT_SIZE);
+
+    poolCapacityUsed[lowestCostPool.poolId] = poolCapacityUsed[lowestCostPool.poolId].add(UNIT_SIZE);
+  }
+
+  return { lowestCostAllocation, lowestCost };
+}
+
 const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools) => {
 
   const amountInUnits = coverAmount.div(UNIT_SIZE);
 
   let lowestCost = MaxUint256;
   let lowestCostAllocation = undefined;
-  for (const splitCount of [1, 2, 3]) {
+  for (const splitCount of [1, 2]) {
     const combinations = getCombinations(splitCount, pools);
 
 
@@ -148,7 +203,7 @@ const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools) => {
   return { lowestCostAllocation, lowestCost };
 }
 const calculateOptimalPoolAllocation = (coverAmount, pools) => {
-  return calculateOptimalPoolAllocationBruteForce(coverAmount, pools);
+  return calculateOptimalPoolAllocationGreedy(coverAmount, pools);
 }
 
 module.exports = {

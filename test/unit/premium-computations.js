@@ -47,12 +47,14 @@ describe.only('Premium computations tests', function () {
     const amount = parseEther('1000');
     const optimalAllocation = calculateOptimalPoolAllocation(amount, pools);
 
+    for (const key in optimalAllocation.lowestCostAllocation) {
+      optimalAllocation.lowestCostAllocation[key] = optimalAllocation.lowestCostAllocation[key].div(parseEther('1')).toString()
+    }
+
     console.log({
-
-
       optimalAllocation,
       combination: optimalAllocation.lowestCostAllocation.combination,
-      amountSplit: optimalAllocation.lowestCostAllocation.amountSplit.toString()
+      amountSplit: optimalAllocation.lowestCostAllocation
     });
   });
 });
