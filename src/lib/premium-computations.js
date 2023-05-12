@@ -122,7 +122,7 @@ const calculateCost = (combination, amountSplit) => {
  */
 const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
 
-  const amountInUnits = coverAmount.div(UNIT_SIZE);
+  const amountInUnits = coverAmount.div(UNIT_SIZE).toNumber();
 
   let lowestCost = BigNumber.from(0);
   let lowestCostAllocation = { };
@@ -146,6 +146,11 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
       const premium = calculatePremiumPerYear(
         amountInWei, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity
       );
+
+      console.log({
+        premium: premium.toString(),
+        cap: poolCapacityUsed[pool.poolId].toString()
+      })
 
       if (premium.lt(lowestCostPerPool)) {
         lowestCostPerPool = premium;
