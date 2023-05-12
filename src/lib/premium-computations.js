@@ -5,7 +5,8 @@ const { MaxUint256, WeiPerEther, Zero } = ethers.constants;
 const { formatEther, formatUnits } = ethers.utils;
 
 
-const UNIT_SIZE = WeiPerEther;
+const MIN_UNIT_SIZE = WeiPerEther;
+const UNIT_DIVISOR = 1000;
 
 const {
   PRICE_CHANGE_PER_DAY,
@@ -42,13 +43,13 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
   const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
   const surgePremium = totalSurgePremium.sub(skipSurgePremium);
 
-  console.log('Cover amount   :', formatEther(coverAmount), 'nxm');
-  console.log('Amount on surge:', formatEther(amountOnSurge), 'nxm');
-
-  console.log('Base price     :', formatUnits(basePrice, 4), 'nxm');
-  console.log('Base premium   :', formatEther(basePremium), 'nxm');
-  console.log('Surge skipped  :', formatEther(skipSurgePremium), 'nxm');
-  console.log('Surge premium  :', formatEther(surgePremium), 'nxm');
+  // console.log('Cover amount   :', formatEther(coverAmount), 'nxm');
+  // console.log('Amount on surge:', formatEther(amountOnSurge), 'nxm');
+  //
+  // console.log('Base price     :', formatUnits(basePrice, 4), 'nxm');
+  // console.log('Base premium   :', formatEther(basePremium), 'nxm');
+  // console.log('Surge skipped  :', formatEther(skipSurgePremium), 'nxm');
+  // console.log('Surge premium  :', formatEther(surgePremium), 'nxm');
 
   return basePremium.add(surgePremium);
 };
@@ -92,9 +93,6 @@ const getAmountSplits = (splitCount, amountInUnits) => {
   return splits;
 }
 
-console.log(getAmountSplits(3, 10));
-
-
 const calculateCost = (combination, amountSplit) => {
   let totalPremium = BigNumber.from(0);
   for (let i = 0; i < combination.length; i++) {
@@ -116,12 +114,16 @@ const calculateCost = (combination, amountSplit) => {
 /**
  * This function allocates each unit to the cheapest opportunity available for that unit
  * at that time given the allocations at the previous points.
+ * Complexity O(n * p)  where n is the number of units in the amount and p is th  e number of pools
  * @param coverAmount
  * @param pools
  * @returns {{lowestCostAllocation: undefined, lowestCost: *}}
  */
 const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
 
+  // set UNIT_SIZE to be a minimum of 1.
+  const UNIT_SIZE = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE)
+    ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
   const amountInUnits = coverAmount.div(UNIT_SIZE).toNumber();
 
   let lowestCost = BigNumber.from(0);
@@ -143,14 +145,14 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
       // we advance one unit size at a time
       const amountInWei = UNIT_SIZE;
 
+      if (poolCapacityUsed[pool.poolId].add(amountInWei).gt(pool.totalCapacity)) {
+        // can't allocate unit to pool
+        continue;
+      }
+
       const premium = calculatePremiumPerYear(
         amountInWei, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity
       );
-
-      console.log({
-        premium: premium.toString(),
-        cap: poolCapacityUsed[pool.poolId].toString()
-      })
 
       if (premium.lt(lowestCostPerPool)) {
         lowestCostPerPool = premium;
@@ -174,21 +176,19 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
 
 const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools) => {
 
+  // set UNIT_SIZE to be a minimum of 1.
+  const UNIT_SIZE = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE)
+    ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
+
   const amountInUnits = coverAmount.div(UNIT_SIZE);
 
   let lowestCost = MaxUint256;
-  let lowestCostAllocation = undefined;
+  let lowestCostAllocation;
   for (const splitCount of [1, 2]) {
     const combinations = getCombinations(splitCount, pools);
 
 
     const amountSplits = getAmountSplits(splitCount, amountInUnits);
-
-    console.log({
-      splitCount,
-      combinationsLength: combinations.length,
-      amountSplitsLength: amountSplits.length
-    })
 
     for (const combination of combinations) {
       for (const amountSplit of amountSplits) {
@@ -196,10 +196,12 @@ const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools) => {
 
         if (cost.lt(lowestCost)) {
           lowestCost = cost;
-          lowestCostAllocation = {
-            combination,
-            amountSplit
-          };
+
+          lowestCostAllocation = {}
+          for (let i = 0; i < combination.length; i++) {
+            const pool = combination[i];
+            lowestCostAllocation[pool.poolId] = BigNumber.from(amountSplit[i]).mul(UNIT_SIZE);
+          }
         }
       }
     }
@@ -215,5 +217,6 @@ module.exports = {
   calculateBasePrice,
   calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
-  calculateOptimalPoolAllocation
+  calculateOptimalPoolAllocation,
+  calculateOptimalPoolAllocationBruteForce
 }
