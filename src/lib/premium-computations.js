@@ -129,6 +129,8 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
 
   const amountInUnits = coverAmount.div(UNIT_SIZE).add(extra).toNumber();
 
+  const amountPadding = extra === 1 ? UNIT_SIZE.sub(coverAmount.mod(UNIT_SIZE)) : BigNumber.from(0);
+
   let lowestCost = BigNumber.from(0);
   let lowestCostAllocation = { };
 
@@ -139,6 +141,7 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
     poolCapacityUsed[pool.poolId] = pool.initialCapacityUsed;
   }
 
+  let lastPoolIdUsed;
   for (let i = 0; i < amountInUnits; i++) {
 
     let lowestCostPerPool = MaxUint256;
@@ -165,12 +168,22 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
 
     lowestCost = lowestCost.add(lowestCostPerPool);
 
+
+    if(!lowestCostPool) {
+      // not enough total capacity available
+      return { lowestCostAllocation: [] };
+    }
+
     if (!lowestCostAllocation[lowestCostPool.poolId]) {
       lowestCostAllocation[lowestCostPool.poolId] = BigNumber.from(0);
     }
     lowestCostAllocation[lowestCostPool.poolId] = lowestCostAllocation[lowestCostPool.poolId].add(UNIT_SIZE);
     poolCapacityUsed[lowestCostPool.poolId] = poolCapacityUsed[lowestCostPool.poolId].add(UNIT_SIZE);
+
+    lastPoolIdUsed = lowestCostPool.poolId;
   }
+
+  lowestCostAllocation[lastPoolIdUsed] = lowestCostAllocation[lastPoolIdUsed].sub(amountPadding);
 
   return { lowestCostAllocation, lowestCost };
 }
