@@ -36,15 +36,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const amountToAllocate = divCeil(coverAmountInNxm, NXM_PER_ALLOCATION_UNIT).mul(NXM_PER_ALLOCATION_UNIT);
   console.log('Amount to allocate:', formatEther(amountToAllocate), 'nxm');
 
-  const zeroPool = {
-    poolId: 0,
-    premiumInNxm: MaxUint256,
-    premiumInAsset: MaxUint256,
-    coverAmountInNxm: MaxUint256,
-    coverAmountInAsset: MaxUint256,
-  };
-
-
   const poolsData = productPools.map(pool => {
 
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;
@@ -59,6 +50,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       .reduce((total, allocation) => total.add(allocation), Zero)
       .mul(NXM_PER_ALLOCATION_UNIT);
 
+    // TODO: handle fixed price
 
     const basePrice = product.useFixedPrice
       ? targetPrice
@@ -83,7 +75,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     const pool = poolsData.find(data => poolId.toString() === data.poolId.toString());
 
     const premiumPerYear = product.useFixedPrice
-      ? calculateFixedPricePremiumPerYear(pool.amountToAllocate, pool.basePrice)
+      ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
       : calculatePremiumPerYear(amountToAllocate, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
 
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);

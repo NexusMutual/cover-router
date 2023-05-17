@@ -4,7 +4,7 @@ const {
 } = require('ethers');
 const { expect } = require('chai');
 const { BigNumber } = require('ethers');
-const { calculateOptimalPoolAllocation, calculateOptimalPoolAllocationBruteForce, calculatePremiumPerYear } = require('../../src/lib/premium-computations');
+const { calculateOptimalPoolAllocation } = require('../../src/lib/premium-computations');
 
 describe('calculateOptimalPoolAllocation', function () {
   this.timeout(0);
@@ -200,4 +200,25 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(optimalAllocation.lowestCostAllocation[pool1.poolId].toString()).to.be.equal(parseEther('1998').toString());
     expect(optimalAllocation.lowestCostAllocation[pool2.poolId].toString()).to.be.equal(parseEther('1002').toString());
   });
+
+
+  it('return empty array when there is on capacity available to allocate', async function () {
+
+    const pool1 = {
+      basePrice: BigNumber.from('200'),
+      initialCapacityUsed: parseEther('9500'),
+      totalCapacity: parseEther('10000')
+    };
+
+    let i = 0;
+    const pools = [pool1];
+    pools.forEach(pool => {
+      pool.poolId = i++;
+    });
+
+
+    const amount = parseEther('1000');
+    const { lowestCostAllocation } = calculateOptimalPoolAllocation(amount, pools);
+    expect(lowestCostAllocation.length).to.be.equal(0);
+  })
 });
