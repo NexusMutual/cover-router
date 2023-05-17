@@ -76,9 +76,11 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 
   const poolsWithPremium = Object.keys(lowestCostAllocation).map(poolId => {
 
+    poolId = parseInt(poolId);
+
     const amountToAllocate = lowestCostAllocation[poolId];
 
-    const pool = poolsData.find(data => poolId === data.poolId);
+    const pool = poolsData.find(data => poolId.toString() === data.poolId.toString());
 
     const premiumPerYear = product.useFixedPrice
       ? calculateFixedPricePremiumPerYear(pool.amountToAllocate, pool.basePrice)
@@ -95,13 +97,13 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       amount: capacityInNxm.mul(rate).div(WeiPerEther),
     }));
 
-    console.log('Pool:', pool.poolId);
+    console.log('Pool:', poolId);
     console.log('Initially used capacity:', formatEther(pool.initialCapacityUsed), 'nxm');
     console.log('Total pool capacity    :', formatEther(pool.totalCapacity), 'nxm');
     console.log('Pool capacity          :', formatEther(capacityInNxm), 'nxm');
 
     return {
-      poolId: pool.poolId,
+      poolId,
       premiumInNxm,
       premiumInAsset,
       coverAmountInNxm,
@@ -109,6 +111,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       capacities: { poolId: pool.poolId, capacity },
     };
   });
+
 
   return poolsWithPremium;
 };

@@ -124,7 +124,10 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
   // set UNIT_SIZE to be a minimum of 1.
   const UNIT_SIZE = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE)
     ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
-  const amountInUnits = coverAmount.div(UNIT_SIZE).toNumber();
+
+  const extra = coverAmount.mod(UNIT_SIZE).gt(0) ? 1 : 0;
+
+  const amountInUnits = coverAmount.div(UNIT_SIZE).add(extra).toNumber();
 
   let lowestCost = BigNumber.from(0);
   let lowestCostAllocation = { };
@@ -165,9 +168,7 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools) => {
     if (!lowestCostAllocation[lowestCostPool.poolId]) {
       lowestCostAllocation[lowestCostPool.poolId] = BigNumber.from(0);
     }
-
     lowestCostAllocation[lowestCostPool.poolId] = lowestCostAllocation[lowestCostPool.poolId].add(UNIT_SIZE);
-
     poolCapacityUsed[lowestCostPool.poolId] = poolCapacityUsed[lowestCostPool.poolId].add(UNIT_SIZE);
   }
 
