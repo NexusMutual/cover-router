@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const { BigNumber } = require('ethers');
 const { calculateOptimalPoolAllocation, calculateOptimalPoolAllocationBruteForce, calculatePremiumPerYear } = require('../../src/lib/premium-computations');
 
-describe.only('calculateOptimalPoolAllocation', function () {
+describe('calculateOptimalPoolAllocation', function () {
   this.timeout(0);
 
   afterEach(function() {
@@ -199,46 +199,5 @@ describe.only('calculateOptimalPoolAllocation', function () {
     // therefore the first pool is only partially filled
     expect(optimalAllocation.lowestCostAllocation[pool1.poolId].toString()).to.be.equal(parseEther('1998').toString());
     expect(optimalAllocation.lowestCostAllocation[pool2.poolId].toString()).to.be.equal(parseEther('1002').toString());
-  });
-
-  it.skip('returns optimal pool allocation for 2 pools with surge pricing', () => {
-
-    const pool1 = {
-      basePrice: BigNumber.from('210'),
-      initialCapacityUsed: parseEther('8900'),
-      totalCapacity: parseEther('10000')
-    };
-
-    const pool2 = {
-      basePrice: BigNumber.from('200'),
-      initialCapacityUsed: parseEther('8900'),
-      totalCapacity: parseEther('10000')
-    };
-    let i = 0;
-    const pools = [pool1, pool2];
-    pools.forEach(pool =>{
-      pool.poolId = i++;
-    });
-
-    const amount = parseEther('200');
-    const optimalAllocation = calculateOptimalPoolAllocation(amount, pools);
-
-    const bruteForceAllocation = calculateOptimalPoolAllocationBruteForce(amount, pools);
-
-
-    console.log(bruteForceAllocation)
-
-    for (const key in optimalAllocation.lowestCostAllocation) {
-      optimalAllocation.lowestCostAllocation[key] = optimalAllocation.lowestCostAllocation[key].div(parseEther('1')).toString()
-
-      bruteForceAllocation.lowestCostAllocation[key] = bruteForceAllocation.lowestCostAllocation[key].div(parseEther('1')).toString()
-    }
-
-    console.log({
-      optimalAllocation,
-      bruteForceAllocation,
-      combination: optimalAllocation.lowestCostAllocation.combination,
-      amountSplit: optimalAllocation.lowestCostAllocation
-    });
   });
 });
