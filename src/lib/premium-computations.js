@@ -93,7 +93,7 @@ const getAmountSplits = (splitCount, amountInUnits) => {
   return splits;
 }
 
-const calculateCost = (combination, amountSplit) => {
+const calculateCost = (combination, amountSplit, UNIT_SIZE) => {
   let totalPremium = BigNumber.from(0);
   for (let i = 0; i < combination.length; i++) {
     const pool = combination[i];
@@ -192,7 +192,7 @@ const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools) => {
 
     for (const combination of combinations) {
       for (const amountSplit of amountSplits) {
-        const cost = calculateCost(combination, amountSplit);
+        const cost = calculateCost(combination, amountSplit, UNIT_SIZE);
 
         if (cost.lt(lowestCost)) {
           lowestCost = cost;
