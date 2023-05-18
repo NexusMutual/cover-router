@@ -57,7 +57,7 @@ describe('Quote Engine tests', () => {
     expect(quote.coverAmountInAsset.toString()).to.be.equal('30');
   });
 
-  it.skip('should return quote with calculated surge', () => {
+  it('should return quote with calculated surge', () => {
     sinon.stub(store, 'getState').callsFake(() => mockStore);
     const productId = 1;
     const amount = parseEther('5000');
@@ -67,12 +67,16 @@ describe('Quote Engine tests', () => {
     const quote = quotes[0];
 
     console.log({
-      quotes
-    })
+      quotes,
+    });
 
     console.log({
-      premiumInNxm: quotes[0].premiumInNxm.toString()
-    })
+      premiumInNxm: quotes[0].premiumInNxm.toString(),
+    });
+
+    console.log({
+      premiumInNxm: quotes[1].premiumInNxm.toString(),
+    });
 
     expect(quote.poolId).to.be.equal(2);
     expect(quote.premiumInNxm.toString()).to.be.equal('330396295962509012');
