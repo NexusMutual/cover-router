@@ -2,15 +2,17 @@ const { BigNumber, ethers } = require('ethers');
 const { calculateTrancheId, divCeil } = require('./helpers');
 const { selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
 
-const { MaxUint256, WeiPerEther, Zero } = ethers.constants;
+const { WeiPerEther, Zero } = ethers.constants;
 const { formatEther } = ethers.utils;
 
-const {
-  NXM_PER_ALLOCATION_UNIT,
-  ONE_YEAR,
-} = require('./constants');
+const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR } = require('./constants');
 
-const { calculateBasePrice, calculateFixedPricePremiumPerYear, calculateOptimalPoolAllocation, calculatePremiumPerYear } = require('./premium-computations');
+const {
+  calculateBasePrice,
+  calculateFixedPricePremiumPerYear,
+  calculateOptimalPoolAllocation,
+  calculatePremiumPerYear,
+} = require('./premium-computations');
 
 const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const product = selectProduct(store, productId);
@@ -37,7 +39,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   console.log('Amount to allocate:', formatEther(amountToAllocate), 'nxm');
 
   const poolsData = productPools.map(pool => {
-
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;
 
     const totalCapacity = trancheCapacities
@@ -60,14 +61,13 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       poolId,
       basePrice,
       initialCapacityUsed,
-      totalCapacity
+      totalCapacity,
     };
   });
 
-  const { lowestCostAllocation } = calculateOptimalPoolAllocation(amountToAllocate, poolsData);
+  const { lowestCostAllocation } = calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
 
   const poolsWithPremium = Object.keys(lowestCostAllocation).map(poolId => {
-
     poolId = parseInt(poolId);
 
     const amountToAllocate = lowestCostAllocation[poolId];
@@ -103,7 +103,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       capacities: { poolId: pool.poolId, capacity },
     };
   });
-
 
   return poolsWithPremium;
 };
