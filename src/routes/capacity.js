@@ -5,9 +5,10 @@ const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();
 
-const formatCapacityResult = ({ productId, capacity }) => ({
+const formatCapacityResult = ({ productId, capacity, capacityUsed }) => ({
   productId,
   capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
+  capacityUsed: capacityUsed.toString(),
 });
 
 router.get(
@@ -17,7 +18,6 @@ router.get(
     const now = BigNumber.from(Date.now()).div(1000);
 
     const response = capacityEngine(store, [], now);
-
     res.json(response.map(capacity => formatCapacityResult(capacity)));
   }),
 );

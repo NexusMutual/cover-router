@@ -19,31 +19,39 @@ function capacityEngine(store, productIds, time) {
     }
 
     const productPools = selectProductPools(store, productId);
-    const productCapacity = { productId: Number(productId), capacity: [] };
+    const productCapacity = { productId: Number(productId), capacity: [], capacityUsed: Zero };
 
     const firstActiveTrancheId = calculateTrancheId(time);
     const gracePeriodExpiration = time.add(MIN_COVER_PERIOD).add(product.gracePeriod);
     const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
     const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
 
-    const capacityNXM = productPools.reduce((capacity, pool) => {
-      const { allocations, trancheCapacities } = pool;
+    const { capacityNXM, capacityUsedNXM } = productPools.reduce(
+      ({ capacityNXM, capacityUsedNXM }, pool) => {
+        const { allocations, trancheCapacities } = pool;
 
-      const totalCapacity = trancheCapacities
-        .slice(firstUsableTrancheIndex)
-        .reduce((total, capacity) => total.add(capacity), Zero)
-        .mul(NXM_PER_ALLOCATION_UNIT);
+        const totalCapacity = trancheCapacities
+          .slice(firstUsableTrancheIndex)
+          .reduce((total, capacity) => total.add(capacity), Zero)
+          .mul(NXM_PER_ALLOCATION_UNIT);
 
-      const initiallyUsedCapacity = allocations
-        .slice(firstUsableTrancheIndex)
-        .reduce((total, allocation) => total.add(allocation), Zero)
-        .mul(NXM_PER_ALLOCATION_UNIT);
+        const totalCapacityUsed = allocations.reduce((total, allocation) => total.add(allocation), Zero);
 
-      if (totalCapacity.gt(initiallyUsedCapacity)) {
-        return capacity.add(totalCapacity).sub(initiallyUsedCapacity);
-      }
-      return capacity;
-    }, Zero);
+        const initiallyUsedCapacity = allocations
+          .slice(0, firstUsableTrancheIndex)
+          .reduce((total, allocation) => total.sub(allocation), totalCapacityUsed)
+          .mul(NXM_PER_ALLOCATION_UNIT);
+
+        if (totalCapacity.gt(initiallyUsedCapacity)) {
+          capacityNXM = capacityNXM.add(totalCapacity).sub(initiallyUsedCapacity);
+        }
+
+        capacityUsedNXM = totalCapacityUsed.mul(NXM_PER_ALLOCATION_UNIT).add(capacityUsedNXM);
+
+        return { capacityNXM, capacityUsedNXM };
+      },
+      { capacityNXM: Zero, capacityUsedNXM: Zero },
+    );
 
     for (const assetId of Object.values(assets)) {
       productCapacity.capacity.push({
@@ -52,6 +60,7 @@ function capacityEngine(store, productIds, time) {
         amount: capacityNXM.mul(assetRates[assetId]).div(WeiPerEther),
       });
     }
+    productCapacity.capacityUsed = capacityUsedNXM;
     capacities.push(productCapacity);
   }
 

@@ -1,6 +1,7 @@
 const capacities = [
   {
     productId: 0,
+    capacityUsed: '364800000000000000000',
     capacity: [
       {
         assetId: 0,
@@ -18,6 +19,7 @@ const capacities = [
   },
   {
     productId: 1,
+    capacityUsed: '0',
     capacity: [
       {
         assetId: 0,
@@ -35,6 +37,7 @@ const capacities = [
   },
   {
     productId: 2,
+    capacityUsed: '0',
     capacity: [
       {
         assetId: 0,
@@ -66,7 +69,7 @@ const quote = {
   },
   capacities: [
     {
-      poolId: 1,
+      poolId: '1',
       capacity: [
         {
           assetId: '0',
