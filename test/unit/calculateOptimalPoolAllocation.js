@@ -188,7 +188,7 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(optimalAllocation.lowestCostAllocation[pool2.poolId]).to.be.equal(undefined);
   });
 
-  it('returns optimal pool allocation for 3 pools with fixed pricing where allocation goes to 2/3 poolsl', () => {
+  it('returns optimal pool allocation for 3 pools with fixed pricing where allocation goes to 2 of the 3 pools', () => {
     const pool1 = {
       basePrice: BigNumber.from('200'),
       initialCapacityUsed: parseEther('9950'),
@@ -341,5 +341,6 @@ describe('calculateOptimalPoolAllocation', function () {
     );
 
     expect(optimalAllocation.lowestCostAllocation[pool6.poolId]).to.be.equal(undefined);
+    expect(optimalBruteForceAllocation.lowestCostAllocation[pool6.poolId]).to.be.equal(undefined);
   });
 });
