@@ -55,25 +55,45 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
 /**
  * This function allocates each unit to the cheapest opportunity available for that unit
  * at that time given the allocations at the previous points.
+ *
+ * To solve the allocation problem we split the amount A in U = `A / UNIT_SIZE + 1`
+ * units and use that for the rest of the computations.
+ *
+ * To allocate the units U we take each unit at a time from 0 to U,
+ * and allocate each unit to the *best* pool available in terms of price
+ * as long as the pool has enough capacity for that unit.
+ *
+ * If there is no pool with capacity available for a unit of allocation the function returns
+ * with an empty list (aborts allocation completely - no partial allocations supported).
+ *
+ * UNIT_SIZE is dynamically computed as 0.1% (1 / UNIT_DIVISOR) of the cover amount.
+ * It has a minimum which is 1e18 (can't go below 1 ETH or 1 DAI).
+ *
  * Complexity O(n * p)  where n is the number of units in the amount and p is th  e number of pools
  * @param coverAmount
  * @param pools
- * @returns {{lowestCostAllocation: undefined, lowestCost: *}}
+ * @param useFixedPrice
+ * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
 const calculateOptimalPoolAllocationGreedy = (coverAmount, pools, useFixedPrice) => {
+
   // set UNIT_SIZE to be a minimum of 1.
   const UNIT_SIZE = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE) ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
 
+  // compute the extra amount of units (0 or 1) to be added based on the division remainder.
   const extra = coverAmount.mod(UNIT_SIZE).gt(0) ? 1 : 0;
 
   const amountInUnits = coverAmount.div(UNIT_SIZE).add(extra).toNumber();
 
+  // the amount padding is the amount added artificially added when adding a whole unit
+  // to account for the remainder
   const amountPadding = extra === 1 ? UNIT_SIZE.sub(coverAmount.mod(UNIT_SIZE)) : BigNumber.from(0);
 
   let lowestCost = BigNumber.from(0);
+  // Pool Id (number) -> Capacity Amount (BigNumber)
   const lowestCostAllocation = {};
 
-  // by poolId
+  // Pool Id (number) -> Capacity Amount (BigNumber)
   const poolCapacityUsed = {};
 
   for (const pool of pools) {
@@ -119,6 +139,8 @@ const calculateOptimalPoolAllocationGreedy = (coverAmount, pools, useFixedPrice)
     lastPoolIdUsed = lowestCostPool.poolId;
   }
 
+  // the amount padding is subtracted from the last pool used so that all allocated amounts
+  // across pools sum up to coverAmount
   lowestCostAllocation[lastPoolIdUsed] = lowestCostAllocation[lastPoolIdUsed].sub(amountPadding);
 
   return { lowestCostAllocation, lowestCost };

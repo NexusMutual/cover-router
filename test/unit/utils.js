@@ -54,6 +54,16 @@ const calculateCost = (combination, amountSplit, UNIT_SIZE, useFixedPrice) => {
 
   return totalPremium;
 };
+
+/**
+ *  Computes the optimal price by trying all combinations of pools and amount splits
+ *  for each particular combination of pools.
+ *
+ * @param coverAmount
+ * @param pools
+ * @param useFixedPrice
+ * @returns {{lowestCostAllocation: {}, lowestCost: *}}
+ */
 const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools, useFixedPrice) => {
   // set UNIT_SIZE to be a minimum of 1.
   const UNIT_SIZE = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE) ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
