@@ -20,6 +20,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   if (!product) {
     return null;
   }
+
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
   const assetRates = store.getState().assetRates;
@@ -55,26 +56,23 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       ? targetPrice
       : calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
 
-    return {
-      poolId,
-      basePrice,
-      initialCapacityUsed,
-      totalCapacity,
-    };
+    return { poolId, basePrice, initialCapacityUsed, totalCapacity };
   });
 
-  const { lowestCostAllocation } = calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
+  // TODO: add separate function for fixed price
+  const allocations = calculateOptimalPoolAllocation(amountToAllocate, poolsData);
 
-  const poolsWithPremium = Object.keys(lowestCostAllocation).map(poolId => {
-    poolId = parseInt(poolId);
+  const poolsWithPremium = allocations.map(allocation => {
+    const { poolId, amount: coverAmountInNxm } = allocation;
 
-    const amountToAllocate = lowestCostAllocation[poolId];
+    // TODO: use asset decimals instead of generic 18 decimals
+    const coverAmountInAsset = coverAmountInNxm.mul(assetRate).div(WeiPerEther);
 
     const pool = poolsData.find(data => poolId.toString() === data.poolId.toString());
 
     const premiumPerYear = product.useFixedPrice
-      ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
-      : calculatePremiumPerYear(amountToAllocate, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
+      ? calculateFixedPricePremiumPerYear(coverAmountInNxm, pool.basePrice)
+      : calculatePremiumPerYear(coverAmountInNxm, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
 
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
 
@@ -97,7 +95,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       premiumInNxm,
       premiumInAsset,
       coverAmountInNxm,
-      coverAmountInAsset: amount,
+      coverAmountInAsset,
       capacities: { poolId: pool.poolId, capacity },
     };
   });

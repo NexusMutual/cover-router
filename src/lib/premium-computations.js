@@ -1,11 +1,5 @@
-const { BigNumber, ethers } = require('ethers');
+const { MaxUint256, WeiPerEther, Zero } = require('ethers').constants;
 const { bnMax } = require('./helpers');
-
-const { MaxUint256, WeiPerEther, Zero } = ethers.constants;
-
-const MIN_UNIT_SIZE = WeiPerEther;
-const UNIT_DIVISOR = 1000;
-
 const {
   PRICE_CHANGE_PER_DAY,
   SURGE_PRICE_RATIO,
@@ -13,6 +7,9 @@ const {
   SURGE_THRESHOLD_RATIO,
   TARGET_PRICE_DENOMINATOR,
 } = require('./constants');
+
+const MIN_CHUNK_SIZE = WeiPerEther;
+
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
   const elapsed = now.sub(bumpedPriceUpdateTime);
   const priceDrop = elapsed.mul(PRICE_CHANGE_PER_DAY).div(3600 * 24);
@@ -48,97 +45,68 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
  * This function allocates each unit to the cheapest opportunity available for that unit
  * at that time given the allocations at the previous points.
  *
- * To solve the allocation problem we split the amount A in U = `A / UNIT_SIZE + 1`
- * units and use that for the rest of the computations.
+ * To solve the allocation problem we split the amount A in max 10 chunks (or less if A < MIN_SIZE).
  *
  * To allocate the units U we take each unit at a time from 0 to U,
  * and allocate each unit to the *best* pool available in terms of price
  * as long as the pool has enough capacity for that unit.
  *
  * If there is no pool with capacity available for a unit of allocation the function returns
- * with an empty list (aborts allocation completely - no partial allocations supported).
+ * with an empty list.
  *
- * UNIT_SIZE is dynamically computed as 0.1% (1 / UNIT_DIVISOR) of the cover amount.
- * It has a minimum which is 1e18 (can't go below 1 ETH or 1 DAI).
- *
- * Complexity O(n * p)  where n is the number of units in the amount and p is th  e number of pools
+ * Complexity O(n) where n is the number of pools
  * @param coverAmount
  * @param pools
- * @param useFixedPrice
- * @returns {{lowestCostAllocation: *, lowestCost: *}}
+ * @returns {[{poolId: Number, amount: BigNumber }]}
  */
-const calculateOptimalPoolAllocationGreedy = (coverAmount, pools, useFixedPrice) => {
+const calculateOptimalPoolAllocation = (coverAmount, pools) => {
+  const tenth = coverAmount.div(10);
+  const chunk = tenth.lt(MIN_CHUNK_SIZE) ? MIN_CHUNK_SIZE : tenth;
+  let unallocatedAmount = coverAmount;
 
-  // set UNIT_SIZE to be a minimum of 1.
-  const UNIT_SIZE = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE) ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
+  // pool id (number) -> used capacity (BigNumber)
+  const poolCapacities = Object.fromEntries(
+    pools.map(pool => [pool.poolId, { initial: pool.initialCapacityUsed, total: pool.totalCapacity }]),
+  );
 
-  // compute the extra amount of units (0 or 1) to be added based on the division remainder.
-  const extra = coverAmount.mod(UNIT_SIZE).gt(0) ? 1 : 0;
+  // pool id (number) -> allocation (BigNumber)
+  const allocations = {};
 
-  const amountInUnits = coverAmount.div(UNIT_SIZE).add(extra).toNumber();
+  while (unallocatedAmount.gt(0)) {
+    const amount = unallocatedAmount.lt(chunk) ? unallocatedAmount : chunk;
 
-  // the amount padding is the amount added artificially added when adding a whole unit
-  // to account for the remainder
-  const amountPadding = extra === 1 ? UNIT_SIZE.sub(coverAmount.mod(UNIT_SIZE)) : BigNumber.from(0);
+    const cheapestPool = pools
+      // filter out pools with insufficient capacity
+      .filter(pool => {
+        const { initial, total } = poolCapacities[pool.poolId];
+        return initial.add(amount).lte(total);
+      })
+      .map(pool => {
+        // calculate premium for each pool
+        const { poolId, basePrice } = pool;
+        const { initial, total } = poolCapacities[poolId];
+        const premium = calculatePremiumPerYear(amount, basePrice, initial, total);
+        return { poolId, premium };
+      })
+      .reduce(
+        // find the cheapest pool
+        (cheapest, current) => (current.premium.lt(cheapest.premium) ? current : cheapest),
+        { premium: MaxUint256, poolId: 0 },
+      );
 
-  let lowestCost = BigNumber.from(0);
-  // Pool Id (number) -> Capacity Amount (BigNumber)
-  const lowestCostAllocation = {};
+    const { poolId } = cheapestPool;
 
-  // Pool Id (number) -> Capacity Amount (BigNumber)
-  const poolCapacityUsed = {};
-
-  for (const pool of pools) {
-    poolCapacityUsed[pool.poolId] = pool.initialCapacityUsed;
-  }
-
-  let lastPoolIdUsed;
-  for (let i = 0; i < amountInUnits; i++) {
-    let lowestCostPerPool = MaxUint256;
-    let lowestCostPool;
-    for (const pool of pools) {
-      // we advance one unit size at a time
-      const amountInWei = UNIT_SIZE;
-
-      if (poolCapacityUsed[pool.poolId].add(amountInWei).gt(pool.totalCapacity)) {
-        // can't allocate unit to pool
-        continue;
-      }
-
-      const premium = useFixedPrice
-        ? calculateFixedPricePremiumPerYear(amountInWei, pool.basePrice)
-        : calculatePremiumPerYear(amountInWei, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity);
-
-      if (premium.lt(lowestCostPerPool)) {
-        lowestCostPerPool = premium;
-        lowestCostPool = pool;
-      }
-    }
-
-    lowestCost = lowestCost.add(lowestCostPerPool);
-
-    if (!lowestCostPool) {
+    if (poolId === 0) {
       // not enough total capacity available
-      return { lowestCostAllocation: [] };
+      return [];
     }
 
-    if (!lowestCostAllocation[lowestCostPool.poolId]) {
-      lowestCostAllocation[lowestCostPool.poolId] = BigNumber.from(0);
-    }
-    lowestCostAllocation[lowestCostPool.poolId] = lowestCostAllocation[lowestCostPool.poolId].add(UNIT_SIZE);
-    poolCapacityUsed[lowestCostPool.poolId] = poolCapacityUsed[lowestCostPool.poolId].add(UNIT_SIZE);
-
-    lastPoolIdUsed = lowestCostPool.poolId;
+    allocations[poolId] = allocations[poolId] ? allocations[poolId].add(amount) : amount;
+    poolCapacities[poolId].initial = poolCapacities[poolId].initial.add(amount);
+    unallocatedAmount = unallocatedAmount.sub(amount);
   }
 
-  // the amount padding is subtracted from the last pool used so that all allocated amounts
-  // across pools sum up to coverAmount
-  lowestCostAllocation[lastPoolIdUsed] = lowestCostAllocation[lastPoolIdUsed].sub(amountPadding);
-
-  return { lowestCostAllocation, lowestCost };
-};
-const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
-  return calculateOptimalPoolAllocationGreedy(coverAmount, pools, useFixedPrice);
+  return Object.entries(allocations).map(([poolId, amount]) => ({ poolId, amount }));
 };
 
 module.exports = {
