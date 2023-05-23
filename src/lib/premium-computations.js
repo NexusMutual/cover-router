@@ -41,14 +41,6 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
   const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
   const surgePremium = totalSurgePremium.sub(skipSurgePremium);
 
-  // console.log('Cover amount   :', formatEther(coverAmount), 'nxm');
-  // console.log('Amount on surge:', formatEther(amountOnSurge), 'nxm');
-  //
-  // console.log('Base price     :', formatUnits(basePrice, 4), 'nxm');
-  // console.log('Base premium   :', formatEther(basePremium), 'nxm');
-  // console.log('Surge skipped  :', formatEther(skipSurgePremium), 'nxm');
-  // console.log('Surge premium  :', formatEther(surgePremium), 'nxm');
-
   return basePremium.add(surgePremium);
 };
 

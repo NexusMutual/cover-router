@@ -51,8 +51,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       .reduce((total, allocation) => total.add(allocation), Zero)
       .mul(NXM_PER_ALLOCATION_UNIT);
 
-    // TODO: handle fixed price
-
     const basePrice = product.useFixedPrice
       ? targetPrice
       : calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
