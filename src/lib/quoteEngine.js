@@ -67,7 +67,7 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
  * @param pools
  * @returns {[{poolId: Number, amount: BigNumber }]}
  */
-const calculateOptimalAllocations = (coverAmount, pools) => {
+const getAllocations = (coverAmount, pools) => {
   const tenth = coverAmount.div(10);
   const chunk = tenth.lt(MIN_CHUNK_SIZE) ? MIN_CHUNK_SIZE : tenth;
   let unallocatedAmount = coverAmount;
@@ -117,6 +117,30 @@ const calculateOptimalAllocations = (coverAmount, pools) => {
   return Object.entries(allocations).map(([poolId, amount]) => ({ poolId, amount }));
 };
 
+const getFixedPriceAllocations = (coverAmount, pools) => {
+  const sortedPools = pools.sort((a, b) => {
+    const freeA = a.totalCapacity.sub(a.initialCapacityUsed);
+    const freeB = b.totalCapacity.sub(b.initialCapacityUsed);
+    return freeA.gt(freeB) ? -1 : 1;
+  });
+
+  const allocations = sortedPools.reduce(
+    (acc, pool) => {
+      const { amountLeft, allocations } = acc;
+      const { poolId, intialCapacityUsed, totalCapacity } = pool;
+      const available = totalCapacity.sub(intialCapacityUsed);
+      const amount = amountLeft.lt(available) ? amountLeft : available;
+      return {
+        amountLeft: amountLeft.sub(amount),
+        allocations: [...allocations, { poolId, amount }],
+      };
+    },
+    { amountLeft: coverAmount, allocations: [] },
+  );
+
+  return allocations;
+};
+
 const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const product = selectProduct(store, productId);
 
@@ -162,8 +186,9 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     return { poolId, basePrice, initialCapacityUsed, totalCapacity };
   });
 
-  // TODO: add separate function for fixed price
-  const allocations = calculateOptimalAllocations(amountToAllocate, poolsData);
+  const allocations = product.useFixedPrice
+    ? getFixedPriceAllocations(amountToAllocate, poolsData)
+    : getAllocations(amountToAllocate, poolsData);
 
   const poolsWithPremium = allocations.map(allocation => {
     const { poolId, amount: coverAmountInNxm } = allocation;
