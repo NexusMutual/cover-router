@@ -57,20 +57,32 @@ describe('Quote Engine tests', () => {
     expect(quote.coverAmountInAsset.toString()).to.be.equal('30');
   });
 
-  it('should return quote with calculated surge', () => {
+  it('should return quote with split across 2 pools', () => {
     sinon.stub(store, 'getState').callsFake(() => mockStore);
     const productId = 1;
     const amount = parseEther('5000');
 
     const quotes = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
-    const quote = quotes[0];
+    {
+      const quote = quotes[0];
 
-    expect(quote.poolId).to.be.equal(2);
-    expect(quote.premiumInNxm.toString()).to.be.equal('330396295962509012');
-    expect(quote.premiumInAsset.toString()).to.be.equal('9490448253767087987');
-    expect(quote.coverAmountInNxm.toString()).to.be.equal('174067803294414078821');
-    expect(quote.coverAmountInAsset.toString()).to.be.equal('5000000000000000000000');
+      expect(quote.poolId).to.be.equal(1);
+      expect(quote.premiumInNxm.toString()).to.be.equal('72328767123287671');
+      expect(quote.premiumInAsset.toString()).to.be.equal('2077603260177660224');
+      expect(quote.coverAmountInNxm.toString()).to.be.equal('174067803294414078821');
+      expect(quote.coverAmountInAsset.toString()).to.be.equal('5000000000000000000000');
+    }
+
+    {
+      const quote = quotes[1];
+
+      expect(quote.poolId).to.be.equal(2);
+      expect(quote.premiumInNxm.toString()).to.be.equal('213813698630136986');
+      expect(quote.premiumInAsset.toString()).to.be.equal('6141678546620642407');
+      expect(quote.coverAmountInNxm.toString()).to.be.equal('174067803294414078821');
+      expect(quote.coverAmountInAsset.toString()).to.be.equal('5000000000000000000000');
+    }
   });
 
   it('should return quote for a product with fixed price', () => {
@@ -92,9 +104,9 @@ describe('Quote Engine tests', () => {
     const productId = 1;
     const amount = parseEther('300000');
 
-    const [quote] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
+    const quotes = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
-    expect(quote).to.be.equal(undefined);
+    expect(quotes.length).to.be.equal(0);
   });
 
   it('should return null non existing product', () => {
