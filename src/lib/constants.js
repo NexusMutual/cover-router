@@ -4,6 +4,7 @@ const { WeiPerEther } = ethers.constants;
 module.exports = {
   BEACON_PROXY_INIT_CODE_HASH: '1eb804b66941a2e8465fa0951be9c8b855b7794ee05b0789ab22a02ee1298ebe',
   TRANCHE_DURATION: 91 * 24 * 3600, // 91 days in seconds
+  BUCKET_DURATION: 28 * 24 * 3600, // 28 days in seconds
   ONE_YEAR: 365 * 24 * 3600,
 
   SURGE_PRICE_RATIO: 2,
