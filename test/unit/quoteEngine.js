@@ -3,7 +3,7 @@ const {
   utils: { parseEther },
 } = require('ethers');
 const { expect } = require('chai');
-const quoteEngine = require('../../src/lib/quoteEngine');
+const { quoteEngine } = require('../../src/lib/quoteEngine');
 const mockStore = require('../mocks/store');
 const { BigNumber } = require('ethers');
 const { MIN_COVER_PERIOD } = require('../../src/lib/constants');
