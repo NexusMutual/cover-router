@@ -76,17 +76,8 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
  */
 const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
 
-  // set UNIT_SIZE to be a minimum of 1.
-  const UNIT_SIZE = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE) ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
-
-  // compute the extra amount of units (0 or 1) to be added based on the division remainder.
-  const extra = coverAmount.mod(UNIT_SIZE).gt(0) ? 1 : 0;
-
-  const amountInUnits = coverAmount.div(UNIT_SIZE).add(extra).toNumber();
-
-  // the amount padding is the amount added artificially added when adding a whole unit
-  // to account for the remainder
-  const amountPadding = extra === 1 ? UNIT_SIZE.sub(coverAmount.mod(UNIT_SIZE)) : BigNumber.from(0);
+  // set unitSize to be a minimum of 1.
+  const unitSize = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE) ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
 
   let premium = BigNumber.from(0);
   // Pool Id (number) -> Capacity Amount (BigNumber)
@@ -99,22 +90,24 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
     poolCapacityUsed[pool.poolId] = pool.initialCapacityUsed;
   }
 
+  let coverAmountLeft = coverAmount;
   let lastPoolIdUsed;
-  for (let i = 0; i < amountInUnits; i++) {
+  while (coverAmountLeft.gt(0)) {
+
+    const amountToAllocate = coverAmountLeft.gte(unitSize) ? unitSize : coverAmountLeft;
     let lowestCostPerPool = MaxUint256;
-    let lowestCostPoolId;
+    let lowestCostPoolId = 0;
     for (const pool of pools) {
       // we advance one unit size at a time
-      const amountInWei = UNIT_SIZE;
 
-      if (poolCapacityUsed[pool.poolId].add(amountInWei).gt(pool.totalCapacity)) {
+      if (poolCapacityUsed[pool.poolId].add(unitSize).gt(pool.totalCapacity)) {
         // can't allocate unit to pool
         continue;
       }
 
       const premium = useFixedPrice
-        ? calculateFixedPricePremiumPerYear(amountInWei, pool.basePrice)
-        : calculatePremiumPerYear(amountInWei, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity);
+        ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
+        : calculatePremiumPerYear(amountToAllocate, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity);
 
       if (premium.lt(lowestCostPerPool)) {
         lowestCostPerPool = premium;
@@ -124,25 +117,22 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
 
     premium = premium.add(lowestCostPerPool);
 
-    if (lowestCostPoolId === undefined) {
+    if (lowestCostPoolId === 0) {
       // not enough total capacity available
-      return { allocations: [] };
+      return [];
     }
 
     if (!allocations[lowestCostPoolId]) {
       allocations[lowestCostPoolId] = BigNumber.from(0);
     }
-    allocations[lowestCostPoolId] = allocations[lowestCostPoolId].add(UNIT_SIZE);
-    poolCapacityUsed[lowestCostPoolId] = poolCapacityUsed[lowestCostPoolId].add(UNIT_SIZE);
+    allocations[lowestCostPoolId] = allocations[lowestCostPoolId].add(amountToAllocate);
+    poolCapacityUsed[lowestCostPoolId] = poolCapacityUsed[lowestCostPoolId].add(amountToAllocate);
 
     lastPoolIdUsed = lowestCostPoolId;
+    coverAmountLeft = coverAmountLeft.sub(amountToAllocate);
   }
 
-  // the amount padding is subtracted from the last pool used so that all allocated amounts
-  // across pools sum up to coverAmount
-  allocations[lastPoolIdUsed] = allocations[lastPoolIdUsed].sub(amountPadding);
-
-  return { allocations, premium };
+  return allocations;
 };
 
 const quoteEngine = (store, productId, amount, period, coverAsset) => {
@@ -194,7 +184,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     };
   });
 
-  const { allocations } = calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
+  const allocations = calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
     poolId = parseInt(poolId);
