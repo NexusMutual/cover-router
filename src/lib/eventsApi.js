@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const { ethers } = require('ethers');
-const { calculateTrancheId } = require('./helpers');
+const { calculateTrancheId, calculateBucketId } = require('./helpers');
 
 const topics = [
   [
@@ -25,12 +25,21 @@ module.exports = async (provider, contracts) => {
 
   // tranche id checker
   let currentTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
+  let currentBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
 
   setInterval(() => {
     const activeTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
     if (activeTrancheId !== currentTrancheId) {
       currentTrancheId = activeTrancheId;
       emitter.emit('tranche:change');
+    }
+  }, 1000);
+
+  setInterval(() => {
+    const activeBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
+    if (activeBucketId !== currentBucketId) {
+      currentBucketId = activeBucketId;
+      emitter.emit('bucket:change');
     }
   }, 1000);
 
