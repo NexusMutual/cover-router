@@ -2,7 +2,7 @@ const { ethers } = require('ethers');
 
 const { selectProductPools, selectProduct } = require('../store/selectors');
 const { NXM_PER_ALLOCATION_UNIT, MIN_COVER_PERIOD } = require('./constants');
-const { calculateTrancheId } = require('./helpers');
+const { bnMax, calculateTrancheId } = require('./helpers');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
@@ -26,40 +26,38 @@ function capacityEngine(store, productIds, time) {
     const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
     const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
 
-    const { capacityNXM, capacityUsedNXM } = productPools.reduce(
-      ({ capacityNXM, capacityUsedNXM }, pool) => {
+    const { capacityAvailableNXM, capacityUsedNXM } = productPools.reduce(
+      ({ capacityAvailableNXM, capacityUsedNXM }, pool) => {
         const { allocations, trancheCapacities } = pool;
 
-        const totalCapacity = trancheCapacities
-          .slice(firstUsableTrancheIndex)
-          .reduce((total, capacity) => total.add(capacity), Zero)
-          .mul(NXM_PER_ALLOCATION_UNIT);
+        // sum up all allocations to get used capacity
+        const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
 
-        const totalCapacityUsed = allocations.reduce((total, allocation) => total.add(allocation), Zero);
+        // traverse all tranches and sum up available capacity on a per-tranche basis
+        const available = trancheCapacities
+          .slice(firstUsableTrancheIndex) // skip unusable
+          .reduce((total, capacity, index) => {
+            // allocations may surpass total capacity in some scenarios
+            const free = bnMax(capacity.sub(allocations[index]), Zero);
+            return total.add(free);
+          }, Zero);
 
-        const initiallyUsedCapacity = allocations
-          .slice(0, firstUsableTrancheIndex)
-          .reduce((total, allocation) => total.sub(allocation), totalCapacityUsed)
-          .mul(NXM_PER_ALLOCATION_UNIT);
-
-        if (totalCapacity.gt(initiallyUsedCapacity)) {
-          capacityNXM = capacityNXM.add(totalCapacity).sub(initiallyUsedCapacity);
-        }
-
-        capacityUsedNXM = totalCapacityUsed.mul(NXM_PER_ALLOCATION_UNIT).add(capacityUsedNXM);
-
-        return { capacityNXM, capacityUsedNXM };
+        return {
+          capacityUsedNXM: used.mul(NXM_PER_ALLOCATION_UNIT).add(capacityUsedNXM),
+          capacityAvailableNXM: available.mul(NXM_PER_ALLOCATION_UNIT).add(capacityAvailableNXM),
+        };
       },
-      { capacityNXM: Zero, capacityUsedNXM: Zero },
+      { capacityAvailableNXM: Zero, capacityUsedNXM: Zero },
     );
 
     for (const assetId of Object.values(assets)) {
       productCapacity.capacity.push({
         assetId,
         // TODO: use asset decimals instead of generic 18 decimals
-        amount: capacityNXM.mul(assetRates[assetId]).div(WeiPerEther),
+        amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
       });
     }
+
     productCapacity.capacityUsed = capacityUsedNXM;
     capacities.push(productCapacity);
   }
