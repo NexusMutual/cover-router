@@ -35,12 +35,10 @@ function capacityEngine(store, productIds, time) {
 
         // traverse all tranches and sum up available capacity on a per-tranche basis
         const available = trancheCapacities
+          // allocations may surpass total capacity in some scenarios
+          .map((capacity, index) => bnMax(capacity.sub(allocations[index]), Zero))
           .slice(firstUsableTrancheIndex) // skip unusable
-          .reduce((total, capacity, index) => {
-            // allocations may surpass total capacity in some scenarios
-            const free = bnMax(capacity.sub(allocations[index]), Zero);
-            return total.add(free);
-          }, Zero);
+          .reduce((total, free) => total.add(free), Zero);
 
         return {
           capacityUsedNXM: used.mul(NXM_PER_ALLOCATION_UNIT).add(capacityUsedNXM),
