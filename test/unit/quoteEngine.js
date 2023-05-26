@@ -68,8 +68,8 @@ describe('Quote Engine tests', () => {
       const quote = quotes[0];
 
       expect(quote.poolId).to.be.equal(1);
-      expect(quote.premiumInNxm.toString()).to.be.equal('72443835616438356');
-      expect(quote.premiumInAsset.toString()).to.be.equal('2080908538091579231');
+      expect(quote.premiumInNxm.toString()).to.be.equal('57228493150684931');
+      expect(quote.premiumInAsset.toString()).to.be.equal('1643856361359660514');
       expect(quote.coverAmountInNxm.toString()).to.be.equal('174067803294414078821');
       expect(quote.coverAmountInAsset.toString()).to.be.equal('5000000000000000000000');
     }
@@ -78,8 +78,8 @@ describe('Quote Engine tests', () => {
       const quote = quotes[1];
 
       expect(quote.poolId).to.be.equal(2);
-      expect(quote.premiumInNxm.toString()).to.be.equal('213698630136986301');
-      expect(quote.premiumInAsset.toString()).to.be.equal('6138373268706723400');
+      expect(quote.premiumInNxm.toString()).to.be.equal('228913972602739726');
+      expect(quote.premiumInAsset.toString()).to.be.equal('6575425445438642117');
       expect(quote.coverAmountInNxm.toString()).to.be.equal('174067803294414078821');
       expect(quote.coverAmountInAsset.toString()).to.be.equal('5000000000000000000000');
     }

@@ -1,10 +1,10 @@
 const { BigNumber, ethers } = require('ethers');
 const { MaxUint256, WeiPerEther } = ethers.constants;
 
-const { calculateFixedPricePremiumPerYear, calculatePremiumPerYear } = require('../../src/lib/premium-computations');
+const { calculateFixedPricePremiumPerYear, calculatePremiumPerYear } = require('../../src/lib/quoteEngine');
 
 const MIN_UNIT_SIZE = WeiPerEther;
-const UNIT_DIVISOR = 1000;
+const UNIT_DIVISOR = 10;
 const getCombinations = (size, a) => {
   if (size === 1) {
     return a.map(i => [i]);
@@ -72,7 +72,7 @@ const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools, useFixedPr
 
   let lowestCost = MaxUint256;
   let lowestCostAllocation;
-  for (const splitCount of [1, 2]) {
+  for (const splitCount of [1, 2, 3, 4, 5]) {
     const combinations = getCombinations(splitCount, pools);
     const amountSplits = getAmountSplits(splitCount, amountInUnits);
 
@@ -93,7 +93,7 @@ const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools, useFixedPr
     }
   }
 
-  return { lowestCostAllocation, lowestCost };
+  return lowestCostAllocation;
 };
 
 module.exports = {

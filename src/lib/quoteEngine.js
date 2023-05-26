@@ -18,7 +18,7 @@ const {
 } = require('./constants');
 
 const MIN_UNIT_SIZE = WeiPerEther;
-const UNIT_DIVISOR = 1000;
+const UNIT_DIVISOR = 10;
 
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
   const elapsed = now.sub(bumpedPriceUpdateTime);
@@ -75,7 +75,6 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
  * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
 const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
-
   // set unitSize to be a minimum of 1.
   const unitSize = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE) ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
 
@@ -91,9 +90,7 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
   }
 
   let coverAmountLeft = coverAmount;
-  let lastPoolIdUsed;
   while (coverAmountLeft.gt(0)) {
-
     const amountToAllocate = coverAmountLeft.gte(unitSize) ? unitSize : coverAmountLeft;
     let lowestCostPerPool = MaxUint256;
     let lowestCostPoolId = 0;
@@ -128,7 +125,6 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
     allocations[lowestCostPoolId] = allocations[lowestCostPoolId].add(amountToAllocate);
     poolCapacityUsed[lowestCostPoolId] = poolCapacityUsed[lowestCostPoolId].add(amountToAllocate);
 
-    lastPoolIdUsed = lowestCostPoolId;
     coverAmountLeft = coverAmountLeft.sub(amountToAllocate);
   }
 
