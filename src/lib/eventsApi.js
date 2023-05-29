@@ -25,17 +25,30 @@ module.exports = async (provider, contracts) => {
   let currentBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
 
   // emit an event on every block
-  provider.on('block', blockNumber => {
+  provider.on('block', async blockNumber => {
     const activeBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
     const activeTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
+
     if (activeBucketId !== currentBucketId) {
-      currentBucketId = activeBucketId;
-      emitter.emit('bucket:change');
+      const blockTimeStamp = (await provider.getBlock(blockNumber)).timestamp;
+      const blockBucketId = calculateBucketId(blockTimeStamp);
+
+      if (blockBucketId === activeBucketId) {
+        currentBucketId = activeBucketId;
+        emitter.emit('bucket:change');
+      }
     }
+
     if (activeTrancheId !== currentTrancheId) {
-      currentTrancheId = activeTrancheId;
-      emitter.emit('tranche:change');
+      const blockTimeStamp = (await provider.getBlock(blockNumber)).timestamp;
+      const blockTrancheId = calculateTrancheId(blockTimeStamp);
+
+      if (blockTrancheId === activeTrancheId) {
+        currentTrancheId = activeTrancheId;
+        emitter.emit('tranche:change');
+      }
     }
+
     emitter.emit('block', blockNumber);
   });
 
