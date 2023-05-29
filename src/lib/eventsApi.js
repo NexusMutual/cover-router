@@ -15,9 +15,6 @@ module.exports = async (provider, contracts) => {
   // event emitter
   const emitter = new EventEmitter();
 
-  // emit an event on every block
-  provider.on('block', blockNumber => emitter.emit('block', blockNumber));
-
   // contract instances
   const stakingPoolFactory = contracts('StakingPoolFactory');
   const cover = contracts('Cover');
@@ -27,21 +24,20 @@ module.exports = async (provider, contracts) => {
   let currentTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
   let currentBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
 
-  setInterval(() => {
-    const activeTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
-    if (activeTrancheId !== currentTrancheId) {
-      currentTrancheId = activeTrancheId;
-      emitter.emit('tranche:change');
-    }
-  }, 1000);
-
-  setInterval(() => {
+  // emit an event on every block
+  provider.on('block', blockNumber => {
     const activeBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
+    const activeTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
     if (activeBucketId !== currentBucketId) {
       currentBucketId = activeBucketId;
       emitter.emit('bucket:change');
     }
-  }, 1000);
+    if (activeTrancheId !== currentTrancheId) {
+      currentTrancheId = activeTrancheId;
+      emitter.emit('tranche:change');
+    }
+    emitter.emit('block', blockNumber);
+  });
 
   // listeners
   const stakingPoolCount = await stakingPoolFactory.stakingPoolCount();
