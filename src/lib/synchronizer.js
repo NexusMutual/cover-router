@@ -29,7 +29,7 @@ module.exports = async (store, chainApi, eventsApi) => {
         payload: { productId, poolId, poolProduct },
       });
     }
-    console.info(`Update: product data for product with id ${productId}`);
+    console.log(`Update: product data for product with id ${productId}`);
   };
 
   async function updatePool(poolId) {
@@ -47,7 +47,7 @@ module.exports = async (store, chainApi, eventsApi) => {
         payload: { productId, poolId, poolProduct },
       });
     }
-    console.info(`Updated: Pool data fo pool with id ${poolId}`);
+    console.log(`Update: Pool data for pool with id ${poolId}`);
   }
 
   const updateAll = async () => {
@@ -71,12 +71,12 @@ module.exports = async (store, chainApi, eventsApi) => {
       const rate = await chainApi.fetchTokenPriceInAsset(assetId);
       store.dispatch({ type: SET_ASSET_RATE, payload: { assetId, rate } });
     }
-    console.info('Update: Asset rates');
+    console.log('Update: Asset rates');
   };
 
   await updateAll();
   await updateAssetRates();
-  console.info('All data fetched and stored');
+  console.log('All data fetched and stored');
 
   eventsApi.on('pool:change', updatePool);
   eventsApi.on('product:change', updateProduct);
