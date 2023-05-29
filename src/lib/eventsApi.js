@@ -35,6 +35,7 @@ module.exports = async (provider, contracts) => {
 
       if (blockBucketId === activeBucketId) {
         currentBucketId = activeBucketId;
+        console.log(`Event: Bucket ${currentBucketId} expired`);
         emitter.emit('bucket:change');
       }
     }
@@ -45,6 +46,7 @@ module.exports = async (provider, contracts) => {
 
       if (blockTrancheId === activeTrancheId) {
         currentTrancheId = activeTrancheId;
+        console.log(`Event: Tranche ${currentTrancheId} expired`);
         emitter.emit('tranche:change');
       }
     }
