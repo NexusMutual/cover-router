@@ -63,19 +63,35 @@ module.exports = async (provider, contracts) => {
   // subscribe to events for currently existing pools
   for (let poolId = 1; poolId <= stakingPoolCount; poolId++) {
     const stakingPool = contracts('StakingPool', poolId);
-    stakingPool.on({ topics }, () => emitter.emit('pool:change', poolId));
+    stakingPool.on({ topics }, () => {
+      console.log(`Event: Pool ${poolId} state change`);
+      emitter.emit('pool:change', poolId);
+    });
   }
 
   // subscribe to events on new staking pool
   stakingPoolFactory.on('StakingPoolCreated', async poolId => {
+    console.log(`Event: Pool ${poolId} created`);
     emitter.emit('pool:change', poolId);
     const stakingPool = contracts('StakingPool', poolId);
-    stakingPool.on({ topics }, () => emitter.emit('pool:change', poolId));
+    stakingPool.on({ topics }, () => {
+      console.log(`Event: Pool ${poolId} update`);
+      emitter.emit('pool:change', poolId);
+    });
   });
 
-  stakingProducts.on('ProductUpdated', productId => emitter.emit('product:change', productId));
-  cover.on('ProductSet', productId => emitter.emit('product:change', productId));
-  cover.on('CoverEdited', (coverId, productId) => emitter.emit('product:change', productId));
+  stakingProducts.on('ProductUpdated', productId => {
+    console.log(`Event: Product ${productId} update`);
+    emitter.emit('product:change', productId);
+  });
+  cover.on('ProductSet', productId => {
+    console.log(`Event: Product ${productId} set`);
+    emitter.emit('product:change', productId);
+  });
+  cover.on('CoverEdited', (coverId, productId) => {
+    console.log(`Event: Cover ${coverId} for product ${productId} edited`);
+    emitter.emit('product:change', productId);
+  });
 
   return {
     on: emitter.on.bind(emitter),
