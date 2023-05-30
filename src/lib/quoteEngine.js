@@ -15,9 +15,9 @@ const {
   SURGE_THRESHOLD_DENOMINATOR,
   SURGE_THRESHOLD_RATIO,
   TARGET_PRICE_DENOMINATOR,
+  MIN_UNIT_SIZE_DAI,
 } = require('./constants');
 
-const MIN_UNIT_SIZE = WeiPerEther;
 const UNIT_DIVISOR = 10;
 
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
@@ -71,12 +71,13 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
  * Complexity O(n * p)  where n is the number of units in the amount and p is th  e number of pools
  * @param coverAmount
  * @param pools
+ * @param minUnitSize
  * @param useFixedPrice
  * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
-const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
+const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixedPrice) => {
   // set unitSize to be a minimum of 1.
-  const unitSize = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE) ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
+  const unitSize = coverAmount.div(UNIT_DIVISOR).gt(minUnitSize) ? coverAmount.div(UNIT_DIVISOR) : minUnitSize;
 
   let premium = BigNumber.from(0);
   // Pool Id (number) -> Capacity Amount (BigNumber)
@@ -92,12 +93,13 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice) => {
   let coverAmountLeft = coverAmount;
   while (coverAmountLeft.gt(0)) {
     const amountToAllocate = coverAmountLeft.gte(unitSize) ? unitSize : coverAmountLeft;
+
     let lowestCostPerPool = MaxUint256;
     let lowestCostPoolId = 0;
     for (const pool of pools) {
       // we advance one unit size at a time
 
-      if (poolCapacityUsed[pool.poolId].add(unitSize).gt(pool.totalCapacity)) {
+      if (poolCapacityUsed[pool.poolId].add(amountToAllocate).gt(pool.totalCapacity)) {
         // can't allocate unit to pool
         continue;
       }
@@ -180,7 +182,16 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     };
   });
 
-  const allocations = calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
+  const { assets } = store.getState();
+  const daiRate = assetRates[assets.DAI];
+  const minUnitSizeInNxm = MIN_UNIT_SIZE_DAI.mul(daiRate).div(WeiPerEther);
+
+  const allocations = calculateOptimalPoolAllocation(
+    amountToAllocate,
+    poolsData,
+    minUnitSizeInNxm,
+    product.useFixedPrice,
+  );
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
     poolId = parseInt(poolId);
