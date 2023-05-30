@@ -1,7 +1,8 @@
 const capacities = [
   {
     productId: 0,
-    capacity: [
+    allocatedNxm: '364800000000000000000',
+    availableCapacity: [
       {
         assetId: 0,
         amount: '4761714669056628480',
@@ -18,7 +19,8 @@ const capacities = [
   },
   {
     productId: 1,
-    capacity: [
+    allocatedNxm: '0',
+    availableCapacity: [
       {
         assetId: 0,
         amount: '2380857334528314240',
@@ -35,7 +37,8 @@ const capacities = [
   },
   {
     productId: 2,
-    capacity: [
+    allocatedNxm: '0',
+    availableCapacity: [
       {
         assetId: 0,
         amount: '4761714669056628480',
@@ -66,7 +69,7 @@ const quote = {
   },
   capacities: [
     {
-      poolId: 1,
+      poolId: '1',
       capacity: [
         {
           assetId: '0',

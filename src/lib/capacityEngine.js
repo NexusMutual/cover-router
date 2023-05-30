@@ -2,7 +2,7 @@ const { ethers } = require('ethers');
 
 const { selectProductPools, selectProduct } = require('../store/selectors');
 const { NXM_PER_ALLOCATION_UNIT, MIN_COVER_PERIOD } = require('./constants');
-const { calculateTrancheId } = require('./helpers');
+const { bnMax, calculateTrancheId } = require('./helpers');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
@@ -19,39 +19,44 @@ function capacityEngine(store, productIds, time) {
     }
 
     const productPools = selectProductPools(store, productId);
-    const productCapacity = { productId: Number(productId), capacity: [] };
+    const productCapacity = { productId: Number(productId), capacity: [], capacityUsed: Zero };
 
     const firstActiveTrancheId = calculateTrancheId(time);
     const gracePeriodExpiration = time.add(MIN_COVER_PERIOD).add(product.gracePeriod);
     const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
     const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
 
-    const capacityNXM = productPools.reduce((capacity, pool) => {
-      const { allocations, trancheCapacities } = pool;
+    const { capacityAvailableNXM, capacityUsedNXM } = productPools.reduce(
+      ({ capacityAvailableNXM, capacityUsedNXM }, pool) => {
+        const { allocations, trancheCapacities } = pool;
 
-      const totalCapacity = trancheCapacities
-        .slice(firstUsableTrancheIndex)
-        .reduce((total, capacity) => total.add(capacity), Zero)
-        .mul(NXM_PER_ALLOCATION_UNIT);
+        // sum up all allocations to get used capacity
+        const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
 
-      const initiallyUsedCapacity = allocations
-        .slice(firstUsableTrancheIndex)
-        .reduce((total, allocation) => total.add(allocation), Zero)
-        .mul(NXM_PER_ALLOCATION_UNIT);
+        // traverse all tranches and sum up available capacity on a per-tranche basis
+        const available = trancheCapacities
+          // allocations may surpass total capacity in some scenarios
+          .map((capacity, index) => bnMax(capacity.sub(allocations[index]), Zero))
+          .slice(firstUsableTrancheIndex) // skip unusable
+          .reduce((total, free) => total.add(free), Zero);
 
-      if (totalCapacity.gt(initiallyUsedCapacity)) {
-        return capacity.add(totalCapacity).sub(initiallyUsedCapacity);
-      }
-      return capacity;
-    }, Zero);
+        return {
+          capacityUsedNXM: used.mul(NXM_PER_ALLOCATION_UNIT).add(capacityUsedNXM),
+          capacityAvailableNXM: available.mul(NXM_PER_ALLOCATION_UNIT).add(capacityAvailableNXM),
+        };
+      },
+      { capacityAvailableNXM: Zero, capacityUsedNXM: Zero },
+    );
 
     for (const assetId of Object.values(assets)) {
       productCapacity.capacity.push({
         assetId,
         // TODO: use asset decimals instead of generic 18 decimals
-        amount: capacityNXM.mul(assetRates[assetId]).div(WeiPerEther),
+        amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
       });
     }
+
+    productCapacity.capacityUsed = capacityUsedNXM;
     capacities.push(productCapacity);
   }
 
