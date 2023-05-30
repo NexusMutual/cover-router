@@ -8,15 +8,13 @@ const topics = [
     'DepositExtended(address,uint256,uint256,uint256,uint256)',
     'StakeDeposited(address,uint256,uint256,uint256)',
     'PoolFeeChanged(address,uint)',
+    'Deallocated(uint)',
   ].map(event => ethers.utils.id(event)),
 ];
 
 module.exports = async (provider, contracts) => {
   // event emitter
   const emitter = new EventEmitter();
-
-  // emit an event on every block
-  provider.on('block', blockNumber => emitter.emit('block', blockNumber));
 
   // contract instances
   const stakingPoolFactory = contracts('StakingPoolFactory');
@@ -27,21 +25,37 @@ module.exports = async (provider, contracts) => {
   let currentTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
   let currentBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
 
-  setInterval(() => {
-    const activeTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
-    if (activeTrancheId !== currentTrancheId) {
-      currentTrancheId = activeTrancheId;
-      emitter.emit('tranche:change');
-    }
-  }, 1000);
-
-  setInterval(() => {
+  // emit an event on every block
+  provider.on('block', async blockNumber => {
     const activeBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
+    const activeTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
+
     if (activeBucketId !== currentBucketId) {
-      currentBucketId = activeBucketId;
-      emitter.emit('bucket:change');
+      const { timestamp: blockTimestamp } = await provider.getBlock(blockNumber);
+      const blockBucketId = calculateBucketId(blockTimestamp);
+
+      if (blockBucketId === activeBucketId) {
+        console.log(`Event: Bucket ${currentBucketId} expired`);
+
+        currentBucketId = activeBucketId;
+        emitter.emit('bucket:change');
+      }
     }
-  }, 1000);
+
+    if (activeTrancheId !== currentTrancheId) {
+      const { timestamp: blockTimestamp } = await provider.getBlock(blockNumber);
+      const blockTrancheId = calculateTrancheId(blockTimestamp);
+
+      if (blockTrancheId === activeTrancheId) {
+        console.log(`Event: Tranche ${currentTrancheId} expired`);
+
+        currentTrancheId = activeTrancheId;
+        emitter.emit('tranche:change');
+      }
+    }
+
+    emitter.emit('block', blockNumber);
+  });
 
   // listeners
   const stakingPoolCount = await stakingPoolFactory.stakingPoolCount();
