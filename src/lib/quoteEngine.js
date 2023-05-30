@@ -184,7 +184,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 
   const { assets } = store.getState();
   const daiRate = assetRates[assets.DAI];
-  const minUnitSizeInNxm = MIN_UNIT_SIZE_DAI.mul(daiRate).div(WeiPerEther);
+  const minUnitSizeInNxm = MIN_UNIT_SIZE_DAI.mul(WeiPerEther).div(daiRate);
 
   const allocations = calculateOptimalPoolAllocation(
     amountToAllocate,
@@ -220,12 +220,14 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     console.log('Total pool capacity    :', formatEther(pool.totalCapacity), 'nxm');
     console.log('Pool capacity          :', formatEther(capacityInNxm), 'nxm');
 
+    const coverAmountInAsset = amountToAllocate.mul(assetRate).div(WeiPerEther);
+
     return {
       poolId,
       premiumInNxm,
       premiumInAsset,
-      coverAmountInNxm,
-      coverAmountInAsset: amount,
+      coverAmountInNxm: amountToAllocate,
+      coverAmountInAsset,
       capacities: { poolId: pool.poolId, capacity },
     };
   });

@@ -32,5 +32,5 @@ module.exports = {
 
   MIN_COVER_PERIOD: 30 * 24 * 3600, // seconds
 
-  MIN_UNIT_SIZE_DAI: WeiPerEther.mul(10), // 10k DAI
+  MIN_UNIT_SIZE_DAI: WeiPerEther.mul(10000), // 10k DAI
 };

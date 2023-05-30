@@ -23,15 +23,15 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '2380857334528314240',
+        amount: '5267492652039327360',
       },
       {
         assetId: 1,
-        amount: '6652580075600694318266',
+        amount: '14718402550681328880309',
       },
       {
         assetId: 255,
-        amount: '231600000000000000000',
+        amount: '512400000000000000000',
       },
     ],
   },
@@ -57,12 +57,12 @@ const capacities = [
 
 const quote = {
   quote: {
-    premiumInNXM: '200000000000000',
-    premiumInAsset: '2056008060905',
+    premiumInNXM: '2718347967479674796',
+    premiumInAsset: '27944726667418476',
     poolAllocationRequests: [
       {
         poolId: '1',
-        coverAmountInAsset: '30000',
+        coverAmountInAsset: '1000042320824328192',
         skip: false,
       },
     ],

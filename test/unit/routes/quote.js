@@ -21,7 +21,7 @@ describe('GET /quote', async () => {
       .get('/v2/quote')
       .query({
         productId: 0,
-        amount: 30000,
+        amount: parseEther('1'),
         period: 365,
         coverAsset: 0,
         paymentAsset: 0,
