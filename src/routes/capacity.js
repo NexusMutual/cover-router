@@ -7,8 +7,8 @@ const router = express.Router();
 
 const formatCapacityResult = ({ productId, capacity, capacityUsed }) => ({
   productId,
-  capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
-  capacityUsed: capacityUsed.toString(),
+  availableCapacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
+  allocatedNxm: capacityUsed.toString(),
 });
 
 router.get(
