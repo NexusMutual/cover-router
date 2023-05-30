@@ -8,6 +8,7 @@ const topics = [
     'DepositExtended(address,uint256,uint256,uint256,uint256)',
     'StakeDeposited(address,uint256,uint256,uint256)',
     'PoolFeeChanged(address,uint)',
+    'Deallocated(uint)',
   ].map(event => ethers.utils.id(event)),
 ];
 
@@ -30,23 +31,25 @@ module.exports = async (provider, contracts) => {
     const activeTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
 
     if (activeBucketId !== currentBucketId) {
-      const blockTimeStamp = (await provider.getBlock(blockNumber)).timestamp;
-      const blockBucketId = calculateBucketId(blockTimeStamp);
+      const { timestamp: blockTimestamp } = await provider.getBlock(blockNumber);
+      const blockBucketId = calculateBucketId(blockTimestamp);
 
       if (blockBucketId === activeBucketId) {
-        currentBucketId = activeBucketId;
         console.log(`Event: Bucket ${currentBucketId} expired`);
+
+        currentBucketId = activeBucketId;
         emitter.emit('bucket:change');
       }
     }
 
     if (activeTrancheId !== currentTrancheId) {
-      const blockTimeStamp = (await provider.getBlock(blockNumber)).timestamp;
-      const blockTrancheId = calculateTrancheId(blockTimeStamp);
+      const { timestamp: blockTimestamp } = await provider.getBlock(blockNumber);
+      const blockTrancheId = calculateTrancheId(blockTimestamp);
 
       if (blockTrancheId === activeTrancheId) {
-        currentTrancheId = activeTrancheId;
         console.log(`Event: Tranche ${currentTrancheId} expired`);
+
+        currentTrancheId = activeTrancheId;
         emitter.emit('tranche:change');
       }
     }
