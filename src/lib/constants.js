@@ -31,4 +31,6 @@ module.exports = {
   NXM_PER_ALLOCATION_UNIT: WeiPerEther.div(100),
 
   MIN_COVER_PERIOD: 30 * 24 * 3600, // seconds
+
+  MIN_UNIT_SIZE_DAI: WeiPerEther.mul(10000), // 10k DAI
 };

@@ -1,6 +1,6 @@
 const express = require('express');
 const { BigNumber, ethers } = require('ethers');
-const quoteEngine = require('../lib/quoteEngine');
+const { quoteEngine } = require('../lib/quoteEngine');
 const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();

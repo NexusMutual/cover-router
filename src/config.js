@@ -13,7 +13,7 @@ module.exports = convict({
     default: '',
   },
   contractAddresses: {
-    doc: 'URL of the contracts',
+    doc: 'Path to contract addresses json file',
     env: 'CONTRACTS_ADDRESSES',
     default: '',
   },
