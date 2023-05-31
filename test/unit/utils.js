@@ -4,7 +4,7 @@ const { MaxUint256, WeiPerEther } = ethers.constants;
 const { calculateFixedPricePremiumPerYear, calculatePremiumPerYear } = require('../../src/lib/quoteEngine');
 
 const MIN_UNIT_SIZE = WeiPerEther;
-const UNIT_DIVISOR = 10;
+const UNIT_DIVISOR = 100;
 const getCombinations = (size, a) => {
   if (size === 1) {
     return a.map(i => [i]);
