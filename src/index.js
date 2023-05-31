@@ -23,7 +23,7 @@ const main = async () => {
   const provider = new ethers.providers.JsonRpcProvider(providerURL);
 
   // contract factory
-  const addresses = require(config.get('contractAddresses')).CONTRACTS_ADDRESSES;
+  const addresses = require(config.get('contractAddresses'));
   const contracts = await contractFactory(addresses, provider);
 
   // apis
