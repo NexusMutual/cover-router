@@ -2,12 +2,13 @@
   "name": "cover-router",
   "version": "2.0.0",
   "description": "Cover Router",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "mocha test  --exit",
-    "test-with-coverage": "nyc --reporter=html mocha test --exit",
+    "dev": "nodemon src/index.js",
     "lint": "eslint --max-warnings 0 .",
-    "dev": "nodemon src/index.js"
+    "start": "node src/index.js",
+    "test": "mocha test  --exit",
+    "test-with-coverage": "nyc --reporter=html mocha test --exit"
   },
   "repository": {
     "type": "git",
