@@ -16,9 +16,8 @@ const {
   SURGE_THRESHOLD_RATIO,
   TARGET_PRICE_DENOMINATOR,
   MIN_UNIT_SIZE_DAI,
+  UNIT_DIVISOR,
 } = require('./constants');
-
-const UNIT_DIVISOR = 10;
 
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
   const elapsed = now.sub(bumpedPriceUpdateTime);
