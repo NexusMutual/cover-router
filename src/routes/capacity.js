@@ -1,14 +1,18 @@
 const express = require('express');
 const capacityEngine = require('../lib/capacityEngine');
-const { BigNumber } = require('ethers');
+const {
+  BigNumber,
+  utils: { formatUnits },
+} = require('ethers');
 const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();
 
-const formatCapacityResult = ({ productId, capacity, capacityUsed }) => ({
+const formatCapacityResult = ({ productId, capacity, capacityUsed, annualPrice }) => ({
   productId,
   availableCapacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
   allocatedNxm: capacityUsed.toString(),
+  annualPrice: formatUnits(annualPrice),
 });
 
 router.get(
