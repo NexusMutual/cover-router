@@ -2,6 +2,7 @@ const capacities = [
   {
     productId: 0,
     allocatedNxm: '364800000000000000000',
+    annualPrice: '0.02',
     availableCapacity: [
       {
         assetId: 0,
@@ -20,6 +21,7 @@ const capacities = [
   {
     productId: 1,
     allocatedNxm: '0',
+    annualPrice: '0.02',
     availableCapacity: [
       {
         assetId: 0,
@@ -38,6 +40,7 @@ const capacities = [
   {
     productId: 2,
     allocatedNxm: '0',
+    annualPrice: '0.02',
     availableCapacity: [
       {
         assetId: 0,

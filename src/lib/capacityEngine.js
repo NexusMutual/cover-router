@@ -1,8 +1,10 @@
-const { ethers } = require('ethers');
+const { ethers, BigNumber } = require('ethers');
 
 const { selectProductPools, selectProduct } = require('../store/selectors');
-const { NXM_PER_ALLOCATION_UNIT, MIN_COVER_PERIOD } = require('./constants');
-const { bnMax, calculateTrancheId } = require('./helpers');
+const { NXM_PER_ALLOCATION_UNIT, MIN_COVER_PERIOD, TARGET_PRICE_DENOMINATOR } = require('./constants');
+const { bnMax, bnMin, calculateTrancheId } = require('./helpers');
+const { calculateBasePrice } = require('./quoteEngine');
+const { parseEther } = require('ethers/lib/utils');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
@@ -10,6 +12,7 @@ function capacityEngine(store, productIds, time) {
   const { assets, assetRates } = store.getState();
   const capacities = [];
   const ids = productIds.length === 0 ? Object.keys(store.getState().products) : [...productIds];
+  const now = BigNumber.from(Date.now()).div(1000);
 
   for (const productId of ids) {
     const product = selectProduct(store, productId);
@@ -26,9 +29,9 @@ function capacityEngine(store, productIds, time) {
     const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
     const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
 
-    const { capacityAvailableNXM, capacityUsedNXM } = productPools.reduce(
-      ({ capacityAvailableNXM, capacityUsedNXM }, pool) => {
-        const { allocations, trancheCapacities } = pool;
+    const { capacityAvailableNXM, capacityUsedNXM, minBasePrice } = productPools.reduce(
+      ({ capacityAvailableNXM, capacityUsedNXM, minBasePrice }, pool) => {
+        const { allocations, trancheCapacities, targetPrice, bumpedPrice, bumpedPriceUpdateTime } = pool;
 
         // sum up all allocations to get used capacity
         const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
@@ -40,12 +43,17 @@ function capacityEngine(store, productIds, time) {
           .slice(firstUsableTrancheIndex) // skip unusable
           .reduce((total, free) => total.add(free), Zero);
 
+        const basePrice = product.useFixedPrice
+          ? targetPrice
+          : calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
+
         return {
           capacityUsedNXM: used.mul(NXM_PER_ALLOCATION_UNIT).add(capacityUsedNXM),
           capacityAvailableNXM: available.mul(NXM_PER_ALLOCATION_UNIT).add(capacityAvailableNXM),
+          minBasePrice: minBasePrice.eq(Zero) ? basePrice : bnMin(minBasePrice, basePrice),
         };
       },
-      { capacityAvailableNXM: Zero, capacityUsedNXM: Zero },
+      { capacityAvailableNXM: Zero, capacityUsedNXM: Zero, minBasePrice: Zero },
     );
 
     for (const assetId of Object.values(assets)) {
@@ -57,6 +65,7 @@ function capacityEngine(store, productIds, time) {
     }
 
     productCapacity.capacityUsed = capacityUsedNXM;
+    productCapacity.annualPrice = parseEther('1').mul(minBasePrice).div(TARGET_PRICE_DENOMINATOR);
     capacities.push(productCapacity);
   }
 
