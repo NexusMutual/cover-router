@@ -1,4 +1,5 @@
-const { calculateTrancheId } = require('./helpers');
+const config = require('../config');
+const { calculateTrancheId, promiseAllInBatches } = require('./helpers');
 const {
   SET_ASSET_RATE,
   SET_GLOBAL_CAPACITY_RATIO,
@@ -59,9 +60,10 @@ module.exports = async (store, chainApi, eventsApi) => {
 
     const productCount = await chainApi.fetchProductCount();
 
-    for (let productId = 0; productId < productCount; productId++) {
-      await updateProduct(productId);
-    }
+    const productIds = Array.from({ length: productCount }, (_, i) => i);
+    const concurrency = config.get('concurrency');
+
+    await promiseAllInBatches(productId => updateProduct(productId), productIds, concurrency);
   };
 
   const updateAssetRates = async () => {

@@ -16,6 +16,17 @@ const asyncRoute = fn => (req, res, next) => {
   });
 };
 
+const promiseAllInBatches = async (task, items, concurrency) => {
+  let position = 0;
+  let results = [];
+  while (position < items.length) {
+    const itemsForBatch = items.slice(position, position + concurrency);
+    results = [...results, ...(await Promise.all(itemsForBatch.map(item => task(item))))];
+    position += concurrency;
+  }
+  return results;
+};
+
 module.exports = {
   bnMax,
   bnMin,
@@ -23,4 +34,5 @@ module.exports = {
   calculateTrancheId,
   calculateBucketId,
   asyncRoute,
+  promiseAllInBatches,
 };

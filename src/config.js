@@ -7,6 +7,11 @@ module.exports = convict({
     default: 3000,
     env: 'PORT',
   },
+  concurrency: {
+    doc: 'Number of concurrent promises',
+    env: 'CONCURRENCY_NUMBER',
+    default: 5,
+  },
   provider: {
     doc: 'Providers URL',
     env: 'PROVIDER_URL',
