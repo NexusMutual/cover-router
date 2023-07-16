@@ -30,9 +30,9 @@ const createChainApi = async contracts => {
   };
 
   const fetchProduct = async id => {
-    const { productType, capacityReductionRatio, useFixedPrice } = await cover.products(id);
+    const { productType, capacityReductionRatio, useFixedPrice, isDeprecated } = await cover.products(id);
     const { gracePeriod } = await cover.productTypes(productType);
-    return { productType, capacityReductionRatio, useFixedPrice, gracePeriod };
+    return { productType, capacityReductionRatio, useFixedPrice, gracePeriod, isDeprecated };
   };
 
   const fetchProducts = async () => {
@@ -45,9 +45,9 @@ const createChainApi = async contracts => {
     }
 
     return products.map((product, id) => {
-      const { productType, capacityReductionRatio, useFixedPrice } = product;
+      const { productType, capacityReductionRatio, useFixedPrice, isDeprecated } = product;
       const gracePeriod = productTypes[product.productType].gracePeriod;
-      return { productType, capacityReductionRatio, useFixedPrice, gracePeriod };
+      return { productType, capacityReductionRatio, useFixedPrice, gracePeriod, isDeprecated };
     });
   };
 

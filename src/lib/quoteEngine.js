@@ -138,6 +138,15 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   if (!product) {
     return null;
   }
+
+  if (product.isDeprecated) {
+    return {
+      error: {
+        isDeprecated: true,
+      },
+    };
+  }
+
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
   const assetRates = store.getState().assetRates;
