@@ -12,11 +12,6 @@ module.exports = convict({
     env: 'PROVIDER_URL',
     default: '',
   },
-  contractAddresses: {
-    doc: 'Path to contract addresses json file',
-    env: 'CONTRACTS_ADDRESSES',
-    default: '',
-  },
   contractsUrl: {
     doc: 'URL of the contracts',
     default: 'https://api.nexusmutual.io/version-data/data.json',
