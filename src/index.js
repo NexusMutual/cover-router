@@ -13,6 +13,7 @@ const createEventsApi = require('./lib/eventsApi');
 const createSynchronizer = require('./lib/synchronizer');
 
 const capacityRouter = require('./routes/capacity');
+const usageRouter = require('./routes/usage');
 const quoteRouter = require('./routes/quote');
 
 const main = async () => {
@@ -48,6 +49,7 @@ const main = async () => {
 
   // initiate routes
   app.use('/v2', capacityRouter);
+  app.use('/v2', usageRouter);
   app.use('/v2', quoteRouter);
 
   const port = config.get('port');

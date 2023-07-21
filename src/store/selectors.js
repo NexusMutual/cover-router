@@ -17,6 +17,15 @@ const selectProductPools = (store, productId) => {
   });
 };
 
+const selectPoolProducts = (store, poolId) => {
+  const { poolProducts, poolProductIds } = store.getState();
+  const productIds = poolProductIds[poolId] || [];
+  return productIds.map(productId => {
+    const key = `${productId}_${poolId}`;
+    return poolProducts[key];
+  });
+};
+
 const selectAssetSymbol = (store, assetId) => {
   const { assets } = store.getState();
   return Object.keys(assets).find(key => assets[key] === assetId);
@@ -27,4 +36,5 @@ module.exports = {
   selectAssetSymbol,
   selectProduct,
   selectProductPools,
+  selectPoolProducts,
 };
