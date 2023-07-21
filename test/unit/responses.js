@@ -91,7 +91,128 @@ const quote = {
   ],
 };
 
+const usage = [
+  {
+    poolId: '1',
+    products: [
+      {
+        productId: 0,
+        capacityUsed: [
+          {
+            assetId: 0,
+            amount: '0',
+          },
+          {
+            assetId: 1,
+            amount: '0',
+          },
+          {
+            assetId: 255,
+            amount: '0',
+          },
+        ],
+      },
+      {
+        productId: 1,
+        capacityUsed: [
+          {
+            assetId: 0,
+            amount: '0',
+          },
+          {
+            assetId: 1,
+            amount: '0',
+          },
+          {
+            assetId: 255,
+            amount: '0',
+          },
+        ],
+      },
+      {
+        productId: 2,
+        capacityUsed: [
+          {
+            assetId: 0,
+            amount: '0',
+          },
+          {
+            assetId: 1,
+            amount: '0',
+          },
+          {
+            assetId: 255,
+            amount: '0',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    poolId: '2',
+    products: [
+      {
+        productId: 1,
+        capacityUsed: [
+          {
+            assetId: 0,
+            amount: '0',
+          },
+          {
+            assetId: 1,
+            amount: '0',
+          },
+          {
+            assetId: 255,
+            amount: '0',
+          },
+        ],
+      },
+      {
+        productId: 2,
+        capacityUsed: [
+          {
+            assetId: 0,
+            amount: '0',
+          },
+          {
+            assetId: 1,
+            amount: '0',
+          },
+          {
+            assetId: 255,
+            amount: '0',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    poolId: '3',
+    products: [
+      {
+        productId: 0,
+        capacityUsed: [
+          {
+            assetId: 0,
+            amount: '3750158703091230720',
+          },
+          {
+            assetId: 1,
+            amount: '10478675352241508148979',
+          },
+          {
+            assetId: 255,
+            amount: '364800000000000000000',
+          },
+        ],
+      },
+    ],
+  },
+];
+
 module.exports = {
   capacities,
   quote,
+  usage,
 };

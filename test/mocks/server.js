@@ -4,6 +4,7 @@ const express = require('express');
 
 const quoteRouter = require('../../src/routes/quote');
 const capacityRouter = require('../../src/routes/capacity');
+const usageRouter = require('../../src/routes/usage');
 
 const mockStore = require('./store');
 
@@ -27,6 +28,7 @@ const main = () => {
   // initiate routes
   app.use('/v2', capacityRouter);
   app.use('/v2', quoteRouter);
+  app.use('/v2', usageRouter);
 
   return app;
 };

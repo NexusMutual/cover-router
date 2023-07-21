@@ -224,6 +224,11 @@ const store = {
     1: [1, 2],
     2: [1, 2],
   },
+  poolProductIds: {
+    1: [0, 1, 2],
+    2: [1, 2],
+    3: [0],
+  },
   products: {
     0: {
       productType: 0,
