@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const { ethers } = require('ethers');
+const { addresses } = require('@nexusmutual/sdk');
 
 const config = require('./config');
 const { createStore } = require('./store');
@@ -23,7 +24,6 @@ const main = async () => {
   const provider = new ethers.providers.JsonRpcProvider(providerURL);
 
   // contract factory
-  const addresses = require(config.get('contractAddresses'));
   const contracts = await contractFactory(addresses, provider);
 
   // apis

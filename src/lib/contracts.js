@@ -1,4 +1,5 @@
 const { ethers } = require('ethers');
+const { abis } = require('@nexusmutual/sdk');
 const { BEACON_PROXY_INIT_CODE_HASH } = require('./constants');
 
 function calculateAddress(factoryAddress, id) {
@@ -24,7 +25,7 @@ module.exports = (addresses, provider) => {
       : addresses[name]; // regular contract
 
     if (!instances[key] || forceNew) {
-      const abi = require(`../abis/${name}.json`);
+      const abi = abis[name];
       instances[key] = new ethers.Contract(address, abi, provider);
     }
 
