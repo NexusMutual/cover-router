@@ -1,16 +1,7 @@
 const EventEmitter = require('events');
-const { ethers } = require('ethers');
 const { calculateTrancheId, calculateBucketId } = require('./helpers');
 
-const topics = [
-  [
-    'StakeBurned(uint)',
-    'DepositExtended(address,uint256,uint256,uint256,uint256)',
-    'StakeDeposited(address,uint256,uint256,uint256)',
-    'PoolFeeChanged(address,uint)',
-    'Deallocated(uint)',
-  ].map(event => ethers.utils.id(event)),
-];
+const events = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
 
 module.exports = async (provider, contracts) => {
   // event emitter
@@ -63,7 +54,7 @@ module.exports = async (provider, contracts) => {
   // subscribe to events for currently existing pools
   for (let poolId = 1; poolId <= stakingPoolCount; poolId++) {
     const stakingPool = contracts('StakingPool', poolId);
-    for (let eventName of topics) {
+    for (const eventName of events) {
       stakingPool.on(eventName, () => {
         console.log(`Event: ${eventName} triggered for Pool ${poolId}`);
         emitter.emit('pool:change', poolId);
@@ -76,7 +67,7 @@ module.exports = async (provider, contracts) => {
     console.log(`Event: Pool ${poolId} created`);
     emitter.emit('pool:change', poolId);
     const stakingPool = contracts('StakingPool', poolId);
-    for (let eventName of topics) {
+    for (const eventName of events) {
       stakingPool.on(eventName, () => {
         console.log(`Event: ${eventName} triggered for Pool ${poolId}`);
         emitter.emit('pool:change', poolId);
