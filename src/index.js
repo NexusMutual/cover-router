@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const { ethers } = require('ethers');
-const { addresses } = require('@nexusmutual/sdk');
+const { addresses } = require('@nexusmutual/deployments');
 
 const config = require('./config');
 const { createStore } = require('./store');
