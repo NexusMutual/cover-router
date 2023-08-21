@@ -63,10 +63,12 @@ module.exports = async (provider, contracts) => {
   // subscribe to events for currently existing pools
   for (let poolId = 1; poolId <= stakingPoolCount; poolId++) {
     const stakingPool = contracts('StakingPool', poolId);
-    stakingPool.on({ topics }, () => {
-      console.log(`Event: Pool ${poolId} state change`);
-      emitter.emit('pool:change', poolId);
-    });
+    for (let eventName of topics) {
+      stakingPool.on(eventName, () => {
+        console.log(`Event: ${eventName} triggered for Pool ${poolId}`);
+        emitter.emit('pool:change', poolId);
+      });
+    }
   }
 
   // subscribe to events on new staking pool
@@ -74,10 +76,12 @@ module.exports = async (provider, contracts) => {
     console.log(`Event: Pool ${poolId} created`);
     emitter.emit('pool:change', poolId);
     const stakingPool = contracts('StakingPool', poolId);
-    stakingPool.on({ topics }, () => {
-      console.log(`Event: Pool ${poolId} update`);
-      emitter.emit('pool:change', poolId);
-    });
+    for (let eventName of topics) {
+      stakingPool.on(eventName, () => {
+        console.log(`Event: ${eventName} triggered for Pool ${poolId}`);
+        emitter.emit('pool:change', poolId);
+      });
+    }
   });
 
   stakingProducts.on('ProductUpdated', productId => {
