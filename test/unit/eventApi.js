@@ -33,6 +33,8 @@ async function contractFactoryMock(addresses, provider) {
   };
 }
 
+const settleEvents = () => new Promise(resolve => setTimeout(resolve, 0));
+
 describe.only('Catching events', () => {
   let eventsApi;
   let contracts;
@@ -62,10 +64,9 @@ describe.only('Catching events', () => {
     }
 
     // pushing expect to end of the event queue
-    setTimeout(() => {
-      expect(eventCounter).to.be.equal(stakingPoolEvents.length);
-      expect(poolChangeCounter).to.be.equal(stakingPoolEvents.length);
-    }, 0);
+    await settleEvents();
+    expect(eventCounter).to.be.equal(stakingPoolEvents.length);
+    expect(poolChangeCounter).to.be.equal(stakingPoolEvents.length);
   });
 
   it('should catch all events on cover', async function () {
@@ -86,10 +87,9 @@ describe.only('Catching events', () => {
     }
 
     // pushing expect to end of the event queue
-    setTimeout(() => {
-      expect(eventCounter).to.be.equal(coverEvents.length);
-      expect(productChangeCounter).to.be.equal(coverEvents.length);
-    }, 0);
+    await settleEvents();
+    expect(eventCounter).to.be.equal(coverEvents.length);
+    expect(productChangeCounter).to.be.equal(coverEvents.length);
   });
 
   it('should catch all events on stakingProducts', async function () {
@@ -109,10 +109,9 @@ describe.only('Catching events', () => {
     }
 
     // pushing expect to end of the event queue
-    setTimeout(() => {
-      expect(eventCounter).to.be.equal(stakingProductsEvents.length);
-      expect(productChangeCounter).to.be.equal(stakingProductsEvents.length);
-    }, 0);
+    await settleEvents();
+    expect(eventCounter).to.be.equal(stakingProductsEvents.length);
+    expect(productChangeCounter).to.be.equal(stakingProductsEvents.length);
   });
 
   it('should catch all events on stakingPoolFactory', async function () {
@@ -132,9 +131,8 @@ describe.only('Catching events', () => {
     }
 
     // pushing expect to end of the event queue
-    setTimeout(() => {
-      expect(eventCounter).to.be.equal(stakingPoolFactoryEvents.length);
-      expect(poolChangeCounter).to.be.equal(stakingPoolFactoryEvents.length);
-    }, 0);
+    await settleEvents();
+    expect(eventCounter).to.be.equal(stakingPoolFactoryEvents.length);
+    expect(poolChangeCounter).to.be.equal(stakingPoolFactoryEvents.length);
   });
 });
