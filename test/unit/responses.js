@@ -60,11 +60,11 @@ const capacities = [
 
 const quote = {
   quote: {
-    premiumInNXM: '2718347967479674796',
-    premiumInAsset: '27944726667418476',
+    premiumInNXM: '1945600000000000000',
+    premiumInAsset: '20000846416486563',
     poolAllocationRequests: [
       {
-        poolId: '1',
+        poolId: '2',
         coverAmountInAsset: '1000042320824328192',
         skip: false,
       },
@@ -72,19 +72,19 @@ const quote = {
   },
   capacities: [
     {
-      poolId: '1',
+      poolId: '2',
       capacity: [
         {
           assetId: '0',
-          amount: '1011555965965397760',
+          amount: '3750158703091230720',
         },
         {
           assetId: '1',
-          amount: '2826484798959880487553',
+          amount: '10478675352241508148979',
         },
         {
           assetId: '255',
-          amount: '98400000000000000000',
+          amount: '364800000000000000000',
         },
       ],
     },
@@ -151,6 +151,23 @@ const usage = [
   {
     poolId: '2',
     products: [
+      {
+        productId: 0,
+        capacityUsed: [
+          {
+            assetId: 0,
+            amount: '0',
+          },
+          {
+            assetId: 1,
+            amount: '0',
+          },
+          {
+            assetId: 255,
+            amount: '0',
+          },
+        ],
+      },
       {
         productId: 1,
         capacityUsed: [

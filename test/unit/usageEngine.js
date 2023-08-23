@@ -1,11 +1,11 @@
 const sinon = require('sinon');
 const { expect } = require('chai');
-const { BigNumber } = require('ethers');
 
 const usageEngine = require('../../src/lib/usageEngine');
 const mockStore = require('../mocks/store');
 const { usage } = require('./responses');
-describe.only('Capacity Engine tests', () => {
+
+describe('Usage Engine tests', () => {
   const store = { getState: () => null };
 
   afterEach(function () {

@@ -1,6 +1,6 @@
 const { ethers } = require('ethers');
 
-const { selectPoolProducts } = require('../store/selectors');
+const { selectPoolProducts, selectPoolIds } = require('../store/selectors');
 const { NXM_PER_ALLOCATION_UNIT } = require('./constants');
 
 const { WeiPerEther, Zero } = ethers.constants;
@@ -8,7 +8,7 @@ const { WeiPerEther, Zero } = ethers.constants;
 function usageEngine(store, poolIds) {
   const { assets, assetRates } = store.getState();
   const usage = [];
-  const ids = poolIds.length === 0 ? Object.keys(store.getState().poolProductIds) : [...poolIds];
+  const ids = poolIds.length === 0 ? selectPoolIds(store) : [...poolIds];
 
   for (const poolId of ids) {
     const poolProducts = selectPoolProducts(store, poolId);

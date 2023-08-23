@@ -5,6 +5,7 @@ const { BigNumber } = require('ethers');
 const capacityEngine = require('../../src/lib/capacityEngine');
 const mockStore = require('../mocks/store');
 const { capacities } = require('./responses');
+
 describe('Capacity Engine tests', () => {
   const store = { getState: () => null };
 
