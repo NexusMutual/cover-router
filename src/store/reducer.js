@@ -12,6 +12,7 @@ const initialState = {
   globalCapacityRatio: 0,
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
+  poolProductIds: {}, // productId -> [ poolIds ]
   products: {}, // productId -> { product }
   trancheId: 0,
 };
@@ -29,10 +30,16 @@ function reducer(state = initialState, { type, payload }) {
     const key = `${productId}_${poolId}`;
     const newPoolProduct = { productId, poolId, ...poolProduct };
     const poolProducts = { ...state.poolProducts, [key]: newPoolProduct };
-    const previousIds = state.productPoolIds[productId] || [];
-    const newIds = [...new Set([...previousIds, poolId])];
-    const productPoolIds = { ...state.productPoolIds, [productId]: newIds };
-    return { ...state, poolProducts, productPoolIds };
+
+    const previousPoolIds = state.productPoolIds[productId] || [];
+    const newPoolIds = [...new Set([...previousPoolIds, poolId])];
+    const productPoolIds = { ...state.productPoolIds, [productId]: newPoolIds };
+
+    const previousProductIds = state.poolProductIds[poolId] || [];
+    const newProductIds = [...new Set([...previousProductIds, productId])];
+    const poolProductIds = { ...state.poolProductIds, [poolId]: newProductIds };
+
+    return { ...state, poolProducts, productPoolIds, poolProductIds };
   }
 
   if (type === SET_ASSET_RATE) {

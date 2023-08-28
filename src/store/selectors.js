@@ -1,3 +1,8 @@
+const selectAssets = store => {
+  const { assets } = store.getState();
+  return assets;
+};
+
 const selectAssetRate = (store, assetId) => {
   const { assetRates } = store.getState();
   return assetRates[assetId];
@@ -9,12 +14,23 @@ const selectProduct = (store, productId) => {
 };
 
 const selectProductPools = (store, productId) => {
-  const { poolProducts, productPoolIds } = store.getState();
-  const poolIds = productPoolIds[productId] || [];
-  return poolIds.map(poolId => {
-    const key = `${productId}_${poolId}`;
-    return poolProducts[key];
-  });
+  const { poolProducts } = store.getState();
+  return Object.values(poolProducts).filter(item => `${item.productId}` === `${productId}`);
+};
+
+const selectPoolProducts = (store, poolId) => {
+  const { poolProducts } = store.getState();
+  return Object.values(poolProducts).filter(item => `${item.poolId}` === `${poolId}`);
+};
+
+const selectPoolIds = store => {
+  const { poolProducts } = store.getState();
+  return Object.values(poolProducts).reduce((acc, item) => {
+    if (!acc.includes(`${item.poolId}`)) {
+      acc.push(`${item.poolId}`);
+    }
+    return acc;
+  }, []);
 };
 
 const selectAssetSymbol = (store, assetId) => {
@@ -23,8 +39,11 @@ const selectAssetSymbol = (store, assetId) => {
 };
 
 module.exports = {
+  selectAssets,
   selectAssetRate,
   selectAssetSymbol,
   selectProduct,
   selectProductPools,
+  selectPoolProducts,
+  selectPoolIds,
 };

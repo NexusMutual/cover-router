@@ -73,7 +73,7 @@ const store = {
     },
     '0_3': {
       productId: 0,
-      poolId: 2,
+      poolId: 3,
       allocations: [
         BigNumber.from(0),
         BigNumber.from(0),
@@ -223,6 +223,11 @@ const store = {
     0: [1, 2, 3],
     1: [1, 2],
     2: [1, 2],
+  },
+  poolProductIds: {
+    1: [0, 1, 2],
+    2: [1, 2],
+    3: [0],
   },
   products: {
     0: {
