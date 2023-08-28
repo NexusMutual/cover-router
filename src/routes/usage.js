@@ -16,7 +16,6 @@ router.get(
   '/usage',
   asyncRoute(async (req, res) => {
     const store = req.app.get('store');
-
     const response = usageEngine(store, []);
     res.json(response.map(usage => formatUsageResult(usage)));
   }),
@@ -27,7 +26,6 @@ router.get(
   asyncRoute(async (req, res) => {
     const poolId = Number(req.params.poolId);
     const store = req.app.get('store');
-
     const [usage] = usageEngine(store, [poolId]);
 
     if (!usage) {

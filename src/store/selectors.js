@@ -1,3 +1,8 @@
+const selectAssets = store => {
+  const { assets } = store.getState();
+  return assets;
+};
+
 const selectAssetRate = (store, assetId) => {
   const { assetRates } = store.getState();
   return assetRates[assetId];
@@ -34,6 +39,7 @@ const selectAssetSymbol = (store, assetId) => {
 };
 
 module.exports = {
+  selectAssets,
   selectAssetRate,
   selectAssetSymbol,
   selectProduct,

@@ -1,33 +1,32 @@
 const { ethers } = require('ethers');
 
-const { selectPoolProducts, selectPoolIds } = require('../store/selectors');
+const { selectAssetRate, selectAssets, selectPoolProducts, selectPoolIds } = require('../store/selectors');
 const { NXM_PER_ALLOCATION_UNIT } = require('./constants');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
-function usageEngine(store, poolIds) {
-  const { assets, assetRates } = store.getState();
-  const usage = [];
-  const ids = poolIds.length === 0 ? selectPoolIds(store) : [...poolIds];
+function usageEngine(store, requestedPoolIds = []) {
+  const poolIds = requestedPoolIds.length === 0 ? selectPoolIds(store) : [...requestedPoolIds];
+  const assetIds = Object.values(selectAssets(store));
 
-  for (const poolId of ids) {
+  const usage = poolIds.map(poolId => {
     const poolProducts = selectPoolProducts(store, poolId);
-
-    const poolCapacities = poolProducts.map(pool => {
+    const products = poolProducts.map(pool => {
       const { productId, allocations } = pool;
-      const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
-      const capacityUsedNXM = used.mul(NXM_PER_ALLOCATION_UNIT);
-      return {
-        productId,
-        capacityUsed: Object.values(assets).map(assetId => ({
-          assetId,
-          amount: capacityUsedNXM.mul(assetRates[assetId]).div(WeiPerEther),
-        })),
-      };
+      const unitsUsed = allocations.reduce((total, allocation) => total.add(allocation), Zero);
+      const nxmUsed = unitsUsed.mul(NXM_PER_ALLOCATION_UNIT);
+
+      const capacityUsed = assetIds.map(assetId => {
+        const assetRate = selectAssetRate(store, assetId);
+        const amount = nxmUsed.mul(assetRate).div(WeiPerEther);
+        return { assetId, amount };
+      });
+
+      return { productId, capacityUsed };
     });
 
-    usage.push({ poolId, products: poolCapacities });
-  }
+    return { poolId, products };
+  });
 
   return usage;
 }
