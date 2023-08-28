@@ -11,38 +11,38 @@ const stakingPoolFactoryEvents = ['StakingPoolCreated'];
 const contractFactory = require('../../src/lib/contracts');
 const { addresses } = require('@nexusmutual/deployments');
 
-async function contractFactoryMock(addresses, provider) {
-  const contracts = await contractFactory(addresses, provider);
-  return (name, id = 0, forceNew = false) => {
-    if (name === 'StakingPoolFactory') {
-      const stakingPoolFactory = contracts('StakingPoolFactory');
-      const stakingPoolFactoryMock = Object.entries(stakingPoolFactory).reduce((acc, [key, value]) => {
-        if (key === 'stakingPoolCount') {
-          acc.stakingPoolCount = async () => {
-            return 1;
-          };
-        } else {
-          acc[key] = value;
-        }
-        return acc;
-      }, {});
-      Object.setPrototypeOf(stakingPoolFactoryMock, Object.getPrototypeOf(stakingPoolFactory));
-      return stakingPoolFactoryMock;
+function contractFactoryMock(addresses, provider) {
+  const factory = contractFactory(addresses, provider);
+
+  const mockedFactory = (name, id = 0, forceNew = false) => {
+    if (name !== 'StakingPoolFactory') {
+      return factory(name, id, forceNew);
     }
-    return contracts(name, id, forceNew);
+
+    const stakingPoolFactory = factory('StakingPoolFactory');
+    const entries = Object.entries(stakingPoolFactory).map(([key, value]) => {
+      return [key, key === 'stakingPoolCount' ? async () => 1 : value];
+    });
+
+    const stakingPoolFactoryMock = Object.fromEntries(entries);
+    Object.setPrototypeOf(stakingPoolFactoryMock, Object.getPrototypeOf(stakingPoolFactory));
+
+    return stakingPoolFactoryMock;
   };
+
+  return mockedFactory;
 }
 
 const settleEvents = () => new Promise(resolve => setTimeout(resolve, 0));
 
-describe.only('Catching events', () => {
+describe('Catching events', () => {
   let eventsApi;
   let contracts;
-  beforeEach(async function () {
-    this.timeout(5000);
-    const provider = getDefaultProvider();
-    contracts = await contractFactoryMock(addresses, provider);
 
+  beforeEach(async function () {
+    this.timeout(0);
+    const provider = getDefaultProvider();
+    contracts = contractFactoryMock(addresses, provider);
     eventsApi = await eventsApiConstructor(provider, contracts);
   });
 
