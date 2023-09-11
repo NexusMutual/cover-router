@@ -1,5 +1,5 @@
 const { ethers } = require('ethers');
-const { abis } = require('@nexusmutual/sdk');
+const { abis } = require('@nexusmutual/deployments');
 const { BEACON_PROXY_INIT_CODE_HASH } = require('./constants');
 
 function calculateAddress(factoryAddress, id) {
