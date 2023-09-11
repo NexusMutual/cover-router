@@ -60,8 +60,10 @@ const capacities = [
 
 const quote = {
   quote: {
+    annualPrice: '279',
     premiumInNXM: '2718347967479674796',
     premiumInAsset: '27944726667418476',
+    totalCoverAmountInAsset: '1000042320824328192',
     poolAllocationRequests: [
       {
         poolId: '1',
