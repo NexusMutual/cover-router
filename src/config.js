@@ -17,4 +17,10 @@ module.exports = convict({
     env: 'PROVIDER_URL',
     default: '',
   },
+  pollingInterval: {
+    doc: 'Polling interval for eth_getLogs in ms',
+    format: 'int',
+    env: 'POLLING_INTERVAL',
+    default: 30_000,
+  },
 });

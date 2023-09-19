@@ -23,6 +23,9 @@ const main = async () => {
   const providerURL = config.get('provider');
   const provider = new ethers.providers.JsonRpcProvider(providerURL);
 
+  // set a smaller polling interval, default is 4000ms
+  provider.pollingInterval = config.get('pollingInterval');
+
   // contract factory
   const contracts = await contractFactory(addresses, provider);
 
