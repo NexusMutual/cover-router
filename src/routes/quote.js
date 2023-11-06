@@ -14,9 +14,10 @@ router.get(
     const amount = BigNumber.from(req.query.amount);
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
+    const coverId = Number(req.query.coverId);
 
     const store = req.app.get('store');
-    const route = await quoteEngine(store, productId, amount, period, coverAsset);
+    const route = await quoteEngine(store, productId, amount, period, coverAsset, coverId);
 
     if (!route) {
       return res.status(400).send({ error: 'Invalid Product Id', response: null });

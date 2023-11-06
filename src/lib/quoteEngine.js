@@ -1,7 +1,7 @@
 const { BigNumber, ethers } = require('ethers');
 const { calculateTrancheId, divCeil } = require('./helpers');
 const { selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
-
+const { fetchLastSegmentAllocations } = require('./chainApi');
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
 
@@ -74,7 +74,8 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
  * @param useFixedPrice
  * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
-const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixedPrice) => {
+const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixedPrice, currentPoolAllocations) => {
+
   // set unitSize to be a minimum of 1.
   const unitSize = coverAmount.div(UNIT_DIVISOR).gt(minUnitSize) ? coverAmount.div(UNIT_DIVISOR) : minUnitSize;
 
@@ -102,6 +103,12 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixe
         // can't allocate unit to pool
         continue;
       }
+
+      const currentPoolAllocation = currentPoolAllocations[pool.poolId];
+
+      const newPoolAllocation = allocations[lowestCostPoolId].add(amountToAllocate);
+
+      // const amountToAllocate
 
       const premium = useFixedPrice
         ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
@@ -132,7 +139,7 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixe
   return allocations;
 };
 
-const quoteEngine = (store, productId, amount, period, coverAsset) => {
+const quoteEngine = async (store, productId, amount, period, coverAsset, coverId) => {
   const product = selectProduct(store, productId);
 
   if (!product) {
@@ -145,6 +152,18 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
         isDeprecated: true,
       },
     };
+  }
+
+  console.log({
+    coverId
+  })
+
+  let lastSegmentAllocations = [];
+  if (coverId !== undefined) {
+    console.log({
+      insideCoverId: coverId,
+    })
+    lastSegmentAllocations = await fetchLastSegmentAllocations(coverId);
   }
 
   const productPools = selectProductPools(store, productId);

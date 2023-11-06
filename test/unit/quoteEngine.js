@@ -15,12 +15,12 @@ describe('Quote Engine tests', () => {
     sinon.restore();
   });
 
-  it('should return quote in ETH for product 1 for 1 ETH for minimal cover period', () => {
+  it('should return quote in ETH for product 1 for 1 ETH for minimal cover period', async () => {
     sinon.stub(store, 'getState').callsFake(() => mockStore);
     const productId = 1;
     const amount = parseEther('1');
 
-    const [quote] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 0);
+    const [quote] = await quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 0);
 
     expect(quote.poolId).to.be.equal(1);
     expect(quote.premiumInNxm.toString()).to.be.equal('159912328767123287');
@@ -103,5 +103,21 @@ describe('Quote Engine tests', () => {
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
     expect(quote).to.be.equal(null);
+  });
+
+  it('should return quote in ETH for product 1 for 2 ETH for minimal cover period for an existing cover with 1 allocation', async () => {
+    sinon.stub(store, 'getState').callsFake(() => mockStore);
+    const productId = 1;
+    const amount = parseEther('1');
+
+    const coverId = Number(0);
+
+    const [quote] = await quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 0, coverId);
+
+    expect(quote.poolId).to.be.equal(1);
+    expect(quote.premiumInNxm.toString()).to.be.equal('159912328767123287');
+    expect(quote.premiumInAsset.toString()).to.be.equal('1643905184916703');
+    expect(quote.coverAmountInNxm.toString()).to.be.equal('97280000000000000000');
+    expect(quote.coverAmountInAsset.toString()).to.be.equal('1000042320824328192');
   });
 });

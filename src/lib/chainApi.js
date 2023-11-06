@@ -51,6 +51,12 @@ const createChainApi = async contracts => {
     });
   };
 
+  const fetchLastSegmentAllocations = async (coverId) => {
+    const coverSegmentsCount = await cover.coverSegmentsCount(coverId);
+    const lastSegmentAllocations = await cover.coverSegmentAllocations(coverId, coverSegmentsCount.sub(1));
+    return lastSegmentAllocations;
+  }
+
   const fetchPoolProduct = async (productId, poolId, globalCapacityRatio, capacityReductionRatio) => {
     const stakingPool = contracts('StakingPool', poolId);
     console.log('Fetching allocations for product', productId, 'in pool', poolId, 'at address', stakingPool.address);
@@ -93,6 +99,7 @@ const createChainApi = async contracts => {
     fetchProductCount,
     fetchPoolProduct,
     fetchTokenPriceInAsset,
+    fetchLastSegmentAllocations
   };
 };
 
