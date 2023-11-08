@@ -161,8 +161,7 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
   })
 
   const cover = selectCover(store, coverId);
-  const lastSegmentAllocations = cover ? cover.segments[cover.segments.length - 1] : [];
-
+  const lastSegmentAllocations = cover ? cover.lastSegmentAllocations : {};
 
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
@@ -216,6 +215,7 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
     poolsData,
     minUnitSizeInNxm,
     product.useFixedPrice,
+    lastSegmentAllocations
   );
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {

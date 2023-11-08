@@ -48,7 +48,8 @@ module.exports = async (store, chainApi, eventsApi) => {
 
     const coverIds = [];
 
-    for (let i = 0; i < coverCount.toNumber(); i++) {
+    // first cover ID is 1
+    for (let i = 1; i < coverCount.toNumber(); i++) {
       coverIds.push(i);
     }
 

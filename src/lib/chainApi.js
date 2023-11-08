@@ -55,6 +55,14 @@ const createChainApi = async contracts => {
   const fetchCovers = async (coverIds) => {
 
     const covers = await coverViewer.getCovers(coverIds);
+
+    for (let i = 0; i < covers.length; i++) {
+      const cover = covers[i];
+
+      // get last segment allocations
+      const lastSegmentAllocations = await cover.coverSegmentAllocations(cover.coverId, cover.segments.length - 1);
+      cover.lastSegmentAllocations = lastSegmentAllocations;
+    }
     return covers;
   }
 
@@ -64,7 +72,8 @@ const createChainApi = async contracts => {
   }
 
   function fetchCoverCount = async () => {
-    return await cover.coverDataCount();
+    const coverDataCount = await cover.coverDataCount();
+    return coverDataCount;
   }
 
   const fetchPoolProduct = async (productId, poolId, globalCapacityRatio, capacityReductionRatio) => {
