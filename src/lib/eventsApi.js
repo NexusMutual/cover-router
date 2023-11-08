@@ -86,6 +86,7 @@ module.exports = async (provider, contracts) => {
   cover.on('CoverEdited', (coverId, productId) => {
     console.log(`Event: Cover ${coverId} for product ${productId} edited`);
     emitter.emit('product:change', productId);
+    emitter.emit('cover:change', coverId);
   });
 
   return {

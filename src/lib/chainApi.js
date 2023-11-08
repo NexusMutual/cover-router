@@ -8,6 +8,7 @@ const createChainApi = async contracts => {
   const stakingPoolFactory = contracts('StakingPoolFactory');
   const stakingProducts = contracts('StakingProducts');
   const stakingViewer = contracts('StakingViewer');
+  const coverViewer = contracts('CoverViewer');
 
   const fetchTokenPriceInAsset = async assetId => {
     return assetId === 255 ? WeiPerEther : pool.getTokenPriceInAsset(assetId);
@@ -51,6 +52,21 @@ const createChainApi = async contracts => {
     });
   };
 
+  const fetchCovers = async (coverIds) => {
+
+    const covers = await coverViewer.getCovers(coverIds);
+    return covers;
+  }
+
+  const fetchCover = async (coverId) => {
+    const cover = await coverViewer.getCovers([coverId]);
+    return cover;
+  }
+
+  function fetchCoverCount = async () => {
+    return await cover.coverDataCount();
+  }
+
   const fetchLastSegmentAllocations = async (coverId) => {
     const coverSegmentsCount = await cover.coverSegmentsCount(coverId);
     const lastSegmentAllocations = await cover.coverSegmentAllocations(coverId, coverSegmentsCount.sub(1));
@@ -90,6 +106,9 @@ const createChainApi = async contracts => {
   };
 
   return {
+    fetchCovers,
+    fetchCover,
+    fetchCoverCount,
     fetchProducts,
     fetchProduct,
     fetchProductPoolsIds,

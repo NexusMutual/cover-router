@@ -6,6 +6,7 @@ const {
   SET_PRODUCT,
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
+  SET_COVER
 } = require('../store/actions');
 
 module.exports = async (store, chainApi, eventsApi) => {
@@ -33,6 +34,31 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.log(`Update: product data for product with id ${productId}`);
   };
 
+  const updateCover = async coverId => {
+
+    const product = await chainApi.fetchCover(coverId);
+    store.dispatch({ type: SET_COVER, payload: { ...product, id: coverId } });
+
+    console.log(`Update: cover data for cover with id ${coverId}`);
+  };
+
+  const updateCovers = async () => {
+
+    const coverCount = await chainApi.fetchCoverCount();
+
+    const coverIds = [];
+
+    for (let i = 0; i < coverCount.toNumber(); i++) {
+      coverIds.push(i);
+    }
+
+    const covers = chainApi.fetchCovers(coverIds);
+
+    for (let i = 0; i < covers.length; i++) {
+      store.dispatch({ type: SET_COVER, payload: { ...covers[i], id: coverIds[i] } });
+    }
+  };
+
   async function updatePool(poolId) {
     const { globalCapacityRatio, products } = store.getState();
     const productIds = await chainApi.fetchPoolProductIds(poolId);
@@ -58,6 +84,8 @@ module.exports = async (store, chainApi, eventsApi) => {
     const globalCapacityRatio = await chainApi.fetchGlobalCapacityRatio();
     store.dispatch({ type: SET_GLOBAL_CAPACITY_RATIO, payload: globalCapacityRatio });
 
+    await updateCovers();
+
     const productCount = await chainApi.fetchProductCount();
 
     const productIds = Array.from({ length: productCount }, (_, i) => i);
@@ -82,6 +110,7 @@ module.exports = async (store, chainApi, eventsApi) => {
 
   eventsApi.on('pool:change', updatePool);
   eventsApi.on('product:change', updateProduct);
+  eventsApi.on('cover:change', updateCover);
   eventsApi.on('tranche:change', updateAll);
   eventsApi.on('bucket:change', updateAll);
   eventsApi.on('block', updateAssetRates);
