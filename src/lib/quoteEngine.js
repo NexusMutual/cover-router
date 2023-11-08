@@ -1,7 +1,6 @@
 const { BigNumber, ethers } = require('ethers');
 const { calculateTrancheId, divCeil } = require('./helpers');
-const { selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
-const { fetchLastSegmentAllocations } = require('./chainApi');
+const { selectAssetRate, selectProductPools, selectProduct, selectCover } = require('../store/selectors');
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
 
@@ -104,11 +103,14 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixe
         continue;
       }
 
-      const currentPoolAllocation = currentPoolAllocations[pool.poolId];
+      if (currentPoolAllocations.length > 0) {
 
-      const newPoolAllocation = allocations[lowestCostPoolId].add(amountToAllocate);
+        const currentPoolAllocation = currentPoolAllocations[pool.poolId];
 
-      // const amountToAllocate
+        const newPoolAllocation = allocations[lowestCostPoolId].add(amountToAllocate);
+
+        // const amountToAllocate
+      }
 
       const premium = useFixedPrice
         ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
@@ -158,13 +160,9 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
     coverId
   })
 
-  let lastSegmentAllocations = [];
-  if (coverId !== undefined) {
-    console.log({
-      insideCoverId: coverId,
-    })
-    lastSegmentAllocations = await fetchLastSegmentAllocations(coverId);
-  }
+  const cover = selectCover(store, coverId);
+  const lastSegmentAllocations = cover ? cover.segments[cover.segments.length - 1] : [];
+
 
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
