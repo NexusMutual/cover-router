@@ -54,14 +54,13 @@ const createChainApi = async contracts => {
 
   const fetchCovers = async (coverIds) => {
 
-    const covers = await coverViewer.getCovers(coverIds);
+    const { covers, lastSegmentAllocations } = await coverViewer.getCoversWithLastSegmentAllocations(coverIds);
 
+    // lastSegmentAllocations is a mapping from poolId to aLlocation
+    cover.lastSegmentAllocations = {};
     for (let i = 0; i < covers.length; i++) {
       const cover = covers[i];
-
-      // get last segment allocations
-      const lastSegmentAllocations = await cover.coverSegmentAllocations(cover.coverId, cover.segments.length - 1);
-      cover.lastSegmentAllocations = lastSegmentAllocations;
+      cover.lastSegmentAllocations[lastSegmentAllocations[i].poolId] = lastSegmentAllocations[i];
     }
     return covers;
   }
@@ -77,7 +76,7 @@ const createChainApi = async contracts => {
   }
 
   const fetchPoolProduct = async (productId, poolId, globalCapacityRatio, capacityReductionRatio) => {
-    const stakingPool = contracts('StakingPool', poolId);
+    consst stakingPool = contracts('StakingPool', poolId);
     console.log('Fetching allocations for product', productId, 'in pool', poolId, 'at address', stakingPool.address);
 
     // pool allocations and capacities
