@@ -94,6 +94,12 @@ const calculatePreviousCoverAmountsRepriced = async (
   return previousAllocationAmountsRepriced;
 }
 
+function getPremium(amountToAllocate, pool, poolCapacityUsed, useFixedPrice) {
+  const premium = useFixedPrice
+    ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
+    : calculatePremiumPerYear(amountToAllocate, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity);
+}
+
 /**
  * This function allocates each unit to the cheapest opportunity available for that unit
  * at that time given the allocations at the previous points.
@@ -116,7 +122,7 @@ const calculatePreviousCoverAmountsRepriced = async (
  * @param pools
  * @param minUnitSize
  * @param useFixedPrice
- * @param assetRate
+ * @param nxmPriceInCoverAsset
  * @param lastSegmentAllocations
  * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
@@ -125,7 +131,8 @@ const calculateOptimalPoolAllocation = (
   pools,
   minUnitSize,
   useFixedPrice,
-  assetRate,
+  nxmPriceInCoverAsset,
+  period,
   lastSegmentAllocations,
   previousSegmentAmount
   ) => {
@@ -151,7 +158,7 @@ const calculateOptimalPoolAllocation = (
     previousCoverAmountsRepriced = calculatePreviousCoverAmountsRepriced(
       previousSegmentAmount,
       lastSegmentAllocations,
-      assetRate
+      nxmPriceInCoverAsset
     );
   }
 
@@ -177,18 +184,6 @@ const calculateOptimalPoolAllocation = (
 
         // const amountToAllocate
       }
-
-      // const premium = useFixedPrice
-      //   ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
-      //   : calculatePremiumPerYear(amountToAllocate, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity);
-
-      const premium = calculatePremium(
-        amountToAllocate,
-        pool.basePrice,
-        poolCapacityUsed[pool.poolId],
-        pool.totalCapacity,
-        period,
-        );
 
       if (premium.lt(lowestCostPerPool)) {
         lowestCostPerPool = premium;
@@ -238,7 +233,7 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
   const lastSegmentAllocations = cover ? cover.lastSegmentAllocations : {};
 
   const productPools = selectProductPools(store, productId);
-  const assetRate = selectAssetRate(store, coverAsset);
+  const nxmPriceInCoverAsset = selectAssetRate(store, coverAsset);
   const assetRates = store.getState().assetRates;
 
   const now = BigNumber.from(Date.now()).div(1000);
@@ -249,7 +244,7 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
   const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
 
   // TODO: use asset decimals instead of generic 18 decimals
-  const coverAmountInNxm = amount.mul(WeiPerEther).div(assetRate);
+  const coverAmountInNxm = amount.mul(WeiPerEther).div(nxmPriceInCoverAsset);
 
   // rounding up to nearest allocation unit
   const amountToAllocate = divCeil(coverAmountInNxm, NXM_PER_ALLOCATION_UNIT).mul(NXM_PER_ALLOCATION_UNIT);
@@ -290,8 +285,9 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
     amountToAllocate,
     poolsData,
     minUnitSizeInNxm,
+    period,
     product.useFixedPrice,
-    assetRate,
+    nxmPriceInCoverAsset,
     previousSegmentAmount,
     lastSegmentAllocations
   );
@@ -310,7 +306,7 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
 
     // TODO: use asset decimals instead of generic 18 decimals
-    const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);
+    const premiumInAsset = premiumInNxm.mul(nxmPriceInCoverAsset).div(WeiPerEther);
 
     const capacityInNxm = pool.totalCapacity.sub(pool.initialCapacityUsed);
     const capacity = Object.entries(assetRates).map(([assetId, rate]) => ({
@@ -323,7 +319,7 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
     console.log('Total pool capacity    :', formatEther(pool.totalCapacity), 'nxm');
     console.log('Pool capacity          :', formatEther(capacityInNxm), 'nxm');
 
-    const coverAmountInAsset = amountToAllocate.mul(assetRate).div(WeiPerEther);
+    const coverAmountInAsset = amountToAllocate.mul(nxmPriceInCoverAsset).div(WeiPerEther);
 
     return {
       poolId,
