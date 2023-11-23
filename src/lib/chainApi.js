@@ -10,7 +10,7 @@ const createChainApi = async contracts => {
   const stakingViewer = contracts('StakingViewer');
 
   const fetchTokenPriceInAsset = async assetId => {
-    return assetId === 255 ? WeiPerEther : pool.getTokenPriceInAsset(assetId);
+    return assetId === 255 ? WeiPerEther : pool.getInternalTokenPriceInAsset(assetId);
   };
 
   const fetchGlobalCapacityRatio = async () => cover.globalCapacityRatio();
