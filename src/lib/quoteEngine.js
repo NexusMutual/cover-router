@@ -154,7 +154,7 @@ function getPremium(
  * @param useFixedPrice
  * @param nxmPriceInCoverAsset
  * @param period
- * @param lastSegment
+ * @param lastSegment is undefined if it's not an edit
  * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
 const calculateOptimalPoolAllocation = (
@@ -188,7 +188,7 @@ const calculateOptimalPoolAllocation = (
   // if this is an edit
   if (lastSegment) {
 
-    const now  = new Date().getTime() / 1000;
+    const now  = BigNumber.from(Math.round(new Date().getTime() / 1000));
     const remainingPeriod = lastSegment.start.add(lastSegment.period).sub(now);
     period = remainingPeriod.add(period);
     // when editing a cover the new period is the remaining period + the requested period

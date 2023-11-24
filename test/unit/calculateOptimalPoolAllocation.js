@@ -701,4 +701,90 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(optimalAllocations[pool6.poolId]).to.be.equal(undefined);
     expect(optimalBruteForceAllocation[pool6.poolId]).to.be.equal(undefined);
   });
+
+  it('returns optimal pool allocation for 2 pools with 2 previous allocations', () => {
+    const pool1 = {
+      basePrice: BigNumber.from('201'),
+      initialCapacityUsed: parseEther('8990'),
+      totalCapacity: parseEther('10000'),
+    };
+
+    const pool2 = {
+      basePrice: BigNumber.from('200'),
+      initialCapacityUsed: parseEther('8990'),
+      totalCapacity: parseEther('10000'),
+    };
+
+    let i = INITIAL_POOL_INDEX;
+    const pools = [pool1, pool2];
+    pools.forEach(pool => {
+      pool.poolId = i++;
+    });
+
+    const amount = parseEther('20');
+    const period = BigNumber.from(30 * 24 * 3600);
+
+    const lastSegment = {
+      amount: parseEther('10'),
+      period: BigNumber.from(30 * 24 * 3600),
+      start: BigNumber.from(Math.round(new Date().getTime() / 1000)),
+      allocations: [parseEther('5'), parseEther('5')]
+    }
+
+    const optimalAllocations = calculateOptimalPoolAllocation(
+      amount,
+      pools,
+      MIN_UNIT_SIZE,
+      false,
+      NXM_PRICE_IN_COVER_ASSET,
+      period,
+      lastSegment
+    );
+
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('10').toString());
+  });
+
+  it('returns optimal pool allocation for 2 pools with 1 previous allocation', () => {
+    const pool1 = {
+      basePrice: BigNumber.from('201'),
+      initialCapacityUsed: parseEther('8990'),
+      totalCapacity: parseEther('10000'),
+    };
+
+    const pool2 = {
+      basePrice: BigNumber.from('200'),
+      initialCapacityUsed: parseEther('8990'),
+      totalCapacity: parseEther('10000'),
+    };
+
+    let i = INITIAL_POOL_INDEX;
+    const pools = [pool1, pool2];
+    pools.forEach(pool => {
+      pool.poolId = i++;
+    });
+
+    const amount = parseEther('20');
+    const period = BigNumber.from(30 * 24 * 3600);
+
+    const lastSegment = {
+      amount: parseEther('10'),
+      period: BigNumber.from(30 * 24 * 3600),
+      start: BigNumber.from(Math.round(new Date().getTime() / 1000)),
+      allocations: [parseEther('10')]
+    }
+
+    const optimalAllocations = calculateOptimalPoolAllocation(
+      amount,
+      pools,
+      MIN_UNIT_SIZE,
+      false,
+      NXM_PRICE_IN_COVER_ASSET,
+      period,
+      lastSegment
+    );
+
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('10').toString());
+  });
 });
