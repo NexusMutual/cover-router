@@ -60,7 +60,11 @@ const createChainApi = async contracts => {
     cover.lastSegmentAllocations = {};
     for (let i = 0; i < covers.length; i++) {
       const cover = covers[i];
-      cover.lastSegmentAllocations[lastSegmentAllocations[i].poolId] = lastSegmentAllocations[i];
+
+      // store last segment allocations as a mapping from poolId -> allocation
+      for (const lastSegmentAllocation of lastSegmentAllocations) {
+        cover.lastSegmentAllocations[lastSegmentAllocation.poolId] = lastSegmentAllocation;
+      }
     }
     return covers;
   }

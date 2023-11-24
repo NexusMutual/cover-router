@@ -50,7 +50,7 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
   return basePremium.add(surgePremium);
 };
 
-const calculatePremium = async (coverAmount, basePrice, initialCapacityUsed, totalCapacity, period, useFixedPrice) => {
+const calculatePremium = (coverAmount, basePrice, initialCapacityUsed, totalCapacity, period, useFixedPrice) => {
 
   const premiumPerYear = useFixedPrice
     ? calculateFixedPricePremiumPerYear(coverAmount, basePrice)
@@ -68,13 +68,13 @@ const getNXMForAssetAmount = (amountInCoverAsset, nxmPriceInCoverAsset) => {
   return coverNXMAmount;
 }
 
-const calculatePreviousCoverAmountsRepriced = async (
+const calculatePreviousAllocationsRepriced = async (
   previousSegmentAmount,
   previousSegmentAllocations,
   nxmPriceInCoverAsset) => {
 
   let previousTotalCoverAmountInNXM = BigNumber.from(0);
-  for (const allocation of previousSegmentAllocations) {
+  for (const allocation of Object.values(previousSegmentAllocations)) {
     previousTotalCoverAmountInNXM = previousTotalCoverAmountInNXM.add(allocation.coverAmountInNXM);
   }
 
@@ -82,22 +82,52 @@ const calculatePreviousCoverAmountsRepriced = async (
     previousSegmentAmount, nxmPriceInCoverAsset
   );
 
-  const previousAllocationAmountsRepriced = [];
+  const previousAllocationsRepriced = {};
 
-  for (const allocation of previousSegmentAllocations) {
-    const previousAllocationAmountRepriced =
+  for (const poolId of Object.keys(previousSegmentAllocations)) {
+
+    const allocation = previousSegmentAllocations[poolId];
+    const previousAllocationRepriced =
       allocation.coverAmountInNXM.mul(previousCoverAmountInNXMRepriced).div(previousTotalCoverAmountInNXM);
 
-    previousAllocationAmountsRepriced.push(previousAllocationAmountRepriced);
+    previousAllocationsRepriced[poolId] = previousAllocationRepriced;
   }
 
-  return previousAllocationAmountsRepriced;
+  return previousAllocationsRepriced;
 }
 
-function getPremium(amountToAllocate, pool, poolCapacityUsed, useFixedPrice) {
-  const premium = useFixedPrice
-    ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
-    : calculatePremiumPerYear(amountToAllocate, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity);
+function getPremium(
+  amountToAllocate,
+  period,
+  extraPeriod,
+  basePrice,
+  initialCapacityUsed,
+  totalCapacity,
+  previousAllocationAmountRepriced,
+  useFixedPrice) {
+  const totalPremium = calculatePremium(
+    amountToAllocate,
+    basePrice,
+    initialCapacityUsed,
+    totalCapacity,
+    period,
+    useFixedPrice,
+  );
+
+  const remainingPeriod = period.sub(extraPeriod);
+
+  const extraAmount = amountToAllocate.gt(previousAllocationAmountRepriced)
+    ? amountToAllocate.sub(previousAllocationAmountRepriced)
+    : 0;
+
+  const premium = totalPremium
+    .mul(extraAmount)
+    .mul(remainingPeriod)
+    .div(period)
+    .div(amountToAllocate)
+    .add(totalPremium.mul(extraPeriod).div(period));
+
+  return premium;
 }
 
 /**
@@ -123,7 +153,8 @@ function getPremium(amountToAllocate, pool, poolCapacityUsed, useFixedPrice) {
  * @param minUnitSize
  * @param useFixedPrice
  * @param nxmPriceInCoverAsset
- * @param lastSegmentAllocations
+ * @param period
+ * @param lastSegment
  * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
 const calculateOptimalPoolAllocation = (
@@ -133,8 +164,7 @@ const calculateOptimalPoolAllocation = (
   useFixedPrice,
   nxmPriceInCoverAsset,
   period,
-  lastSegmentAllocations,
-  previousSegmentAmount
+  lastSegment
   ) => {
 
   // set unitSize to be a minimum of 1.
@@ -148,16 +178,25 @@ const calculateOptimalPoolAllocation = (
   const poolCapacityUsed = {};
 
   for (const pool of pools) {
+
     poolCapacityUsed[pool.poolId] = pool.initialCapacityUsed;
   }
 
-  let previousCoverAmountsRepriced = [];
+  let previousAllocationsRepriced = {};
+  let extraPeriod = BigNumber.from(0);
 
-  if (Object.keys(lastSegmentAllocations).length > 0) {
+  // if this is an edit
+  if (lastSegment) {
 
-    previousCoverAmountsRepriced = calculatePreviousCoverAmountsRepriced(
-      previousSegmentAmount,
-      lastSegmentAllocations,
+    const now  = new Date().getTime() / 1000;
+    const remainingPeriod = lastSegment.start.add(lastSegment.period).sub(now);
+    period = remainingPeriod.add(period);
+    // when editing a cover the new period is the remaining period + the requested period
+    extraPeriod = period;
+
+    previousAllocationsRepriced = calculatePreviousAllocationsRepriced(
+      lastSegment.amount,
+      lastSegment.allocations,
       nxmPriceInCoverAsset
     );
   }
@@ -176,14 +215,16 @@ const calculateOptimalPoolAllocation = (
         continue;
       }
 
-      if (lastSegmentAllocations.length > 0) {
-
-        const currentPoolAllocation = lastSegmentAllocations[pool.poolId];
-
-        const newPoolAllocation = allocations[lowestCostPoolId].add(amountToAllocate);
-
-        // const amountToAllocate
-      }
+      const premium = getPremium(
+        amountToAllocate,
+        period,
+        extraPeriod,
+        pool.basePrice,
+        poolCapacityUsed[pool.poolId],
+        pool.totalCapacity,
+        previousAllocationsRepriced[pool.poolId] || BigNumber.from(0),
+        useFixedPrice
+      );
 
       if (premium.lt(lowestCostPerPool)) {
         lowestCostPerPool = premium;
@@ -224,10 +265,6 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
       },
     };
   }
-
-  console.log({
-    coverId
-  })
 
   const cover = selectCover(store, coverId);
   const lastSegmentAllocations = cover ? cover.lastSegmentAllocations : {};
@@ -279,17 +316,16 @@ const quoteEngine = async (store, productId, amount, period, coverAsset, coverId
   const daiRate = assetRates[assets.DAI];
   const minUnitSizeInNxm = MIN_UNIT_SIZE_DAI.mul(WeiPerEther).div(daiRate);
 
-  const previousSegmentAmount = cover.segments[cover.segments.length].amount;
+  const lastSegment = cover ? { ...cover.segments[cover.segments.length], allocations: lastSegmentAllocations } : {};
 
   const allocations = calculateOptimalPoolAllocation(
     amountToAllocate,
     poolsData,
     minUnitSizeInNxm,
-    period,
     product.useFixedPrice,
     nxmPriceInCoverAsset,
-    previousSegmentAmount,
-    lastSegmentAllocations
+    period,
+    lastSegment
   );
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
@@ -340,5 +376,5 @@ module.exports = {
   calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
   calculateOptimalPoolAllocation,
-  calculatePreviousCoverAmountsRepriced
+  calculatePreviousCoverAmountsRepriced: calculatePreviousAllocationsRepriced
 };
