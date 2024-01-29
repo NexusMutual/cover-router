@@ -1,7 +1,7 @@
 const express = require('express');
 const { BigNumber, ethers } = require('ethers');
 const { quoteEngine } = require('../lib/quoteEngine');
-const { asyncRoute } = require('../lib/helpers');
+const { asyncRoute, calculatePremiumWithCommissionAndSlippage } = require('../lib/helpers');
 const { TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
 
 const router = express.Router();
@@ -14,6 +14,8 @@ router.get(
     const amount = BigNumber.from(req.query.amount);
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
+    const commission = BigNumber.from(req.query.commission || 0);
+    const slipage = BigNumber.from(req.query.slippage || 0);
 
     const store = req.app.get('store');
     const route = await quoteEngine(store, productId, amount, period, coverAsset);
@@ -62,9 +64,9 @@ router.get(
     const response = {
       quote: {
         totalCoverAmountInAsset: quote.totalCoverAmountInAsset.toString(),
-        annualPrice: annualPrice.toString(),
-        premiumInNXM: quote.premiumInNXM.toString(),
-        premiumInAsset: quote.premiumInAsset.toString(),
+        annualPrice: calculatePremiumWithCommissionAndSlippage(annualPrice, commission, slipage).toString(),
+        premiumInNXM: calculatePremiumWithCommissionAndSlippage(quote.premiumInNXM, commission, slipage).toString(),
+        premiumInAsset: calculatePremiumWithCommissionAndSlippage(quote.premiumInAsset, commission, slipage).toString(),
         poolAllocationRequests: quote.poolAllocationRequests,
       },
       capacities: quote.capacities.map(({ poolId, capacity }) => ({

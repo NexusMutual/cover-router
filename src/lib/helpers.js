@@ -1,4 +1,4 @@
-const { TRANCHE_DURATION, BUCKET_DURATION } = require('./constants');
+const { TRANCHE_DURATION, BUCKET_DURATION, BUY_COVER_PRICE_DENOMINATOR } = require('./constants');
 
 const bnMax = (a, b) => (a.gt(b) ? a : b);
 
@@ -27,6 +27,13 @@ const promiseAllInBatches = async (task, items, concurrency) => {
   return results;
 };
 
+const calculatePremiumWithCommissionAndSlippage = (premium, commission, slippage) => {
+  if (commission.isZero() && slippage.isZero()) {
+    return premium;
+  }
+  return premium.mul(BUY_COVER_PRICE_DENOMINATOR).div(BUY_COVER_PRICE_DENOMINATOR.sub(commission).sub(slippage));
+};
+
 module.exports = {
   bnMax,
   bnMin,
@@ -35,4 +42,5 @@ module.exports = {
   calculateBucketId,
   asyncRoute,
   promiseAllInBatches,
+  calculatePremiumWithCommissionAndSlippage,
 };

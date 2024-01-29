@@ -7,7 +7,7 @@ const {
 } = require('ethers');
 
 const initApp = require('../../mocks/server');
-const { quote } = require('../responses');
+const { quote, quoteWithCommissionAndSlippage } = require('../responses');
 
 describe('GET /quote', async () => {
   let server;
@@ -31,6 +31,23 @@ describe('GET /quote', async () => {
     expect(response).to.be.deep.equal(quote);
   });
 
+  it('should successfully get a quote with commission and slippage', async function () {
+    const { body: response } = await server
+      .get('/v2/quote')
+      .query({
+        productId: 0,
+        amount: parseEther('1'),
+        period: 365,
+        coverAsset: 0,
+        paymentAsset: 0,
+        commission: 1500,
+        slippage: 100,
+      })
+      .expect('Content-Type', /json/)
+      .expect(200);
+    expect(response).to.be.deep.equal(quoteWithCommissionAndSlippage);
+  });
+
   it('should fail get a quote for cover over the capacity', async function () {
     const {
       body: { error },
@@ -48,7 +65,7 @@ describe('GET /quote', async () => {
     expect(error).to.be.equal('Not enough capacity for the cover amount');
   });
 
-  it('should successfully get a quote', async function () {
+  it('should fail to get a quote if product id is invalid', async function () {
     const {
       body: { error },
     } = await server

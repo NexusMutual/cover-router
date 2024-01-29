@@ -93,7 +93,43 @@ const quote = {
   ],
 };
 
+const quoteWithCommissionAndSlippage = {
+  quote: {
+    annualPrice: '332',
+    premiumInNXM: '3236128532713898566',
+    premiumInAsset: '33267531746926757',
+    totalCoverAmountInAsset: '1000042320824328192',
+    poolAllocationRequests: [
+      {
+        poolId: '1',
+        coverAmountInAsset: '1000042320824328192',
+        skip: false,
+      },
+    ],
+  },
+  capacities: [
+    {
+      poolId: '1',
+      capacity: [
+        {
+          assetId: '0',
+          amount: '1011555965965397760',
+        },
+        {
+          assetId: '1',
+          amount: '2826484798959880487553',
+        },
+        {
+          assetId: '255',
+          amount: '98400000000000000000',
+        },
+      ],
+    },
+  ],
+};
+
 module.exports = {
   capacities,
   quote,
+  quoteWithCommissionAndSlippage,
 };
