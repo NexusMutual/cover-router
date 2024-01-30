@@ -55,7 +55,7 @@ router.get(
       };
     }, initialQuote);
 
-    const annualPrice = quote.premiumInAsset
+    const annualPrice = calculatePremiumWithCommissionAndSlippage(quote.premiumInAsset, commission, slipage)
       .mul(365 * 24 * 3600)
       .mul(TARGET_PRICE_DENOMINATOR)
       .div(period)
@@ -64,7 +64,7 @@ router.get(
     const response = {
       quote: {
         totalCoverAmountInAsset: quote.totalCoverAmountInAsset.toString(),
-        annualPrice: calculatePremiumWithCommissionAndSlippage(annualPrice, commission, slipage).toString(),
+        annualPrice: annualPrice.toString(),
         premiumInNXM: calculatePremiumWithCommissionAndSlippage(quote.premiumInNXM, commission, slipage).toString(),
         premiumInAsset: calculatePremiumWithCommissionAndSlippage(quote.premiumInAsset, commission, slipage).toString(),
         poolAllocationRequests: quote.poolAllocationRequests,
