@@ -15,7 +15,7 @@ router.get(
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
     const commission = BigNumber.from(req.query.commission || 0);
-    const slipage = BigNumber.from(req.query.slippage || 0);
+    const slippage = BigNumber.from(req.query.slippage || 0);
 
     const store = req.app.get('store');
     const route = await quoteEngine(store, productId, amount, period, coverAsset);
@@ -55,7 +55,7 @@ router.get(
       };
     }, initialQuote);
 
-    const annualPrice = calculatePremiumWithCommissionAndSlippage(quote.premiumInAsset, commission, slipage)
+    const annualPrice = calculatePremiumWithCommissionAndSlippage(quote.premiumInAsset, commission, slippage)
       .mul(365 * 24 * 3600)
       .mul(TARGET_PRICE_DENOMINATOR)
       .div(period)
@@ -65,8 +65,12 @@ router.get(
       quote: {
         totalCoverAmountInAsset: quote.totalCoverAmountInAsset.toString(),
         annualPrice: annualPrice.toString(),
-        premiumInNXM: calculatePremiumWithCommissionAndSlippage(quote.premiumInNXM, commission, slipage).toString(),
-        premiumInAsset: calculatePremiumWithCommissionAndSlippage(quote.premiumInAsset, commission, slipage).toString(),
+        premiumInNXM: calculatePremiumWithCommissionAndSlippage(quote.premiumInNXM, commission, slippage).toString(),
+        premiumInAsset: calculatePremiumWithCommissionAndSlippage(
+          quote.premiumInAsset,
+          commission,
+          slippage,
+        ).toString(),
         poolAllocationRequests: quote.poolAllocationRequests,
       },
       capacities: quote.capacities.map(({ poolId, capacity }) => ({
