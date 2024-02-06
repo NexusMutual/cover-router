@@ -85,4 +85,9 @@ module.exports = async (store, chainApi, eventsApi) => {
   eventsApi.on('tranche:change', updateAll);
   eventsApi.on('bucket:change', updateAll);
   eventsApi.on('block', updateAssetRates);
+
+  return {
+    updateAll,
+    updateAssetRates,
+  };
 };
