@@ -14,6 +14,7 @@ const createSynchronizer = require('./lib/synchronizer');
 
 const capacityRouter = require('./routes/capacity');
 const quoteRouter = require('./routes/quote');
+const reindexRouter = require('./routes/reindex');
 
 const main = async () => {
   // state
@@ -34,7 +35,7 @@ const main = async () => {
   const eventsApi = await createEventsApi(provider, contracts);
 
   // keeps store in-sync with chain data
-  await createSynchronizer(store, chainApi, eventsApi);
+  const synchronizer = await createSynchronizer(store, chainApi, eventsApi);
 
   const app = express();
 
@@ -48,10 +49,12 @@ const main = async () => {
   });
 
   app.set('store', store);
+  app.set('synchronizer', synchronizer);
 
   // initiate routes
   app.use('/v2', capacityRouter);
   app.use('/v2', quoteRouter);
+  app.use('/v2', reindexRouter);
 
   const port = config.get('port');
   app.listen(port).on('listening', () => console.info('Cover Router started on port %d', port));
