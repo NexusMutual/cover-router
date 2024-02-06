@@ -50,7 +50,8 @@ function capacityEngine(store, productIds, time) {
           .reduce((total, free) => total.add(free), Zero);
 
         if (carryOver.lt(0)) {
-          available.add(carryOver);
+          const cappedCarryOver = bnMax(carryOver, available.mul(-1));
+          available.add(cappedCarryOver);
         }
 
         const basePrice = product.useFixedPrice
