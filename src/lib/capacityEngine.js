@@ -36,12 +36,22 @@ function capacityEngine(store, productIds, time) {
         // sum up all allocations to get used capacity
         const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
 
-        // traverse all tranches and sum up available capacity on a per-tranche basis
-        const available = trancheCapacities
-          // allocations may surpass total capacity in some scenarios
-          .map((capacity, index) => bnMax(capacity.sub(allocations[index]), Zero))
+        // traverse all tranches and calculate capacity
+        const availablePerTranche = trancheCapacities.map((capacity, index) => capacity.sub(allocations[index]));
+
+        // sum up available capacity on a per-tranche basis
+        const available = availablePerTranche
           .slice(firstUsableTrancheIndex) // skip unusable
           .reduce((total, free) => total.add(free), Zero);
+
+        // allocations may surpass total capacity in some scenarios
+        const carryOver = availablePerTranche
+          .slice(0, firstUsableTrancheIndex) // check carry over in unused
+          .reduce((total, free) => total.add(free), Zero);
+
+        if (carryOver.lt(0)) {
+          available.add(carryOver);
+        }
 
         const basePrice = product.useFixedPrice
           ? targetPrice
