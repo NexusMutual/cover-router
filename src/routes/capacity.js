@@ -8,11 +8,13 @@ const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();
 
-const formatCapacityResult = ({ productId, capacity, capacityUsed, annualPrice }) => ({
+const formatCapacityResult = ({ productId, capacity, capacityUsed, minAnnualPrice, maxAnnualPrice }) => ({
   productId,
   availableCapacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
   allocatedNxm: capacityUsed.toString(),
-  annualPrice: formatUnits(annualPrice),
+  annualPrice: formatUnits(minAnnualPrice),
+  minAnnualPrice: formatUnits(minAnnualPrice),
+  maxAnnualPrice: formatUnits(maxAnnualPrice),
 });
 
 router.get(
