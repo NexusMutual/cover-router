@@ -40,7 +40,7 @@ function capacityEngine(store, productIds, time) {
         const availablePerTranche = trancheCapacities.map((capacity, index) => capacity.sub(allocations[index]));
 
         // sum up available capacity on a per-tranche basis
-        const available = availablePerTranche
+        let available = availablePerTranche
           .slice(firstUsableTrancheIndex) // skip unusable
           .reduce((total, free) => total.add(free), Zero);
 
@@ -50,8 +50,11 @@ function capacityEngine(store, productIds, time) {
           .reduce((total, free) => total.add(free), Zero);
 
         if (carryOver.lt(0)) {
-          const cappedCarryOver = bnMax(carryOver, available.mul(-1));
-          available.add(cappedCarryOver);
+          available = available.add(carryOver);
+        }
+
+        if (available.lt(0)) {
+          available = Zero;
         }
 
         const basePrice = product.useFixedPrice
