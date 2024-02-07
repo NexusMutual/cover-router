@@ -140,11 +140,8 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   }
 
   if (product.isDeprecated) {
-    return {
-      error: {
-        isDeprecated: true,
-      },
-    };
+    const error = { isDeprecated: true };
+    return { error };
   }
 
   const productPools = selectProductPools(store, productId);
