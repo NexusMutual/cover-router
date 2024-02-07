@@ -1,4 +1,4 @@
-const { TRANCHE_DURATION, BUCKET_DURATION, BUY_COVER_PRICE_DENOMINATOR } = require('./constants');
+const { TRANCHE_DURATION, BUCKET_DURATION, COMMISSION_DENOMINATOR, SLIPPAGE_DENOMINATOR } = require('./constants');
 
 const bnMax = (a, b) => (a.gt(b) ? a : b);
 
@@ -28,10 +28,15 @@ const promiseAllInBatches = async (task, items, concurrency) => {
 };
 
 const calculatePremiumWithCommissionAndSlippage = (premium, commission, slippage) => {
-  if (commission.isZero() && slippage.isZero()) {
-    return premium;
-  }
-  return premium.mul(BUY_COVER_PRICE_DENOMINATOR).div(BUY_COVER_PRICE_DENOMINATOR.sub(commission).sub(slippage));
+  const premiumWithCommission = premium // dummy comment so the linter keeps this on separate lines
+    .mul(COMMISSION_DENOMINATOR)
+    .div(COMMISSION_DENOMINATOR.sub(commission));
+
+  const premiumWithCommissionAndSlippage = premiumWithCommission
+    .mul(SLIPPAGE_DENOMINATOR.add(slippage))
+    .div(SLIPPAGE_DENOMINATOR);
+
+  return premiumWithCommissionAndSlippage;
 };
 
 module.exports = {
