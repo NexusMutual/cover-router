@@ -1,13 +1,11 @@
 const { expect } = require('chai');
 const supertest = require('supertest');
-const {
-  ethers: {
-    utils: { parseEther },
-  },
-} = require('ethers');
+const ethers = require('ethers');
 
 const initApp = require('../../mocks/server');
 const { quote } = require('../responses');
+
+const { parseEther } = ethers.utils;
 
 describe('GET /quote', async () => {
   let server;
