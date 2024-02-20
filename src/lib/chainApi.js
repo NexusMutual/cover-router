@@ -17,8 +17,7 @@ const createChainApi = async contracts => {
 
   const fetchStakingPoolCount = async () => stakingPoolFactory.stakingPoolCount();
 
-  // const fetchProductCount = async () => cover.productsCount();
-  const fetchProductCount = async () => 3;
+  const fetchProductCount = async () => cover.productsCount();
 
   const fetchPoolProductIds = async poolId => {
     const products = await stakingViewer.getPoolProducts(poolId);
