@@ -5,7 +5,7 @@ const { selectAssetRate, selectProductPools, selectProduct } = require('../store
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
 
-const { bnMax } = require('./helpers');
+const { bnMax, bnMin } = require('./helpers');
 
 const {
   NXM_PER_ALLOCATION_UNIT,
@@ -16,7 +16,7 @@ const {
   SURGE_THRESHOLD_RATIO,
   TARGET_PRICE_DENOMINATOR,
   MIN_UNIT_SIZE_DAI,
-  UNIT_DIVISOR,
+  SURGE_CHUNK_DIVISOR,
 } = require('./constants');
 
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
@@ -75,61 +75,119 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
  * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
 const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixedPrice) => {
-  // set unitSize to be a minimum of 1.
-  const unitSize = coverAmount.div(UNIT_DIVISOR).gt(minUnitSize) ? coverAmount.div(UNIT_DIVISOR) : minUnitSize;
-
-  let premium = BigNumber.from(0);
   // Pool Id (number) -> Capacity Amount (BigNumber)
   const allocations = {};
 
-  // Pool Id (number) -> Capacity Amount (BigNumber)
-  const poolCapacityUsed = {};
-
+  // map prices and their capacities
+  const priceMapping = {};
   for (const pool of pools) {
-    poolCapacityUsed[pool.poolId] = pool.initialCapacityUsed;
+    priceMapping[pool.poolId] = calculatePoolPriceAndCapacity(
+      pool.totalCapacity,
+      pool.basePrice,
+      pool.initialCapacityUsed,
+      useFixedPrice,
+    );
   }
 
   let coverAmountLeft = coverAmount;
   while (coverAmountLeft.gt(0)) {
-    const amountToAllocate = coverAmountLeft.gte(unitSize) ? unitSize : coverAmountLeft;
+    // find the cheapest pool
+    const lowestPricePool = Object.entries(priceMapping).reduce(
+      (acc, [poolId, pool]) => {
+        if (acc.chunkBasePrice.gt(pool.chunkBasePrice) && pool.chunk.gt(0)) {
+          return {
+            chunkBasePrice: pool.chunkBasePrice,
+            poolBasePrice: pool.poolBasePrice,
+            chunk: pool.chunk,
+            usedCapacity: pool.usedCapacity,
+            totalCapacity: pool.totalCapacity,
+            poolId,
+          };
+        }
+        return acc;
+      },
+      {
+        chunk: Zero,
+        chunkBasePrice: MaxUint256,
+        poolId: Zero,
+        poolBasePrice: Zero,
+        usedCapacity: Zero,
+        totalCapacity: Zero,
+      },
+    );
 
-    let lowestCostPerPool = MaxUint256;
-    let lowestCostPoolId = 0;
-    for (const pool of pools) {
-      // we advance one unit size at a time
-
-      if (poolCapacityUsed[pool.poolId].add(amountToAllocate).gt(pool.totalCapacity)) {
-        // can't allocate unit to pool
-        continue;
-      }
-
-      const premium = useFixedPrice
-        ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
-        : calculatePremiumPerYear(amountToAllocate, pool.basePrice, poolCapacityUsed[pool.poolId], pool.totalCapacity);
-
-      if (premium.lt(lowestCostPerPool)) {
-        lowestCostPerPool = premium;
-        lowestCostPoolId = pool.poolId;
-      }
-    }
-
-    premium = premium.add(lowestCostPerPool);
-
-    if (lowestCostPoolId === 0) {
+    if (lowestPricePool.chunk.eq(0)) {
       // not enough total capacity available
       return [];
     }
 
-    if (!allocations[lowestCostPoolId]) {
-      allocations[lowestCostPoolId] = BigNumber.from(0);
-    }
-    allocations[lowestCostPoolId] = allocations[lowestCostPoolId].add(amountToAllocate);
-    poolCapacityUsed[lowestCostPoolId] = poolCapacityUsed[lowestCostPoolId].add(amountToAllocate);
+    const allocationAmount = bnMin(lowestPricePool.chunk, coverAmountLeft);
 
-    coverAmountLeft = coverAmountLeft.sub(amountToAllocate);
+    allocations[lowestPricePool.poolId] = allocations[lowestPricePool.poolId]
+      ? allocations[lowestPricePool.poolId].add(allocationAmount)
+      : allocationAmount;
+
+    coverAmountLeft = coverAmountLeft.sub(allocationAmount);
+
+    priceMapping[lowestPricePool.poolId] = calculatePoolPriceAndCapacity(
+      lowestPricePool.totalCapacity,
+      lowestPricePool.poolBasePrice,
+      lowestPricePool.usedCapacity.add(allocationAmount),
+      useFixedPrice,
+    );
   }
 
   return allocations;
+};
+
+const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, useFixedPrice) => {
+  const used = usedCapacity;
+  const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
+  // use 0.01% of total capacity or the remaining capacity, whichever is smaller
+  const chunk = bnMin(totalCapacity.div(SURGE_CHUNK_DIVISOR), totalCapacity.sub(usedCapacity));
+
+  if (totalCapacity.eq(0) || chunk.eq(0)) {
+    return {
+      chunk: Zero,
+      chunkBasePrice: basePrice,
+      poolBasePrice: basePrice,
+      usedCapacity,
+      totalCapacity,
+    };
+  }
+
+  if (used.lt(surgeStartPoint) || useFixedPrice) {
+    return {
+      chunk: useFixedPrice ? totalCapacity.sub(usedCapacity) : surgeStartPoint.sub(used),
+      chunkBasePrice: basePrice,
+      poolBasePrice: basePrice,
+      usedCapacity,
+      totalCapacity,
+    };
+  }
+
+  const amountOnSurgeSkip = used.sub(surgeStartPoint);
+
+  // calculate base premium
+  const basePremium = chunk.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
+
+  // calculate surge premium
+  const amountOnSurge = used.add(chunk).sub(surgeStartPoint);
+  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
+  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
+  const surgePremium = totalSurgePremium.sub(skipSurgePremium);
+
+  // calculate total premium
+  const premium = basePremium.add(surgePremium);
+  const chunkBasePrice = premium.mul(TARGET_PRICE_DENOMINATOR).div(chunk);
+
+  return {
+    chunk,
+    chunkBasePrice,
+    poolBasePrice: basePrice,
+    usedCapacity,
+    totalCapacity,
+  };
 };
 
 const quoteEngine = (store, productId, amount, period, coverAsset) => {

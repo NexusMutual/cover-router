@@ -8,6 +8,7 @@ module.exports = {
   ONE_YEAR: 365 * 24 * 3600,
 
   SURGE_PRICE_RATIO: 2,
+  SURGE_PRICE_DENOMINATOR: 100,
   SURGE_THRESHOLD_RATIO: 90, // 90.00%
   SURGE_THRESHOLD_DENOMINATOR: 100, // 100.00%
 
@@ -35,4 +36,5 @@ module.exports = {
   MIN_UNIT_SIZE_DAI: WeiPerEther.mul(10000), // 10k DAI
 
   UNIT_DIVISOR: 100,
+  SURGE_CHUNK_DIVISOR: 10_000, // 0.01% of total capacity
 };
