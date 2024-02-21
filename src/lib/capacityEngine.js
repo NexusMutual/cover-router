@@ -97,7 +97,9 @@ function capacityEngine(store, productIds, time, period = 365) {
       amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
     }));
 
-    const maxAnnualPrice = WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
+    const maxAnnualPrice = capacityAvailableNXM.isZero()
+      ? Zero
+      : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
 
     capacities.push({
       productId: Number(productId),
