@@ -21,7 +21,7 @@ router.get(
   asyncRoute(async (req, res) => {
     const store = req.app.get('store');
     const now = BigNumber.from(Date.now()).div(1000);
-    const period = BigNumber.from(req.query.period || 365);
+    const period = BigNumber.from(req.query.period || 30);
 
     if (period.lt(28) || period.gt(365)) {
       return res.status(400).send({ error: 'Invalid period', response: null });
@@ -38,7 +38,7 @@ router.get(
     const productId = Number(req.params.productId);
     const store = req.app.get('store');
     const now = BigNumber.from(Date.now()).div(1000);
-    const period = BigNumber.from(req.query.period || 365);
+    const period = BigNumber.from(req.query.period || 30);
 
     if (period.lt(28) || period.gt(365)) {
       return res.status(400).send({ error: 'Invalid period', response: null });

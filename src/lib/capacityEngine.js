@@ -7,7 +7,7 @@ const { calculateBasePrice, calculatePremiumPerYear, calculateFixedPricePremiumP
 
 const { WeiPerEther, Zero } = ethers.constants;
 
-function capacityEngine(store, productIds, time, period = 365) {
+function capacityEngine(store, productIds, time, period = 30) {
   const { assets, assetRates } = store.getState();
   const capacities = [];
   const ids = productIds.length === 0 ? Object.keys(store.getState().products) : [...productIds];
