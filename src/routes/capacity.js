@@ -11,7 +11,6 @@ const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minA
   productId,
   availableCapacity: availableCapacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
   allocatedNxm: usedCapacity.toString(),
-  annualPrice: formatUnits(minAnnualPrice),
   minAnnualPrice: formatUnits(minAnnualPrice),
   maxAnnualPrice: formatUnits(maxAnnualPrice),
 });
