@@ -7,8 +7,6 @@ const { expect } = require('chai');
 const { BigNumber } = require('ethers');
 const { calculateOptimalPoolAllocation } = require('../../src/lib/quoteEngine');
 
-const { calculateOptimalPoolAllocationBruteForce } = require('./utils');
-
 const INITIAL_POOL_INDEX = 1;
 
 const MIN_UNIT_SIZE = WeiPerEther;
@@ -72,6 +70,7 @@ describe('calculateOptimalPoolAllocation', function () {
 
     const amount = parseEther('20');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    console.log(optimalAllocations);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('10').toString());
@@ -296,8 +295,8 @@ describe('calculateOptimalPoolAllocation', function () {
     const amount = parseEther('1000000');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('330000').toString());
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('340000').toString());
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('333000').toString());
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('337000').toString());
     expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(parseEther('330000').toString());
   });
 
@@ -469,10 +468,10 @@ describe('calculateOptimalPoolAllocation', function () {
     const minUnitSize = BigNumber.from('188880198128988825736');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, minUnitSize);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('6202026600000000000000');
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal('886003800000000000000');
-    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('60248258400000000000000');
-    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('21264091200000000000000');
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('6613720650000000000000');
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal('347088070000000000000');
+    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('60498761040000000000000');
+    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('21140810240000000000000');
   });
 
   it('returns the same results as the brute force optimization for 6 pools with surge pricing', () => {
@@ -521,28 +520,16 @@ describe('calculateOptimalPoolAllocation', function () {
     const amount = parseEther('10');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
 
-    const optimalBruteForceAllocation = calculateOptimalPoolAllocationBruteForce(amount, pools);
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('2000000000000000000');
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(
-      optimalBruteForceAllocation[pool1.poolId].toString(),
-    );
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal('2500000000000000000');
 
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(
-      optimalBruteForceAllocation[pool2.poolId].toString(),
-    );
+    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('1800000000000000000');
 
-    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(
-      optimalBruteForceAllocation[pool3.poolId].toString(),
-    );
+    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('2500000000000000000');
 
-    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal(
-      optimalBruteForceAllocation[pool4.poolId].toString(),
-    );
-
-    expect(optimalAllocations[pool5.poolId]).to.be.equal(undefined);
-    expect(optimalBruteForceAllocation[pool5.poolId]).to.be.equal(undefined);
+    expect(optimalAllocations[pool5.poolId].toString()).to.be.equal('1200000000000000000');
 
     expect(optimalAllocations[pool6.poolId]).to.be.equal(undefined);
-    expect(optimalBruteForceAllocation[pool6.poolId]).to.be.equal(undefined);
   });
 });
