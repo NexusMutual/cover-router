@@ -20,8 +20,10 @@ function capacityEngine(store, productIds, time, period = 30) {
       continue;
     }
 
+    const secondsPerDay = BigNumber.from(24 * 3600);
+
     const firstActiveTrancheId = calculateTrancheId(time);
-    const gracePeriodExpiration = time.add(period).add(product.gracePeriod);
+    const gracePeriodExpiration = time.add(secondsPerDay.mul(period)).add(product.gracePeriod);
     const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
     const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
 
