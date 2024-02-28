@@ -229,9 +229,14 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       .reduce((total, capacity) => total.add(capacity), Zero)
       .mul(NXM_PER_ALLOCATION_UNIT);
 
-    const initialCapacityUsed = allocations
-      .slice(firstUsableTrancheIndex)
-      .reduce((total, allocation) => total.add(allocation), Zero)
+    const initialCapacityUsed = trancheCapacities
+      .reduce((used, capacity, index) => {
+        if (index < firstUsableTrancheIndex) {
+          const carryOver = capacity.sub(allocations[index]);
+          return carryOver.lt(0) ? used.add(carryOver.abs()) : used;
+        }
+        return used.add(allocations[index]);
+      }, Zero)
       .mul(NXM_PER_ALLOCATION_UNIT);
 
     const basePrice = product.useFixedPrice
