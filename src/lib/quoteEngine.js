@@ -243,6 +243,15 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       ? targetPrice
       : calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
 
+    if (totalCapacity.lte(initialCapacityUsed)) {
+      return {
+        poolId,
+        basePrice,
+        initialCapacityUsed: Zero,
+        totalCapacity: Zero,
+      };
+    }
+
     return {
       poolId,
       basePrice,
