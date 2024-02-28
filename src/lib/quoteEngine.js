@@ -119,11 +119,10 @@ const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, u
  * Complexity O(n)  where n is the number of chunks
  * @param coverAmount
  * @param pools
- * @param minUnitSize
  * @param useFixedPrice
  * @returns {{lowestCostAllocation: *, lowestCost: *}}
  */
-const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixedPrice) => {
+const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice = false) => {
   // Pool Id (number) -> Capacity Amount (BigNumber)
   const allocations = {};
 
@@ -247,16 +246,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     };
   });
 
-  const { assets } = store.getState();
-  const daiRate = assetRates[assets.DAI];
-  const minUnitSizeInNxm = MIN_UNIT_SIZE_DAI.mul(WeiPerEther).div(daiRate);
-
-  const allocations = calculateOptimalPoolAllocation(
-    amountToAllocate,
-    poolsData,
-    minUnitSizeInNxm,
-    product.useFixedPrice,
-  );
+  const allocations = calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
     poolId = parseInt(poolId);
