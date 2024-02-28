@@ -51,23 +51,22 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
 };
 
 /**
- * This function allocates each unit to the cheapest opportunity available for that unit
- * at that time given the allocations at the previous points.
+ * This function allocates chunks of capacity depending on the price for that amount
  *
- * To solve the allocation problem we split the amount A in U = `A / UNIT_SIZE + 1`
- * units and use that for the rest of the computations.
+ * To solve the allocation problem we map the chunks of capacities and their prices
+ * and use that for the rest of the computations.
  *
- * To allocate the units U we take each unit at a time from 0 to U,
- * and allocate each unit to the *best* pool available in terms of price
- * as long as the pool has enough capacity for that unit.
+ * With each iteration we recalculate the price and chunk for the pool used in the previous iteration
  *
- * If there is no pool with capacity available for a unit of allocation the function returns
+ * if the pool is not in the surge we use the base price and capacity left until we reach the surge, once we reach
+ * the surge we use percentage of the capacity for the chunk and calculate the price for that chunk.
+ *
+ * If there is no pool with capacity available the function returns
  * with an empty list (aborts allocation completely - no partial allocations supported).
  *
- * UNIT_SIZE is dynamically computed as 0.1% (1 / UNIT_DIVISOR) of the cover amount.
- * It has a minimum which is 1e18 (can't go below 1 ETH or 1 DAI).
+ * chunk size in the surge is dynamically computed as 0.01% (1 / SURGE_CHUNK_DIVISOR) of the total capacity.
  *
- * Complexity O(n * p)  where n is the number of units in the amount and p is th  e number of pools
+ * Complexity O(n)  where n is the number of chunks
  * @param coverAmount
  * @param pools
  * @param minUnitSize
