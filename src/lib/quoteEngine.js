@@ -50,6 +50,56 @@ const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, to
   return basePremium.add(surgePremium);
 };
 
+const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, useFixedPrice) => {
+  const used = usedCapacity;
+  const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
+  // use 0.01% of total capacity or the remaining capacity, whichever is smaller
+  const chunk = bnMin(totalCapacity.div(SURGE_CHUNK_DIVISOR), totalCapacity.sub(usedCapacity));
+
+  if (totalCapacity.eq(0) || chunk.eq(0)) {
+    return {
+      chunk: Zero,
+      chunkBasePrice: basePrice,
+      poolBasePrice: basePrice,
+      usedCapacity,
+      totalCapacity,
+    };
+  }
+
+  if (used.lt(surgeStartPoint) || useFixedPrice) {
+    return {
+      chunk: useFixedPrice ? totalCapacity.sub(usedCapacity) : surgeStartPoint.sub(used),
+      chunkBasePrice: basePrice,
+      poolBasePrice: basePrice,
+      usedCapacity,
+      totalCapacity,
+    };
+  }
+
+  const amountOnSurgeSkip = used.sub(surgeStartPoint);
+
+  // calculate base premium
+  const basePremium = chunk.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
+
+  // calculate surge premium
+  const amountOnSurge = used.add(chunk).sub(surgeStartPoint);
+  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
+  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
+  const surgePremium = totalSurgePremium.sub(skipSurgePremium);
+
+  // calculate total premium
+  const premium = basePremium.add(surgePremium);
+  const chunkBasePrice = premium.mul(TARGET_PRICE_DENOMINATOR).div(chunk);
+
+  return {
+    chunk,
+    chunkBasePrice,
+    poolBasePrice: basePrice,
+    usedCapacity,
+    totalCapacity,
+  };
+};
+
 /**
  * This function allocates chunks of capacity depending on the price for that amount
  *
@@ -137,56 +187,6 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, minUnitSize, useFixe
   }
 
   return allocations;
-};
-
-const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, useFixedPrice) => {
-  const used = usedCapacity;
-  const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
-  // use 0.01% of total capacity or the remaining capacity, whichever is smaller
-  const chunk = bnMin(totalCapacity.div(SURGE_CHUNK_DIVISOR), totalCapacity.sub(usedCapacity));
-
-  if (totalCapacity.eq(0) || chunk.eq(0)) {
-    return {
-      chunk: Zero,
-      chunkBasePrice: basePrice,
-      poolBasePrice: basePrice,
-      usedCapacity,
-      totalCapacity,
-    };
-  }
-
-  if (used.lt(surgeStartPoint) || useFixedPrice) {
-    return {
-      chunk: useFixedPrice ? totalCapacity.sub(usedCapacity) : surgeStartPoint.sub(used),
-      chunkBasePrice: basePrice,
-      poolBasePrice: basePrice,
-      usedCapacity,
-      totalCapacity,
-    };
-  }
-
-  const amountOnSurgeSkip = used.sub(surgeStartPoint);
-
-  // calculate base premium
-  const basePremium = chunk.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-
-  // calculate surge premium
-  const amountOnSurge = used.add(chunk).sub(surgeStartPoint);
-  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const surgePremium = totalSurgePremium.sub(skipSurgePremium);
-
-  // calculate total premium
-  const premium = basePremium.add(surgePremium);
-  const chunkBasePrice = premium.mul(TARGET_PRICE_DENOMINATOR).div(chunk);
-
-  return {
-    chunk,
-    chunkBasePrice,
-    poolBasePrice: basePrice,
-    usedCapacity,
-    totalCapacity,
-  };
 };
 
 const quoteEngine = (store, productId, amount, period, coverAsset) => {
