@@ -4,6 +4,7 @@ const {
   SET_PRODUCT,
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
+  SET_STATE,
 } = require('./actions');
 
 const initialState = {
@@ -47,6 +48,10 @@ function reducer(state = initialState, { type, payload }) {
 
   if (type === SET_TRANCHE_ID) {
     return { ...state, trancheId: payload };
+  }
+
+  if (type === SET_STATE) {
+    return { ...payload };
   }
 
   return state;

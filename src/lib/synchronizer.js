@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+const ethers = require('ethers');
 const config = require('../config');
 const { calculateTrancheId, promiseAllInBatches } = require('./helpers');
 const {
@@ -6,7 +9,31 @@ const {
   SET_PRODUCT,
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
+  SET_STATE,
 } = require('../store/actions');
+
+const { BigNumber } = ethers;
+
+const STATE_FILE = path.resolve(__dirname, '../../storage', 'state.json');
+
+const parseJsonBigNumbers = state => {
+  if (state.type === 'BigNumber') {
+    return BigNumber.from(state);
+  }
+
+  const parsedState = {};
+  Object.entries(state).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      parsedState[key] = value.map(item => (typeof item === 'object' ? parseJsonBigNumbers(item) : item));
+    } else if (typeof value === 'object') {
+      parsedState[key] = parseJsonBigNumbers(value);
+    } else {
+      parsedState[key] = value;
+    }
+  });
+
+  return parsedState;
+};
 
 module.exports = async (store, chainApi, eventsApi) => {
   const updateProduct = async productId => {
@@ -30,6 +57,7 @@ module.exports = async (store, chainApi, eventsApi) => {
         payload: { productId, poolId, poolProduct },
       });
     }
+    fs.writeFileSync(STATE_FILE, JSON.stringify(store.getState(), null, 2));
     console.log(`Update: product data for product with id ${productId}`);
   };
 
@@ -48,6 +76,7 @@ module.exports = async (store, chainApi, eventsApi) => {
         payload: { productId, poolId, poolProduct },
       });
     }
+    fs.writeFileSync(STATE_FILE, JSON.stringify(store.getState(), null, 2));
     console.log(`Update: Pool data for pool with id ${poolId}`);
   }
 
@@ -73,12 +102,27 @@ module.exports = async (store, chainApi, eventsApi) => {
       const rate = await chainApi.fetchTokenPriceInAsset(assetId);
       store.dispatch({ type: SET_ASSET_RATE, payload: { assetId, rate } });
     }
+    fs.writeFileSync(STATE_FILE, JSON.stringify(store.getState(), null, 2));
     console.log('Update: Asset rates');
   };
 
-  await updateAll();
-  await updateAssetRates();
-  console.log('All data fetched and stored');
+  const persistStatePath = path.resolve(__dirname, '../../storage', STATE_FILE);
+
+  if (fs.existsSync(persistStatePath)) {
+    const state = JSON.parse(fs.readFileSync(persistStatePath, 'utf8'));
+    console.log('Restoring state from file');
+    store.dispatch({ type: SET_STATE, payload: parseJsonBigNumbers(state) });
+
+    Promise.resolve()
+      .then(() => updateAssetRates())
+      .catch(err => console.error('Error while running updateAssetRates:', err))
+      .then(() => updateAll())
+      .catch(err => console.error('Error while running updatingAll', err));
+  } else {
+    await updateAll();
+    await updateAssetRates();
+    console.log('All data fetched and stored');
+  }
 
   eventsApi.on('pool:change', updatePool);
   eventsApi.on('product:change', updateProduct);
