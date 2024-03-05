@@ -7,6 +7,96 @@ const { TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
 const router = express.Router();
 const { Zero } = ethers.constants;
 
+/**
+ * @openapi
+ * /api/v2/quote:
+ *   get:
+ *     tags:
+ *       - Quote
+ *     description: Get a quote for a cover
+ *     parameters:
+ *     - in: query
+ *       name: productId
+ *       required: true
+ *       schema:
+ *         type: integer
+ *         description: The product id
+ *     - in: query
+ *       name: amount
+ *       required: true
+ *       schema:
+ *         type: string
+ *         description: The cover amount
+ *     - in: query
+ *       name: period
+ *       required: true
+ *       schema:
+ *         type: integer
+ *         description: The cover period
+ *     - in: query
+ *       name: coverAsset
+ *       required: true
+ *       schema:
+ *         type: integer
+ *         description: The cover asset
+ *     responses:
+ *       200:
+ *         description: Returns a quote
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 quote:
+ *                   type: object
+ *                   properties:
+ *                     totalCoverAmountInAsset:
+ *                       type: string
+ *                       description: The total cover amount in asset
+ *                     annualPrice:
+ *                       type: string
+ *                       description: The annual price
+ *                     premiumInNXM:
+ *                       type: string
+ *                       description: The premium in NXM
+ *                     premiumInAsset:
+ *                       type: string
+ *                       description: The premium in asset
+ *                     poolAllocationRequests:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           poolId:
+ *                             type: string
+ *                             description: The pool id
+ *                           coverAmountInAsset:
+ *                             type: string
+ *                             description: The cover amount in asset for the pool
+ *                           skip:
+ *                             type: boolean
+ *                             description: Skip
+ *                             default: false
+ *                 capacities:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       poolId:
+ *                         type: string
+ *                         description: The pool id
+ *                       capacity:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             assetId:
+ *                               type: string
+ *                               description: The asset id
+ *                             amount:
+ *                               type: string
+ *                               description: The capacity amount
+ */
 router.get(
   '/quote',
   asyncRoute(async (req, res) => {
