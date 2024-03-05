@@ -15,6 +15,47 @@ const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minA
   maxAnnualPrice: formatUnits(maxAnnualPrice),
 });
 
+/**
+ * @openapi
+ * /api/v2/capacity/:
+ *   get:
+ *     tags:
+ *       - Capacity
+ *     description: Get a capacity for all products
+ *     responses:
+ *       200:
+ *         description: Returns a capacities
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   productId:
+ *                     type: integer
+ *                     description: The product id
+ *                   availableCapacity:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         assetId:
+ *                           type: integer
+ *                           description: The asset id
+ *                         amount:
+ *                           type: string
+ *                           description: The capacity amount
+ *                   allocatedNxm:
+ *                     type: string
+ *                     description: The allocated NXM
+ *                   minAnnualPrice:
+ *                     type: string
+ *                     description: The minimal annual price
+ *                   maxAnnualPrice:
+ *                     type: string
+ *                     description: The maximal annual price
+ */
 router.get(
   '/capacity',
   asyncRoute(async (req, res) => {
@@ -30,6 +71,53 @@ router.get(
     res.json(response.map(capacity => formatCapacityResult(capacity)));
   }),
 );
+
+/**
+ * @openapi
+ * /api/v2/capacity/{productId}:
+ *   get:
+ *     tags:
+ *       - Capacity
+ *     description: Get a capacity for a product
+ *     parameters:
+ *     - in: params
+ *       name: productId
+ *       required: false
+ *       schema:
+ *         type: integer
+ *         description: The product id
+ *     responses:
+ *       200:
+ *         description: Returns a capacity
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 productId:
+ *                   type: integer
+ *                   description: The product id
+ *                 availableCapacity:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       assetId:
+ *                         type: integer
+ *                         description: The asset id
+ *                       amount:
+ *                         type: string
+ *                         description: The capacity amount
+ *                 allocatedNxm:
+ *                   type: string
+ *                   description: The allocated NXM
+ *                 minAnnualPrice:
+ *                   type: string
+ *                   description: The minimal annual price
+ *                 maxAnnualPrice:
+ *                   type: string
+ *                   description: The maximal annual price
+ */
 
 router.get(
   '/capacity/:productId',

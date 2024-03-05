@@ -3,6 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const { ethers } = require('ethers');
 const { addresses } = require('@nexusmutual/deployments');
+const swaggerUI = require('swagger-ui-express');
+const swaggerSpec = require('./lib/swagger');
 
 const config = require('./config');
 const { createStore, initialState, load, save } = require('./store');
@@ -66,6 +68,9 @@ const main = async () => {
     await synchronizer.updateAssetRates();
     await synchronizer.updateAll();
   }
+
+  // Serve Swagger documentation
+  app.use('/v2/api/docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
   const port = config.get('port');
   app.listen(port).on('listening', () => console.info('Cover Router started on port %d', port));
