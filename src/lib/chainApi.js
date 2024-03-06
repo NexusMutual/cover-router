@@ -8,6 +8,7 @@ const createChainApi = async contracts => {
   const stakingPoolFactory = contracts('StakingPoolFactory');
   const stakingProducts = contracts('StakingProducts');
   const stakingViewer = contracts('StakingViewer');
+  const coverViewer = contracts('CoverViewer');
 
   const fetchTokenPriceInAsset = async assetId => {
     return assetId === 255 ? WeiPerEther : pool.getInternalTokenPriceInAsset(assetId);
@@ -51,8 +52,35 @@ const createChainApi = async contracts => {
     });
   };
 
+  const fetchCovers = async (coverIds) => {
+
+    const { covers, lastSegmentAllocations } = await coverViewer.getCoversWithLastSegmentAllocations(coverIds);
+
+    // lastSegmentAllocations is a mapping from poolId to aLlocation
+    cover.lastSegmentAllocations = {};
+    for (let i = 0; i < covers.length; i++) {
+      const cover = covers[i];
+
+      // store last segment allocations as a mapping from poolId -> allocation
+      for (const lastSegmentAllocation of lastSegmentAllocations) {
+        cover.lastSegmentAllocations[lastSegmentAllocation.poolId] = lastSegmentAllocation;
+      }
+    }
+    return covers;
+  }
+
+  const fetchCover = async (coverId) => {
+    const cover = await coverViewer.getCovers([coverId]);
+    return cover;
+  }
+
+  function fetchCoverCount = async () => {
+    const coverDataCount = await cover.coverDataCount();
+    return coverDataCount;
+  }
+
   const fetchPoolProduct = async (productId, poolId, globalCapacityRatio, capacityReductionRatio) => {
-    const stakingPool = contracts('StakingPool', poolId);
+    consst stakingPool = contracts('StakingPool', poolId);
     console.log('Fetching allocations for product', productId, 'in pool', poolId, 'at address', stakingPool.address);
 
     // pool allocations and capacities
@@ -84,6 +112,9 @@ const createChainApi = async contracts => {
   };
 
   return {
+    fetchCovers,
+    fetchCover,
+    fetchCoverCount,
     fetchProducts,
     fetchProduct,
     fetchProductPoolsIds,

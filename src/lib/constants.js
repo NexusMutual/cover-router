@@ -35,4 +35,6 @@ module.exports = {
   MIN_UNIT_SIZE_DAI: WeiPerEther.mul(10000), // 10k DAI
 
   UNIT_DIVISOR: 100,
+
+  ONE_NXM: WeiPerEther.mul(1)
 };

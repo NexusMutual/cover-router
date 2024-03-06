@@ -8,6 +8,11 @@ const selectProduct = (store, productId) => {
   return products[productId];
 };
 
+const selectCover = (store, productId) => {
+  const { covers } = store.getState();
+  return covers[productId];
+};
+
 const selectProductPools = (store, productId) => {
   const { poolProducts, productPoolIds } = store.getState();
   const poolIds = productPoolIds[productId] || [];
@@ -27,4 +32,5 @@ module.exports = {
   selectAssetSymbol,
   selectProduct,
   selectProductPools,
+  selectCover
 };
