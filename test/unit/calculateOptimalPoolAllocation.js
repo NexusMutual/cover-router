@@ -1,17 +1,12 @@
 const sinon = require('sinon');
 const {
   utils: { parseEther },
-  constants: { WeiPerEther },
 } = require('ethers');
 const { expect } = require('chai');
 const { BigNumber } = require('ethers');
 const { calculateOptimalPoolAllocation } = require('../../src/lib/quoteEngine');
 
-const { calculateOptimalPoolAllocationBruteForce } = require('./utils');
-
 const INITIAL_POOL_INDEX = 1;
-
-const MIN_UNIT_SIZE = WeiPerEther;
 
 describe('calculateOptimalPoolAllocation', function () {
   this.timeout(0);
@@ -46,7 +41,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('1000');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(amount.toString());
   });
@@ -71,7 +66,8 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('20');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
+    console.log(optimalAllocations);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('10').toString());
@@ -97,7 +93,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('30');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('13').toString());
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('17').toString());
@@ -129,7 +125,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('10');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('4').toString());
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('3').toString());
@@ -162,7 +158,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('100');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('23').toString());
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('57').toString());
@@ -188,7 +184,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('30');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool1.poolId]).to.be.equal(undefined);
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('30').toString());
@@ -213,7 +209,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('50');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('50').toString());
     expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
@@ -238,7 +234,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('50');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('50').toString());
     expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
@@ -263,7 +259,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('50');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('50').toString());
     expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
@@ -294,10 +290,10 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('1000000');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('330000').toString());
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('340000').toString());
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('333000').toString());
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('337000').toString());
     expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(parseEther('330000').toString());
   });
 
@@ -321,7 +317,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('60');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE, true);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, true);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('60').toString());
     expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
@@ -346,7 +342,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('60');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE, true);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, true);
 
     expect(optimalAllocations[pool1.poolId]).to.be.equal(undefined);
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('60').toString());
@@ -378,7 +374,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('100');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE, true);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, true);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('50').toString());
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('20').toString());
@@ -405,7 +401,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('1000');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     // resulting UNIT_SIZE is 3 ETH because of the size of the amount
     // therefore the first pool is only partially filled
@@ -433,7 +429,7 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('1000');
-    const allocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const allocations = calculateOptimalPoolAllocation(amount, pools);
     expect(allocations.length).to.be.equal(0);
   });
 
@@ -467,12 +463,12 @@ describe('calculateOptimalPoolAllocation', function () {
 
     const amount = BigNumber.from('88600380000000000000000');
     const minUnitSize = BigNumber.from('188880198128988825736');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, minUnitSize);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('6202026600000000000000');
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal('886003800000000000000');
-    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('60248258400000000000000');
-    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('21264091200000000000000');
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('6613720650000000000000');
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal('347088070000000000000');
+    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('60498761040000000000000');
+    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('21140810240000000000000');
   });
 
   it('returns the same results as the brute force optimization for 6 pools with surge pricing', () => {
@@ -519,30 +515,18 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = parseEther('10');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools, MIN_UNIT_SIZE);
+    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
-    const optimalBruteForceAllocation = calculateOptimalPoolAllocationBruteForce(amount, pools);
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('2000000000000000000');
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(
-      optimalBruteForceAllocation[pool1.poolId].toString(),
-    );
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal('2500000000000000000');
 
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(
-      optimalBruteForceAllocation[pool2.poolId].toString(),
-    );
+    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('1800000000000000000');
 
-    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(
-      optimalBruteForceAllocation[pool3.poolId].toString(),
-    );
+    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('2500000000000000000');
 
-    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal(
-      optimalBruteForceAllocation[pool4.poolId].toString(),
-    );
-
-    expect(optimalAllocations[pool5.poolId]).to.be.equal(undefined);
-    expect(optimalBruteForceAllocation[pool5.poolId]).to.be.equal(undefined);
+    expect(optimalAllocations[pool5.poolId].toString()).to.be.equal('1200000000000000000');
 
     expect(optimalAllocations[pool6.poolId]).to.be.equal(undefined);
-    expect(optimalBruteForceAllocation[pool6.poolId]).to.be.equal(undefined);
   });
 });
