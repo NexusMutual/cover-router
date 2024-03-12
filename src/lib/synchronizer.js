@@ -76,10 +76,6 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.log('Update: Asset rates');
   };
 
-  await updateAll();
-  await updateAssetRates();
-  console.log('All data fetched and stored');
-
   eventsApi.on('pool:change', updatePool);
   eventsApi.on('product:change', updateProduct);
   eventsApi.on('tranche:change', updateAll);
