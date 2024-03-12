@@ -6,8 +6,8 @@ const router = express.Router();
 router.get(
   '/reindex',
   asyncRoute(async (req, res) => {
-    // only allow requests from 127.0.0.1
-    if (req.ip !== '127.0.0.1') {
+    // only allow requests from 127.0.0.1 and ::ffff:127.0.0.1
+    if (!req.ip.endsWith('127.0.0.1')) {
       return res.status(403).send('Forbidden');
     }
 
