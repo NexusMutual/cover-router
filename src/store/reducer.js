@@ -52,4 +52,7 @@ function reducer(state = initialState, { type, payload }) {
   return state;
 }
 
-module.exports = reducer;
+module.exports = {
+  initialState,
+  reducer,
+};

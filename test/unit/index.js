@@ -4,4 +4,5 @@ describe('unit tests', function () {
   require('./eventApi');
   require('./routes');
   require('./calculateOptimalPoolAllocation');
+  require('./cache');
 });

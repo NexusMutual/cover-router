@@ -5,7 +5,7 @@ const { ethers } = require('ethers');
 const { addresses } = require('@nexusmutual/deployments');
 
 const config = require('./config');
-const { createStore } = require('./store');
+const { createStore, initialState, load, save } = require('./store');
 
 const contractFactory = require('./lib/contracts');
 const createChainApi = require('./lib/chainApi');
@@ -17,9 +17,6 @@ const quoteRouter = require('./routes/quote');
 const reindexRouter = require('./routes/reindex');
 
 const main = async () => {
-  // state
-  const store = createStore();
-
   // provider
   const providerURL = config.get('provider');
   const provider = new ethers.providers.JsonRpcProvider(providerURL);
@@ -34,9 +31,6 @@ const main = async () => {
   const chainApi = await createChainApi(contracts);
   const eventsApi = await createEventsApi(provider, contracts);
 
-  // keeps store in-sync with chain data
-  const synchronizer = await createSynchronizer(store, chainApi, eventsApi);
-
   const app = express();
 
   app.use(express.json());
@@ -48,16 +42,38 @@ const main = async () => {
     next();
   });
 
-  app.set('store', store);
-  app.set('synchronizer', synchronizer);
-
   // initiate routes
   app.use('/v2', capacityRouter);
   app.use('/v2', quoteRouter);
   app.use('/v2', reindexRouter);
 
+  // state
+  const state = load(initialState);
+  const store = createStore(state);
+  const isFromCache = state !== initialState;
+
+  // persist the state after each change
+  store.subscribe(() => save(store.getState()));
+
+  // keeps store in-sync with chain data
+  const synchronizer = await createSynchronizer(store, chainApi, eventsApi);
+
+  app.set('store', store);
+  app.set('synchronizer', synchronizer);
+
+  if (!isFromCache) {
+    console.log('Missing initial state, delaying startup until the state is fully loaded');
+    await synchronizer.updateAssetRates();
+    await synchronizer.updateAll();
+  }
+
   const port = config.get('port');
   app.listen(port).on('listening', () => console.info('Cover Router started on port %d', port));
+
+  if (isFromCache) {
+    await synchronizer.updateAssetRates();
+    await synchronizer.updateAll();
+  }
 };
 
 process.on('unhandledRejection', (reason, p) => console.error('Unhandled Rejection at: Promise ', p, reason));

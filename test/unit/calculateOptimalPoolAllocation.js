@@ -67,7 +67,6 @@ describe('calculateOptimalPoolAllocation', function () {
 
     const amount = parseEther('20');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
-    console.log(optimalAllocations);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('10').toString());
