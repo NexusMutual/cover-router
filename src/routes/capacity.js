@@ -17,7 +17,7 @@ const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minA
 
 /**
  * @openapi
- * /api/v2/capacity/:
+ * /v2/capacity/:
  *   get:
  *     tags:
  *       - Capacity
@@ -74,13 +74,13 @@ router.get(
 
 /**
  * @openapi
- * /api/v2/capacity/{productId}:
+ * /v2/capacity/{productId}:
  *   get:
  *     tags:
  *       - Capacity
  *     description: Get a capacity for a product
  *     parameters:
- *     - in: params
+ *     - in: path
  *       name: productId
  *       required: false
  *       schema:

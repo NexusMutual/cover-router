@@ -9,7 +9,7 @@ const { Zero } = ethers.constants;
 
 /**
  * @openapi
- * /api/v2/quote:
+ * /v2/quote:
  *   get:
  *     tags:
  *       - Quote
