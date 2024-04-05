@@ -59,6 +59,26 @@ const capacities = [
       },
     ],
   },
+  {
+    productId: 3,
+    availableCapacity: [
+      {
+        assetId: 0,
+        amount: '627202118245255087296',
+      },
+      {
+        assetId: 1,
+        amount: '1752525132313136206805332',
+      },
+      {
+        assetId: 255,
+        amount: '61011640000000000000000',
+      },
+    ],
+    allocatedNxm: '32725200000000000000000',
+    minAnnualPrice: '0.09',
+    maxAnnualPrice: '0.10683129196231919',
+  },
 ];
 
 const quote = {
