@@ -77,7 +77,7 @@ const capacities = [
     ],
     allocatedNxm: '32725200000000000000000',
     minAnnualPrice: '0.09',
-    maxAnnualPrice: '0.10683129196231919',
+    maxAnnualPrice: '0.112156212788396874',
   },
 ];
 
