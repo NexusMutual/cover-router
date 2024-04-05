@@ -1,7 +1,7 @@
 const { ethers, BigNumber } = require('ethers');
 
 const { selectProductPools, selectProduct } = require('../store/selectors');
-const { NXM_PER_ALLOCATION_UNIT, TRANCHE_DURATION } = require('./constants');
+const { NXM_PER_ALLOCATION_UNIT } = require('./constants');
 const { bnMax, bnMin, calculateTrancheId } = require('./helpers');
 const { calculateBasePrice, calculatePremiumPerYear, calculateFixedPricePremiumPerYear } = require('./quoteEngine');
 
