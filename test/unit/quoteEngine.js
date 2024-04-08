@@ -99,7 +99,7 @@ describe('Quote Engine tests', () => {
 
   it('should return null non existing product', () => {
     sinon.stub(store, 'getState').callsFake(() => mockStore);
-    const productId = 3;
+    const productId = 4;
     const amount = BigNumber.from(30);
 
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);

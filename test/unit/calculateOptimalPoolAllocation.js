@@ -461,7 +461,6 @@ describe('calculateOptimalPoolAllocation', function () {
     });
 
     const amount = BigNumber.from('88600380000000000000000');
-    const minUnitSize = BigNumber.from('188880198128988825736');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
     expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('6613720650000000000000');

@@ -43,7 +43,7 @@ describe('Capacity Engine tests', () => {
     sinon.stub(store, 'getState').callsFake(() => mockStore);
     const now = BigNumber.from(Date.now()).div(1000);
 
-    const [product] = capacityEngine(store, ['3'], now);
+    const [product] = capacityEngine(store, ['4'], now);
 
     expect(product).to.be.equal(undefined);
   });
