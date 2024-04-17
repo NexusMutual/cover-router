@@ -123,14 +123,14 @@ router.get(
  *                                The amount of capacity locked for active covers on the product.
  *                 minAnnualPrice:
  *                   type: string
- *                    description: The minimal annual price is a percentage value (2 decimals).
- *                                 It depends on the period query param value (default 30 days).
- *                                 The cover price starts from this value depending on the requested period and amount.
+ *                   description: The minimal annual price is a percentage value (2 decimals).
+ *                                It depends on the period query param value (default 30 days).
+ *                                The cover price starts from this value depending on the requested period and amount.
  *                 maxAnnualPrice:
  *                   type: string
- *                     description: The maximal annual price is a percentage value (2 decimals).
- *                                  It depends on the period query param value (default 30 days).
- *                                  The cover price starts from this value depending on the requested period and amount.
+ *                   description: The maximal annual price is a percentage value (2 decimals).
+ *                                It depends on the period query param value (default 30 days).
+ *                                The cover price starts from this value depending on the requested period and amount.
  */
 
 router.get(
