@@ -19,7 +19,7 @@ Computes optimal capacity allocation per Nexus Mutual staking pool on cover purc
     2. CONCURRENCY_NUMBER= number of concurrent products to process for faster startup
     3. PROVIDER_URL - use either [Infura](https://www.infura.io/) or [Alchemy](https://www.alchemy.com/)
     4. PORT= port number for the server
-    5. Contract addresses are being pull from the NexusMutual deployments repo 
+    5. Contract addresses are being pull from `@nexusmutual/deployments` package 
 4. To run the server `npm run start`
 
 *Note: if running the server in nodemon(dev), change the destination of persisted data so the server wouldn't 
@@ -31,10 +31,10 @@ restart constantly*
 - **URL**: `/v2/api/quote`
 - **Method**: `GET`
 - **OpenAPI**: `/v2/api/docs/#/Quote/get_api_v2_quote`
-- **Description**: The quote route uses a product id, a cover amount and a period to return premium and the
+- **Description**: The quote route uses a product id, a period and the cover amount for a given cover asset to return premium and the
 best available combination of pools for the premium.
 - **Quote Engine**: Calculation is based on batching the current capacities and mapping them with the
-  price per pool, then the cheapest capacity is selected, and remapped if not the whole cover amount is covered by the
+  price per pool, then the cheapest capacity is selected, and remapped if the whole cover amount is not covered by the
   cheapest capacity.
 
 ### Capacity Route
