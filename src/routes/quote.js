@@ -32,16 +32,16 @@ const { Zero } = ethers.constants;
  *       required: true
  *       schema:
  *         type: integer
- *         description: The cover period
+ *         description: The cover period (in days)
  *     - in: query
  *       name: coverAsset
  *       required: true
  *       schema:
  *         type: integer
- *         description: The cover asset
+ *         description: The cover asset (e.g. 0 for ETH, 1 for DAI)
  *     responses:
  *       200:
- *         description: Returns a quote
+ *         description: Returns a quote object
  *         content:
  *           application/json:
  *             schema:
@@ -52,18 +52,22 @@ const { Zero } = ethers.constants;
  *                   properties:
  *                     totalCoverAmountInAsset:
  *                       type: string
- *                       description: The total cover amount in asset
+ *                       description: The total cover amount value in cover asset (smallest unit e.g. wei for ETH)
  *                     annualPrice:
  *                       type: string
- *                       description: The annual price
+ *                       description: The annual price as a percentage value (2 decimals). Should be divided by 100.
  *                     premiumInNXM:
  *                       type: string
- *                       description: The premium in NXM
+ *                       description: The premium value denominated in NXM.
+ *                                    To be used when the payment is done using NXM.
  *                     premiumInAsset:
  *                       type: string
- *                       description: The premium in asset
+ *                       description: The premium value denominated in the cover asset.
+ *                                    To be used when the payment is done using the cover asset.
  *                     poolAllocationRequests:
  *                       type: array
+ *                       description: Selected pools with necessary capacity for the requested cover.
+ *                                    Necessary data for the buy cover tx request.
  *                       items:
  *                         type: object
  *                         properties:
@@ -72,13 +76,14 @@ const { Zero } = ethers.constants;
  *                             description: The pool id
  *                           coverAmountInAsset:
  *                             type: string
- *                             description: The cover amount in asset for the pool
+ *                             description: The cover amount value that will be allocated from the pool capacity.
  *                           skip:
  *                             type: boolean
  *                             description: Skip
  *                             default: false
  *                 capacities:
  *                   type: array
+ *                   description: Show the pools with sufficient (and cheapest) capacity for the requested cover.
  *                   items:
  *                     type: object
  *                     properties:
@@ -95,7 +100,7 @@ const { Zero } = ethers.constants;
  *                               description: The asset id
  *                             amount:
  *                               type: string
- *                               description: The capacity amount
+ *                               description: The total capacity amount of the pool for the asset.
  */
 router.get(
   '/quote',
