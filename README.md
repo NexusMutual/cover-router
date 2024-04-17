@@ -41,11 +41,11 @@ best available combination of pools for the premium.
 - **URL**: `v2/api/capacity`
 - **Method**: `GET`
 - **OpenAPI**: `/v2/api/docs/#/Capacity/get_api_v2_capacity_`
-- **Description**: Returns the current capacity for all products for the period of 30 days.
+- **Description**: Returns the current capacity for all products for a period of 30 days if no period query param is specified.
 
 ### Capacity Route for a specific product
 - **URL**: `v2/api/capacity/{productId}`
 - **Method**: `GET`
 - **OpenAPI**: `/v2/api/docs/#/Capacity/get_api_v2_capacity__productId_`
-- **Description**: Returns the current capacity for specific product for the period of 30 days.
+- **Description**: Returns the current capacity for a specific product for a period of 30 days if no period query param is specified.
 
