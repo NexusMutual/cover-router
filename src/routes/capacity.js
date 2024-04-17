@@ -21,10 +21,10 @@ const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minA
  *   get:
  *     tags:
  *       - Capacity
- *     description: Get a capacity for all products
+ *     description: Get capacity data for all products
  *     responses:
  *       200:
- *         description: Returns a capacities
+ *         description: Returns capacity for all products
  *         content:
  *           application/json:
  *             schema:
@@ -37,6 +37,8 @@ const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minA
  *                     description: The product id
  *                   availableCapacity:
  *                     type: array
+ *                     description: The maximum available capacity for the product.
+ *                                  The max amount of cover a user can buy for the product.
  *                     items:
  *                       type: object
  *                       properties:
@@ -48,13 +50,18 @@ const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minA
  *                           description: The capacity amount
  *                   allocatedNxm:
  *                     type: string
- *                     description: The allocated NXM
+ *                     description: The used capacity amount for active covers on the product.
+ *                                  The amount of capacity locked for active covers on the product.
  *                   minAnnualPrice:
  *                     type: string
- *                     description: The minimal annual price
+ *                     description: The minimal annual price is a percentage value (2 decimals).
+ *                                  It depends on the period query param value (default 30 days).
+ *                                  The cover price starts from this value depending on the requested period and amount.
  *                   maxAnnualPrice:
  *                     type: string
- *                     description: The maximal annual price
+ *                     description: The maximal annual price is a percentage value (2 decimals).
+ *                                  It depends on the period query param value (default 30 days).
+ *                                  The cover price starts from this value depending on the requested period and amount.
  */
 router.get(
   '/capacity',
@@ -78,7 +85,7 @@ router.get(
  *   get:
  *     tags:
  *       - Capacity
- *     description: Get a capacity for a product
+ *     description: Get capacity data for a product
  *     parameters:
  *     - in: path
  *       name: productId
@@ -88,7 +95,7 @@ router.get(
  *         description: The product id
  *     responses:
  *       200:
- *         description: Returns a capacity
+ *         description: Returns capacity data for a product
  *         content:
  *           application/json:
  *             schema:
@@ -99,6 +106,8 @@ router.get(
  *                   description: The product id
  *                 availableCapacity:
  *                   type: array
+ *                   description: The maximum available capacity for the product.
+ *                                The max amount of cover a user can buy for the product.
  *                   items:
  *                     type: object
  *                     properties:
@@ -110,13 +119,18 @@ router.get(
  *                         description: The capacity amount
  *                 allocatedNxm:
  *                   type: string
- *                   description: The allocated NXM
+ *                   description: The used capacity amount for active covers on the product.
+ *                                The amount of capacity locked for active covers on the product.
  *                 minAnnualPrice:
  *                   type: string
- *                   description: The minimal annual price
+ *                    description: The minimal annual price is a percentage value (2 decimals).
+ *                                 It depends on the period query param value (default 30 days).
+ *                                 The cover price starts from this value depending on the requested period and amount.
  *                 maxAnnualPrice:
  *                   type: string
- *                   description: The maximal annual price
+ *                     description: The maximal annual price is a percentage value (2 decimals).
+ *                                  It depends on the period query param value (default 30 days).
+ *                                  The cover price starts from this value depending on the requested period and amount.
  */
 
 router.get(
