@@ -1,5 +1,5 @@
 # Cover Router
-Computes optimal capacity allocation per Nexus Mutual staking pool on cover purchase
+Computes the optimal capacity allocation in order to get the best price on cover purchases.
 
 ## Table of Contents
 
