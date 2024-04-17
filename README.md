@@ -19,7 +19,6 @@ Computes the optimal capacity allocation in order to get the best price on cover
     2. CONCURRENCY_NUMBER= number of concurrent products to process for faster startup
     3. PROVIDER_URL - use either [Infura](https://www.infura.io/) or [Alchemy](https://www.alchemy.com/)
     4. PORT= port number for the server
-    5. Contract addresses are being pull from `@nexusmutual/deployments` package 
 4. To run the server `npm run start`
 
 *Note: if running the server in nodemon(dev), change the destination of persisted data so the server wouldn't 
