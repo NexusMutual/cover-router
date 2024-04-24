@@ -52,16 +52,21 @@ const { Zero } = ethers.constants;
  *                   properties:
  *                     totalCoverAmountInAsset:
  *                       type: string
+ *                       format: integer
  *                       description: The total cover amount value in cover asset (smallest unit e.g. wei for ETH)
  *                     annualPrice:
  *                       type: string
- *                       description: The annual price as a percentage value (2 decimals). Should be divided by 100.
+ *                       format: integer
+ *                       description: The annual price as a percentage value between 0-10,000.
+ *                                    Should be divided by 10,000.
  *                     premiumInNXM:
  *                       type: string
+ *                       format: integer
  *                       description: The premium value denominated in NXM.
  *                                    To be used when the payment is done using NXM.
  *                     premiumInAsset:
  *                       type: string
+ *                       format: integer
  *                       description: The premium value denominated in the cover asset.
  *                                    To be used when the payment is done using the cover asset.
  *                     poolAllocationRequests:
@@ -76,6 +81,7 @@ const { Zero } = ethers.constants;
  *                             description: The pool id
  *                           coverAmountInAsset:
  *                             type: string
+ *                             format: integer
  *                             description: The cover amount value that will be allocated from the pool capacity.
  *                           skip:
  *                             type: boolean
@@ -97,9 +103,11 @@ const { Zero } = ethers.constants;
  *                           properties:
  *                             assetId:
  *                               type: string
+ *                               format: integer
  *                               description: The asset id
  *                             amount:
  *                               type: string
+ *                               format: integer
  *                               description: The total capacity amount of the pool for the asset.
  */
 router.get(
