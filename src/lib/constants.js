@@ -17,8 +17,8 @@ module.exports = {
   PRICE_BUMP_RATIO: 20_00, // 20%
 
   // bumped price smoothing
-  // 0.5% per day
-  PRICE_CHANGE_PER_DAY: 50, // 0.5%
+  // 2% per day
+  PRICE_CHANGE_PER_DAY: 200, // 2%
 
   INITIAL_PRICE_DENOMINATOR: 100_00,
   TARGET_PRICE_DENOMINATOR: 100_00,
