@@ -129,7 +129,7 @@ router.get(
       return res.status(400).send({ error: 'Not enough capacity for the cover amount', response: null });
     }
 
-    if (route.error === 'isDeprecated') {
+    if (route.error && route.error.isDeprecated) {
       return res.status(400).send({ error: 'Product is deprecated', response: null });
     }
 
