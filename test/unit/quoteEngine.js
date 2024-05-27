@@ -1,6 +1,6 @@
 const sinon = require('sinon');
 const {
-  utils: { parseEther },
+  utils: { parseEther, parseUnits },
 } = require('ethers');
 const { expect } = require('chai');
 const { quoteEngine } = require('../../src/lib/quoteEngine');
@@ -41,6 +41,20 @@ describe('Quote Engine tests', () => {
     expect(quote.premiumInAsset.toString()).to.be.equal('1644139670895139282');
     expect(quote.coverAmountInNxm.toString()).to.be.equal('34820000000000000000');
     expect(quote.coverAmountInAsset.toString()).to.be.equal('1000184966461209741632');
+  });
+
+  it('should return quote in USDC for product 1 for minimal cover period', () => {
+    sinon.stub(store, 'getState').callsFake(() => mockStore);
+    const productId = 1;
+    const amount = parseUnits('1000', 6);
+
+    const [quote] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 6);
+
+    expect(quote.poolId).to.be.equal(1);
+    expect(quote.premiumInNxm.toString()).to.be.equal('57238356164383561');
+    expect(quote.premiumInAsset.toString()).to.be.equal('1644139');
+    expect(quote.coverAmountInNxm.toString()).to.be.equal('34820000000000000000');
+    expect(quote.coverAmountInAsset.toString()).to.be.equal('1000184965');
   });
 
   it('should return quote with split across 2 pools', () => {

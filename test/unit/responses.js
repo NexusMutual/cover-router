@@ -14,6 +14,10 @@ const capacities = [
         amount: '13305160151201388636532',
       },
       {
+        assetId: 6,
+        amount: '13305160144',
+      },
+      {
         assetId: 255,
         amount: '463200000000000000000',
       },
@@ -32,6 +36,10 @@ const capacities = [
       {
         assetId: 1,
         amount: '14718402550681328880309',
+      },
+      {
+        assetId: 6,
+        amount: '14718402543',
       },
       {
         assetId: 255,
@@ -54,6 +62,10 @@ const capacities = [
         amount: '13305160151201388636532',
       },
       {
+        assetId: 6,
+        amount: '13305160144',
+      },
+      {
         assetId: 255,
         amount: '463200000000000000000',
       },
@@ -71,13 +83,17 @@ const capacities = [
         amount: '1752525132313136206805332',
       },
       {
+        assetId: 6,
+        amount: '1752525131469',
+      },
+      {
         assetId: 255,
         amount: '61011640000000000000000',
       },
     ],
     allocatedNxm: '32725200000000000000000',
-    minAnnualPrice: '0.09',
-    maxAnnualPrice: '0.112156212788396874',
+    minAnnualPrice: '0.0775',
+    maxAnnualPrice: '0.104190714614767679',
   },
 ];
 
@@ -106,6 +122,10 @@ const quote = {
         {
           assetId: '1',
           amount: '2826484798959880487553',
+        },
+        {
+          assetId: '6',
+          amount: '2826484797',
         },
         {
           assetId: '255',

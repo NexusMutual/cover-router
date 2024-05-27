@@ -4,11 +4,13 @@ const store = {
   assetRates: {
     0: BigNumber.from(10280040304526400n),
     1: BigNumber.from(28724439013819923654n),
+    6: BigNumber.from(28724439n),
     255: BigNumber.from(1000000000000000000n),
   },
   assets: {
     ETH: 0,
     DAI: 1,
+    USDC: 6,
     NXM: 255,
   },
   globalCapacityRatio: BigNumber.from(20000),
