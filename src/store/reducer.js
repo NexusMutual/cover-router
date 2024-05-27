@@ -8,7 +8,7 @@ const {
 
 const initialState = {
   assetRates: {}, // assetId -> rate
-  assets: { ETH: 0, DAI: 1, NXM: 255 },
+  assets: { ETH: 0, DAI: 1, USDC: 6, NXM: 255 },
   globalCapacityRatio: 0,
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
