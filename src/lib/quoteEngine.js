@@ -213,7 +213,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
   const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
 
-  // TODO: use asset decimals instead of generic 18 decimals
   const coverAmountInNxm = amount.mul(WeiPerEther).div(assetRate);
 
   // rounding up to nearest allocation unit

@@ -104,7 +104,6 @@ function capacityEngine(store, productIds, time, period = 30) {
 
       const capacityInAssets = Object.values(assets).map(assetId => ({
         assetId,
-        // TODO: use asset decimals instead of generic 18 decimals
         amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
       }));
 
@@ -140,7 +139,6 @@ function capacityEngine(store, productIds, time, period = 30) {
 
       const capacityInAssets = Object.values(assets).map(assetId => ({
         assetId,
-        // TODO: use asset decimals instead of generic 18 decimals
         amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
       }));
 
