@@ -1,9 +1,9 @@
-// NOTE: this must be updated is reducer.js inititaState.assets is updated
+// NOTE: this must be updated if reducer.js initialState.assets is updated
 const assets = {
-  0: { symbol: 'ETH', decimals: 18 },
-  1: { symbol: 'DAI', decimals: 18 },
-  6: { symbol: 'USDC', decimals: 6 },
-  255: { symbol: 'NXM', decimals: 18 },
+  0: { id: '0', symbol: 'ETH', decimals: 18 },
+  1: { id: '1', symbol: 'DAI', decimals: 18 },
+  6: { id: '6', symbol: 'USDC', decimals: 6 },
+  255: { id: '255', symbol: 'NXM', decimals: 18 },
 };
 
 const capacities = [
@@ -16,18 +16,22 @@ const capacities = [
       {
         assetId: 0,
         amount: '4761714669056628480',
+        asset: assets[0],
       },
       {
         assetId: 1,
         amount: '13305160151201388636532',
+        asset: assets[1],
       },
       {
         assetId: 6,
         amount: '13305160144',
+        asset: assets[6],
       },
       {
         assetId: 255,
         amount: '463200000000000000000',
+        asset: assets[255],
       },
     ],
   },
@@ -40,18 +44,22 @@ const capacities = [
       {
         assetId: 0,
         amount: '5267492652039327360',
+        asset: assets[0],
       },
       {
         assetId: 1,
         amount: '14718402550681328880309',
+        asset: assets[1],
       },
       {
         assetId: 6,
         amount: '14718402543',
+        asset: assets[6],
       },
       {
         assetId: 255,
         amount: '512400000000000000000',
+        asset: assets[255],
       },
     ],
   },
@@ -64,18 +72,22 @@ const capacities = [
       {
         assetId: 0,
         amount: '4761714669056628480',
+        asset: assets[0],
       },
       {
         assetId: 1,
         amount: '13305160151201388636532',
+        asset: assets[1],
       },
       {
         assetId: 6,
         amount: '13305160144',
+        asset: assets[6],
       },
       {
         assetId: 255,
         amount: '463200000000000000000',
+        asset: assets[255],
       },
     ],
   },
@@ -85,18 +97,22 @@ const capacities = [
       {
         assetId: 0,
         amount: '627202118245255087296',
+        asset: assets[0],
       },
       {
         assetId: 1,
         amount: '1752525132313136206805332',
+        asset: assets[1],
       },
       {
         assetId: 6,
         amount: '1752525131469',
+        asset: assets[6],
       },
       {
         assetId: 255,
         amount: '61011640000000000000000',
+        asset: assets[255],
       },
     ],
     allocatedNxm: '32725200000000000000000',
@@ -156,10 +172,7 @@ const quoteMapping = {
 const getQuote = assetId => ({
   quote: {
     ...quoteMapping[assetId],
-    asset: {
-      symbol: assets[assetId].symbol,
-      decimals: assets[assetId].decimals,
-    },
+    asset: assets[assetId],
   },
   capacities: [
     {
@@ -168,18 +181,22 @@ const getQuote = assetId => ({
         {
           assetId: '0',
           amount: '1011555965965397760',
+          asset: assets[0],
         },
         {
           assetId: '1',
           amount: '2826484798959880487553',
+          asset: assets[1],
         },
         {
           assetId: '6',
           amount: '2826484797',
+          asset: assets[6],
         },
         {
           assetId: '255',
           amount: '98400000000000000000',
+          asset: assets[255],
         },
       ],
     },
