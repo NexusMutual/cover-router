@@ -19,12 +19,18 @@ const selectProductPools = (store, productId) => {
 
 const selectAssetSymbol = (store, assetId) => {
   const { assets } = store.getState();
-  return Object.keys(assets).find(key => assets[key] === assetId);
+  return assets[assetId].symbol;
+};
+
+const selectAssetDecimals = (store, assetId) => {
+  const { assets } = store.getState();
+  return assets[assetId].decimals;
 };
 
 module.exports = {
   selectAssetRate,
   selectAssetSymbol,
+  selectAssetDecimals,
   selectProduct,
   selectProductPools,
 };

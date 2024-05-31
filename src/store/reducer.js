@@ -8,7 +8,12 @@ const {
 
 const initialState = {
   assetRates: {}, // assetId -> rate
-  assets: { ETH: 0, DAI: 1, USDC: 6, NXM: 255 },
+  assets: {
+    0: { symbol: 'ETH', decimals: 18 },
+    1: { symbol: 'DAI', decimals: 18 },
+    6: { symbol: 'USDC', decimals: 6 },
+    255: { symbol: 'NXM', decimals: 18 },
+  },
   globalCapacityRatio: 0,
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
