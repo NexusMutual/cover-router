@@ -3,7 +3,7 @@ const { BigNumber, ethers } = require('ethers');
 const { quoteEngine } = require('../lib/quoteEngine');
 const { asyncRoute } = require('../lib/helpers');
 const { TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
-const { selectAssetInfo } = require('../store/selectors');
+const { selectAsset } = require('../store/selectors');
 
 const router = express.Router();
 const { Zero } = ethers.constants;
@@ -200,7 +200,7 @@ router.get(
         premiumInNXM: quote.premiumInNXM.toString(),
         premiumInAsset: quote.premiumInAsset.toString(),
         poolAllocationRequests: quote.poolAllocationRequests,
-        asset: selectAssetInfo(store, coverAsset),
+        asset: selectAsset(store, coverAsset),
       },
       capacities: quote.capacities.map(({ poolId, capacity }) => ({
         poolId: poolId.toString(),

@@ -17,15 +17,14 @@ const selectProductPools = (store, productId) => {
   });
 };
 
-const selectAssetInfo = (store, assetId) => {
+const selectAsset = (store, assetId) => {
   const { assets } = store.getState();
-  const { id, symbol, decimals } = assets[assetId];
-  return { id, symbol, decimals };
+  return assets[assetId];
 };
 
 module.exports = {
   selectAssetRate,
-  selectAssetInfo,
+  selectAsset,
   selectProduct,
   selectProductPools,
 };

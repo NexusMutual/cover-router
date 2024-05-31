@@ -1,6 +1,6 @@
 const { BigNumber, ethers } = require('ethers');
 const { calculateTrancheId, divCeil } = require('./helpers');
-const { selectAssetInfo, selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
+const { selectAsset, selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
 
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
@@ -278,7 +278,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     const capacity = Object.entries(assetRates).map(([assetId, rate]) => ({
       assetId,
       amount: capacityInNxm.mul(rate).div(WeiPerEther),
-      asset: selectAssetInfo(store, assetId),
+      asset: selectAsset(store, assetId),
     }));
 
     console.log('Pool:', poolId);
