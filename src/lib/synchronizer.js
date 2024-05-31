@@ -68,7 +68,7 @@ module.exports = async (store, chainApi, eventsApi) => {
 
   const updateAssetRates = async () => {
     const { assets } = store.getState();
-    const assetIds = Object.values(assets);
+    const assetIds = Object.keys(assets);
     for (const assetId of assetIds) {
       const rate = await chainApi.fetchTokenPriceInAsset(assetId);
       store.dispatch({ type: SET_ASSET_RATE, payload: { assetId, rate } });
