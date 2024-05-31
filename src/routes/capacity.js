@@ -138,7 +138,7 @@ router.get(
  *                       amount:
  *                         type: string
  *                         format: integer
- *                         description: The capacity amount expressed in the smallest unit of the asset
+ *                         description: The capacity amount expressed in the the asset
  *                       asset:
  *                         type: object
  *                         description: An object containing asset info
