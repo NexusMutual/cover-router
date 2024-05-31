@@ -88,6 +88,17 @@ const { Zero } = ethers.constants;
  *                             type: boolean
  *                             description: Skip
  *                             default: false
+ *                     asset:
+ *                       type: object
+ *                       description: An object containing cover asset
+ *                       properties:
+ *                         symbol:
+ *                           type: string
+ *                           description: The symbol of the cover asset
+ *                         decimals:
+ *                           type: integer
+ *                           description: The decimals of the cover asset
+ *                           example: 18
  *                 capacities:
  *                   type: array
  *                   description: Show the pools with sufficient (and cheapest) capacity for the requested cover.

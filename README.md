@@ -4,11 +4,12 @@ Computes the optimal capacity allocation in order to get the best price on cover
 ## Table of Contents
 
 - [Cover Router](#cover-router)
-    - [Table of Contents](#table-of-contents)
-    - [Setup](#setup)
-    - [Usage](#usage)
-        - [Get Quote](#quote-route)
-        - [Get Capacity](#capacity-route)
+  - [Table of Contents](#table-of-contents)
+  - [Setup](#setup)
+  - [Usage](#usage)
+    - [Quote Route](#quote-route)
+    - [Capacity Route](#capacity-route)
+    - [Capacity Route for a specific product](#capacity-route-for-a-specific-product)
 
 ## Setup
 
