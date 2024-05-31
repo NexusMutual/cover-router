@@ -9,8 +9,10 @@ const createChainApi = async contracts => {
   const stakingProducts = contracts('StakingProducts');
   const stakingViewer = contracts('StakingViewer');
 
+  const NXM_ASSET_ID = '255';
+
   const fetchTokenPriceInAsset = async assetId => {
-    return assetId === 255 ? WeiPerEther : pool.getInternalTokenPriceInAsset(assetId);
+    return assetId === NXM_ASSET_ID ? WeiPerEther : pool.getInternalTokenPriceInAsset(assetId);
   };
 
   const fetchGlobalCapacityRatio = async () => cover.globalCapacityRatio();
