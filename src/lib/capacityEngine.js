@@ -102,8 +102,8 @@ function capacityEngine(store, productIds, time, period = 30) {
         ? Zero
         : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
 
-      const capacityInAssets = Object.values(assets).map(assetId => ({
-        assetId,
+      const capacityInAssets = Object.keys(assets).map(assetId => ({
+        assetId: Number(assetId),
         amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
       }));
 
@@ -136,9 +136,8 @@ function capacityEngine(store, productIds, time, period = 30) {
       }
 
       const { capacityAvailableNXM, capacityUsedNXM, minPrice } = productData;
-
-      const capacityInAssets = Object.values(assets).map(assetId => ({
-        assetId,
+      const capacityInAssets = Object.keys(assets).map(assetId => ({
+        assetId: Number(assetId),
         amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
       }));
 
