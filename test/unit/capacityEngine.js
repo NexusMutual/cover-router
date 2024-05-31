@@ -1,11 +1,11 @@
-const sinon = require('sinon');
 const { expect } = require('chai');
 const { BigNumber } = require('ethers');
+const sinon = require('sinon');
 
-const capacityEngine = require('../../src/lib/capacityEngine');
-const mockStore = require('../mocks/store');
 const { capacities } = require('./responses');
+const capacityEngine = require('../../src/lib/capacityEngine');
 const { selectAsset } = require('../../src/store/selectors');
+const mockStore = require('../mocks/store');
 
 describe('Capacity Engine tests', () => {
   const store = { getState: () => null };

@@ -1,7 +1,9 @@
 const fs = require('fs');
+
 const { expect } = require('chai');
-const { stateFile, parseCache, clear, load, save } = require('../../src/store/cache');
 const { BigNumber } = require('ethers');
+
+const { stateFile, parseCache, clear, load, save } = require('../../src/store/cache');
 
 describe('cache', function () {
   beforeEach(function () {

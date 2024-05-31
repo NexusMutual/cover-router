@@ -1,12 +1,13 @@
-const sinon = require('sinon');
+const { expect } = require('chai');
 const {
   utils: { parseEther, parseUnits },
 } = require('ethers');
-const { expect } = require('chai');
+const { BigNumber } = require('ethers');
+const sinon = require('sinon');
+
+const { MIN_COVER_PERIOD } = require('../../src/lib/constants');
 const { quoteEngine } = require('../../src/lib/quoteEngine');
 const mockStore = require('../mocks/store');
-const { BigNumber } = require('ethers');
-const { MIN_COVER_PERIOD } = require('../../src/lib/constants');
 
 describe('Quote Engine tests', () => {
   const store = { getState: () => null };

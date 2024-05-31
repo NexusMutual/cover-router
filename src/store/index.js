@@ -1,7 +1,7 @@
 const { createStore } = require('redux');
 
-const { load, save } = require('./cache');
 const actions = require('./actions');
+const { load, save } = require('./cache');
 const { reducer, initialState } = require('./reducer');
 const selectors = require('./selectors');
 

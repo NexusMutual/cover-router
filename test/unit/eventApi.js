@@ -1,15 +1,14 @@
+const { addresses } = require('@nexusmutual/deployments');
 const { expect } = require('chai');
 const { getDefaultProvider } = require('ethers');
 
+const contractFactory = require('../../src/lib/contracts');
 const eventsApiConstructor = require('../../src/lib/eventsApi');
 
 const stakingPoolEvents = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
 const coverEvents = ['ProductSet', 'CoverEdited'];
 const stakingProductsEvents = ['ProductUpdated'];
 const stakingPoolFactoryEvents = ['StakingPoolCreated'];
-
-const contractFactory = require('../../src/lib/contracts');
-const { addresses } = require('@nexusmutual/deployments');
 
 function contractFactoryMock(addresses, provider) {
   const factory = contractFactory(addresses, provider);

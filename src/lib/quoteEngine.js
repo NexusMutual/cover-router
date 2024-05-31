@@ -1,11 +1,4 @@
 const { BigNumber, ethers } = require('ethers');
-const { calculateTrancheId, divCeil } = require('./helpers');
-const { selectAsset, selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
-
-const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
-const { formatEther } = ethers.utils;
-
-const { bnMax, bnMin } = require('./helpers');
 
 const {
   NXM_PER_ALLOCATION_UNIT,
@@ -17,6 +10,11 @@ const {
   TARGET_PRICE_DENOMINATOR,
   SURGE_CHUNK_DIVISOR,
 } = require('./constants');
+const { calculateTrancheId, divCeil, bnMax, bnMin } = require('./helpers');
+const { selectAsset, selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
+
+const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
+const { formatEther } = ethers.utils;
 
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
   const elapsed = now.sub(bumpedPriceUpdateTime);

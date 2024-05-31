@@ -1,4 +1,5 @@
 const EventEmitter = require('events');
+
 const { calculateTrancheId, calculateBucketId } = require('./helpers');
 
 const events = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];

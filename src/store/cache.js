@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+
 const { BigNumber } = require('ethers');
 
 const stateFile = path.resolve(__dirname, '../../storage/state.json');
