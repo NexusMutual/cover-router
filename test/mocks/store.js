@@ -8,10 +8,10 @@ const store = {
     255: BigNumber.from(1000000000000000000n),
   },
   assets: {
-    ETH: 0,
-    DAI: 1,
-    USDC: 6,
-    NXM: 255,
+    0: { symbol: 'ETH', decimals: 18 },
+    1: { symbol: 'DAI', decimals: 18 },
+    6: { symbol: 'USDC', decimals: 6 },
+    255: { symbol: 'NXM', decimals: 18 },
   },
   globalCapacityRatio: BigNumber.from(20000),
   poolProducts: {

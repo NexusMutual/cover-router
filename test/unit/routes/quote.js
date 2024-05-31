@@ -3,9 +3,14 @@ const supertest = require('supertest');
 const ethers = require('ethers');
 
 const initApp = require('../../mocks/server');
-const { quote } = require('../responses');
+const { getQuote } = require('../responses');
+const { parseUnits } = require('ethers/lib/utils');
 
 const { parseEther } = ethers.utils;
+
+const ETH_ASSET_ID = 0;
+const DAI_ASSET_ID = 1;
+const USDC_ASSET_ID = 6;
 
 describe('GET /quote', async () => {
   let server;
@@ -14,19 +19,50 @@ describe('GET /quote', async () => {
     server = supertest(app);
   });
 
-  it('should successfully get a quote', async function () {
+  it('should successfully get a quote for coverAsset 0 - ETH', async function () {
     const { body: response } = await server
       .get('/v2/quote')
       .query({
         productId: 0,
         amount: parseEther('1'),
         period: 365,
-        coverAsset: 0,
+        coverAsset: ETH_ASSET_ID,
         paymentAsset: 0,
       })
       .expect('Content-Type', /json/)
       .expect(200);
-    expect(response).to.be.deep.equal(quote);
+    expect(response).to.be.deep.equal(getQuote(ETH_ASSET_ID));
+  });
+
+  it('should successfully get a quote for coverAsset 1 - DAI', async function () {
+    const { body: response } = await server
+      .get('/v2/quote')
+      .query({
+        productId: 0,
+        amount: parseEther('1'),
+        period: 365,
+        coverAsset: DAI_ASSET_ID,
+        paymentAsset: 0,
+      })
+      .expect('Content-Type', /json/)
+      .expect(200);
+    expect(response).to.be.deep.equal(getQuote(DAI_ASSET_ID));
+  });
+
+  it('should successfully get a quote for coverAsset 6 - USDC', async function () {
+    console.log('amount: ', parseUnits('1', 6).toString());
+    const { body: response } = await server
+      .get('/v2/quote')
+      .query({
+        productId: 0,
+        amount: parseUnits('10', 6),
+        period: 365,
+        coverAsset: USDC_ASSET_ID,
+        paymentAsset: 0,
+      })
+      .expect('Content-Type', /json/)
+      .expect(200);
+    expect(response).to.be.deep.equal(getQuote(USDC_ASSET_ID));
   });
 
   it('should fail get a quote for cover over the capacity', async function () {
@@ -46,7 +82,7 @@ describe('GET /quote', async () => {
     expect(error).to.be.equal('Not enough capacity for the cover amount');
   });
 
-  it('should successfully get a quote', async function () {
+  it('should return 400 error for invalid productId', async function () {
     const {
       body: { error },
     } = await server

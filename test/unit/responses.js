@@ -1,3 +1,11 @@
+// NOTE: this must be updated is reducer.js inititaState.assets is updated
+const assets = {
+  0: { symbol: 'ETH', decimals: 18 },
+  1: { symbol: 'DAI', decimals: 18 },
+  6: { symbol: 'USDC', decimals: 6 },
+  255: { symbol: 'NXM', decimals: 18 },
+};
+
 const capacities = [
   {
     productId: 0,
@@ -97,19 +105,61 @@ const capacities = [
   },
 ];
 
-const quote = {
+const ethQuote = {
+  annualPrice: '279',
+  premiumInNXM: '2718347967479674796',
+  premiumInAsset: '27944726667418476',
+  totalCoverAmountInAsset: '1000042320824328192',
+  poolAllocationRequests: [
+    {
+      poolId: '1',
+      coverAmountInAsset: '1000042320824328192',
+      skip: false,
+    },
+  ],
+};
+
+const daiQuote = {
+  annualPrice: '199',
+  premiumInNXM: '800000000000000',
+  premiumInAsset: '22979551211055938',
+  totalCoverAmountInAsset: '1148977560552796946',
+  poolAllocationRequests: [
+    {
+      poolId: '1',
+      coverAmountInAsset: '1148977560552796946',
+      skip: false,
+    },
+  ],
+};
+
+const usdcQuote = {
+  annualPrice: '199',
+  premiumInNXM: '7000000000000000',
+  premiumInAsset: '201071',
+  totalCoverAmountInAsset: '10053553',
+  poolAllocationRequests: [
+    {
+      poolId: '1',
+      coverAmountInAsset: '10053553',
+      skip: false,
+    },
+  ],
+};
+
+const quoteMapping = {
+  0: ethQuote,
+  1: daiQuote,
+  6: usdcQuote,
+};
+
+const getQuote = assetId => ({
   quote: {
-    annualPrice: '279',
-    premiumInNXM: '2718347967479674796',
-    premiumInAsset: '27944726667418476',
-    totalCoverAmountInAsset: '1000042320824328192',
-    poolAllocationRequests: [
-      {
-        poolId: '1',
-        coverAmountInAsset: '1000042320824328192',
-        skip: false,
-      },
-    ],
+    ...quoteMapping[assetId],
+    asset: {
+      symbol: assets[assetId].symbol,
+      decimals: assets[assetId].decimals,
+    },
   },
   capacities: [
     {
@@ -134,9 +184,9 @@ const quote = {
       ],
     },
   ],
-};
+});
 
 module.exports = {
   capacities,
-  quote,
+  getQuote,
 };
