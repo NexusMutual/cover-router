@@ -3,7 +3,7 @@ const { BigNumber, ethers } = require('ethers');
 const { quoteEngine } = require('../lib/quoteEngine');
 const { asyncRoute } = require('../lib/helpers');
 const { TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
-const { selectAssetDecimals, selectAssetSymbol } = require('../store/selectors');
+const { selectAssetInfo } = require('../store/selectors');
 
 const router = express.Router();
 const { Zero } = ethers.constants;
@@ -90,8 +90,12 @@ const { Zero } = ethers.constants;
  *                             default: false
  *                     asset:
  *                       type: object
- *                       description: An object containing cover asset
+ *                       description: An object containing cover asset info
  *                       properties:
+ *                         id:
+ *                           type: string
+ *                           format: integer
+ *                           description: The id of the cover asset
  *                         symbol:
  *                           type: string
  *                           description: The symbol of the cover asset
@@ -116,11 +120,26 @@ const { Zero } = ethers.constants;
  *                             assetId:
  *                               type: string
  *                               format: integer
- *                               description: The asset id
+ *                               description: The id of the asset
  *                             amount:
  *                               type: string
  *                               format: integer
- *                               description: The total capacity amount of the pool for the asset.
+ *                               description: The total capacity amount of the pool expressed in the asset.
+ *                             asset:
+ *                               type: object
+ *                               description: An object containing asset info
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                   format: integer
+ *                                   description: The id of the asset
+ *                                 symbol:
+ *                                   type: string
+ *                                   description: The symbol of the asset
+ *                                 decimals:
+ *                                   type: integer
+ *                                   description: The decimals of the asset
+ *                                   example: 18
  */
 router.get(
   '/quote',
@@ -181,14 +200,11 @@ router.get(
         premiumInNXM: quote.premiumInNXM.toString(),
         premiumInAsset: quote.premiumInAsset.toString(),
         poolAllocationRequests: quote.poolAllocationRequests,
-        asset: {
-          symbol: selectAssetSymbol(store, coverAsset),
-          decimals: selectAssetDecimals(store, coverAsset),
-        },
+        asset: selectAssetInfo(store, coverAsset),
       },
       capacities: quote.capacities.map(({ poolId, capacity }) => ({
         poolId: poolId.toString(),
-        capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
+        capacity: capacity.map(({ assetId, amount, asset }) => ({ assetId, amount: amount.toString(), asset })),
       })),
     };
 

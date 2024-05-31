@@ -1,6 +1,6 @@
 const { BigNumber, ethers } = require('ethers');
 const { calculateTrancheId, divCeil } = require('./helpers');
-const { selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
+const { selectAssetInfo, selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
 
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
@@ -272,14 +272,13 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       : calculatePremiumPerYear(amountToAllocate, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
 
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
-
-    // TODO: use asset decimals instead of generic 18 decimals
     const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);
 
     const capacityInNxm = pool.totalCapacity.sub(pool.initialCapacityUsed);
     const capacity = Object.entries(assetRates).map(([assetId, rate]) => ({
       assetId,
       amount: capacityInNxm.mul(rate).div(WeiPerEther),
+      asset: selectAssetInfo(store, assetId),
     }));
 
     console.log('Pool:', poolId);
