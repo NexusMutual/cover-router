@@ -1,10 +1,10 @@
 const { expect } = require('chai');
-const supertest = require('supertest');
 const ethers = require('ethers');
+const { parseUnits } = require('ethers/lib/utils');
+const supertest = require('supertest');
 
 const initApp = require('../../mocks/server');
 const { getQuote } = require('../responses');
-const { parseUnits } = require('ethers/lib/utils');
 
 const { parseEther } = ethers.utils;
 
@@ -12,7 +12,7 @@ const ETH_ASSET_ID = 0;
 const DAI_ASSET_ID = 1;
 const USDC_ASSET_ID = 6;
 
-describe('GET /quote', async () => {
+describe('GET /quote', () => {
   let server;
   before(() => {
     const app = initApp();

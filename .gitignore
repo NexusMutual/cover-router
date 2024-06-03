@@ -1,6 +1,13 @@
+# editor
 .idea
+.vscode
 
-node_modules
+# dependencies
+node_modules/
+
+# test coverage
 coverage/
+.nyc_output/
 
+# env
 .env

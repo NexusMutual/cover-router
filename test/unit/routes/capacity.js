@@ -1,9 +1,10 @@
 const { expect } = require('chai');
 const supertest = require('supertest');
+
 const initApp = require('../../mocks/server');
 const { capacities } = require('../responses');
 
-describe('GET /capacity', async () => {
+describe('GET /capacity', () => {
   let server;
   before(() => {
     const app = initApp();

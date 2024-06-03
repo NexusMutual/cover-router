@@ -1,9 +1,9 @@
 const { ethers, BigNumber } = require('ethers');
 
-const { selectAsset, selectProduct, selectProductPools } = require('../store/selectors');
 const { NXM_PER_ALLOCATION_UNIT } = require('./constants');
 const { bnMax, bnMin, calculateTrancheId } = require('./helpers');
 const { calculateBasePrice, calculatePremiumPerYear, calculateFixedPricePremiumPerYear } = require('./quoteEngine');
+const { selectAsset, selectProduct, selectProductPools } = require('../store/selectors');
 
 const { WeiPerEther, Zero } = ethers.constants;
 

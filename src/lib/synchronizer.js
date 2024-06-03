@@ -1,5 +1,5 @@
-const config = require('../config');
 const { calculateTrancheId, promiseAllInBatches } = require('./helpers');
+const config = require('../config');
 const {
   SET_ASSET_RATE,
   SET_GLOBAL_CAPACITY_RATIO,

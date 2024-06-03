@@ -1,22 +1,20 @@
 require('dotenv').config();
 
-const express = require('express');
-const { ethers } = require('ethers');
 const { addresses } = require('@nexusmutual/deployments');
+const { ethers } = require('ethers');
+const express = require('express');
 const swaggerUI = require('swagger-ui-express');
-const swaggerSpec = require('./lib/swagger');
 
 const config = require('./config');
-const { createStore, initialState, load, save } = require('./store');
-
-const contractFactory = require('./lib/contracts');
 const createChainApi = require('./lib/chainApi');
+const contractFactory = require('./lib/contracts');
 const createEventsApi = require('./lib/eventsApi');
+const swaggerSpec = require('./lib/swagger');
 const createSynchronizer = require('./lib/synchronizer');
-
 const capacityRouter = require('./routes/capacity');
 const quoteRouter = require('./routes/quote');
 const reindexRouter = require('./routes/reindex');
+const { createStore, initialState, load, save } = require('./store');
 
 const main = async () => {
   // provider

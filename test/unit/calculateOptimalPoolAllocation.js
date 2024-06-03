@@ -1,9 +1,10 @@
-const sinon = require('sinon');
+const { expect } = require('chai');
 const {
   utils: { parseEther },
 } = require('ethers');
-const { expect } = require('chai');
 const { BigNumber } = require('ethers');
+const sinon = require('sinon');
+
 const { calculateOptimalPoolAllocation } = require('../../src/lib/quoteEngine');
 
 const INITIAL_POOL_INDEX = 1;
