@@ -1,6 +1,6 @@
 {
   "name": "cover-router",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Cover Router",
   "main": "src/index.js",
   "scripts": {
@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/NexusMutual/cover-router#readme",
   "dependencies": {
-    "@nexusmutual/deployments": "^2.6.1",
+    "@nexusmutual/deployments": "^2.6.2",
     "convict": "^6.2.4",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",

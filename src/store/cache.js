@@ -27,7 +27,13 @@ const load = defaultState => {
   }
 
   const contents = fs.readFileSync(stateFile, 'utf8');
-  return parseCache(JSON.parse(contents));
+
+  const parsedData = parseCache(JSON.parse(contents));
+
+  // refresh constants values
+  parsedData.assets = { ...defaultState.assets };
+
+  return parsedData;
 };
 
 const save = state => {

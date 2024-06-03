@@ -9,7 +9,11 @@ const { formatUnits } = ethers.utils;
 
 const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minAnnualPrice, maxAnnualPrice }) => ({
   productId,
-  availableCapacity: availableCapacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
+  availableCapacity: availableCapacity.map(({ assetId, amount, asset }) => ({
+    assetId,
+    amount: amount.toString(),
+    asset,
+  })),
   allocatedNxm: usedCapacity.toString(),
   minAnnualPrice: formatUnits(minAnnualPrice),
   maxAnnualPrice: formatUnits(maxAnnualPrice),
@@ -48,7 +52,22 @@ const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minA
  *                         amount:
  *                           type: string
  *                           format: integer
- *                           description: The capacity amount
+ *                           description: The capacity amount expressed in the asset
+ *                         asset:
+ *                           type: object
+ *                           description: An object containing asset info
+ *                           properties:
+ *                             id:
+ *                               type: string
+ *                               format: integer
+ *                               description: The id of the asset
+ *                             symbol:
+ *                               type: string
+ *                               description: The symbol of the asset
+ *                             decimals:
+ *                               type: integer
+ *                               description: The decimals of the asset
+ *                               example: 18
  *                   allocatedNxm:
  *                     type: string
  *                     format: integer
@@ -118,7 +137,23 @@ router.get(
  *                         description: The asset id
  *                       amount:
  *                         type: string
- *                         description: The capacity amount
+ *                         format: integer
+ *                         description: The capacity amount expressed in the the asset
+ *                       asset:
+ *                         type: object
+ *                         description: An object containing asset info
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             format: integer
+ *                             description: The id of the asset
+ *                           symbol:
+ *                             type: string
+ *                             description: The symbol of the asset
+ *                           decimals:
+ *                             type: integer
+ *                             description: The decimals of the asset
+ *                             example: 18
  *                 allocatedNxm:
  *                   type: string
  *                   description: The used capacity amount for active covers on the product.

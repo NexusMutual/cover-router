@@ -3,6 +3,7 @@ const { BigNumber, ethers } = require('ethers');
 const { quoteEngine } = require('../lib/quoteEngine');
 const { asyncRoute } = require('../lib/helpers');
 const { TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
+const { selectAsset } = require('../store/selectors');
 
 const router = express.Router();
 const { Zero } = ethers.constants;
@@ -87,6 +88,21 @@ const { Zero } = ethers.constants;
  *                             type: boolean
  *                             description: Skip
  *                             default: false
+ *                     asset:
+ *                       type: object
+ *                       description: An object containing cover asset info
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           format: integer
+ *                           description: The id of the cover asset
+ *                         symbol:
+ *                           type: string
+ *                           description: The symbol of the cover asset
+ *                         decimals:
+ *                           type: integer
+ *                           description: The decimals of the cover asset
+ *                           example: 18
  *                 capacities:
  *                   type: array
  *                   description: Show the pools with sufficient (and cheapest) capacity for the requested cover.
@@ -104,11 +120,26 @@ const { Zero } = ethers.constants;
  *                             assetId:
  *                               type: string
  *                               format: integer
- *                               description: The asset id
+ *                               description: The id of the asset
  *                             amount:
  *                               type: string
  *                               format: integer
- *                               description: The total capacity amount of the pool for the asset.
+ *                               description: The total capacity amount of the pool expressed in the asset.
+ *                             asset:
+ *                               type: object
+ *                               description: An object containing asset info
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                   format: integer
+ *                                   description: The id of the asset
+ *                                 symbol:
+ *                                   type: string
+ *                                   description: The symbol of the asset
+ *                                 decimals:
+ *                                   type: integer
+ *                                   description: The decimals of the asset
+ *                                   example: 18
  */
 router.get(
   '/quote',
@@ -129,7 +160,7 @@ router.get(
       return res.status(400).send({ error: 'Not enough capacity for the cover amount', response: null });
     }
 
-    if (route.error === 'isDeprecated') {
+    if (route.error && route.error.isDeprecated) {
       return res.status(400).send({ error: 'Product is deprecated', response: null });
     }
 
@@ -169,10 +200,11 @@ router.get(
         premiumInNXM: quote.premiumInNXM.toString(),
         premiumInAsset: quote.premiumInAsset.toString(),
         poolAllocationRequests: quote.poolAllocationRequests,
+        asset: selectAsset(store, coverAsset),
       },
       capacities: quote.capacities.map(({ poolId, capacity }) => ({
         poolId: poolId.toString(),
-        capacity: capacity.map(({ assetId, amount }) => ({ assetId, amount: amount.toString() })),
+        capacity: capacity.map(({ assetId, amount, asset }) => ({ assetId, amount: amount.toString(), asset })),
       })),
     };
 

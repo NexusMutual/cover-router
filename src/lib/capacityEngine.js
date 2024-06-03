@@ -1,6 +1,6 @@
 const { ethers, BigNumber } = require('ethers');
 
-const { selectProductPools, selectProduct } = require('../store/selectors');
+const { selectAsset, selectProduct, selectProductPools } = require('../store/selectors');
 const { NXM_PER_ALLOCATION_UNIT } = require('./constants');
 const { bnMax, bnMin, calculateTrancheId } = require('./helpers');
 const { calculateBasePrice, calculatePremiumPerYear, calculateFixedPricePremiumPerYear } = require('./quoteEngine');
@@ -102,10 +102,10 @@ function capacityEngine(store, productIds, time, period = 30) {
         ? Zero
         : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
 
-      const capacityInAssets = Object.values(assets).map(assetId => ({
-        assetId,
-        // TODO: use asset decimals instead of generic 18 decimals
+      const capacityInAssets = Object.keys(assets).map(assetId => ({
+        assetId: Number(assetId),
         amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
+        asset: selectAsset(store, assetId),
       }));
 
       capacities.push({
@@ -137,11 +137,10 @@ function capacityEngine(store, productIds, time, period = 30) {
       }
 
       const { capacityAvailableNXM, capacityUsedNXM, minPrice } = productData;
-
-      const capacityInAssets = Object.values(assets).map(assetId => ({
-        assetId,
-        // TODO: use asset decimals instead of generic 18 decimals
+      const capacityInAssets = Object.keys(assets).map(assetId => ({
+        assetId: Number(assetId),
         amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
+        asset: selectAsset(store, assetId),
       }));
 
       capacities.push({

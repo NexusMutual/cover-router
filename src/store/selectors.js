@@ -17,14 +17,14 @@ const selectProductPools = (store, productId) => {
   });
 };
 
-const selectAssetSymbol = (store, assetId) => {
+const selectAsset = (store, assetId) => {
   const { assets } = store.getState();
-  return Object.keys(assets).find(key => assets[key] === assetId);
+  return assets[assetId];
 };
 
 module.exports = {
   selectAssetRate,
-  selectAssetSymbol,
+  selectAsset,
   selectProduct,
   selectProductPools,
 };

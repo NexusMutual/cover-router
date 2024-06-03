@@ -5,6 +5,7 @@ const { BigNumber } = require('ethers');
 const capacityEngine = require('../../src/lib/capacityEngine');
 const mockStore = require('../mocks/store');
 const { capacities } = require('./responses');
+const { selectAsset } = require('../../src/store/selectors');
 
 describe('Capacity Engine tests', () => {
   const store = { getState: () => null };
@@ -20,8 +21,9 @@ describe('Capacity Engine tests', () => {
 
     response.forEach((product, i) => {
       expect(product.productId).to.be.equal(capacities[i].productId);
-      product.availableCapacity.forEach(({ amount }, j) => {
+      product.availableCapacity.forEach(({ assetId, amount, asset }, j) => {
         expect(amount.toString()).to.be.equal(capacities[i].availableCapacity[j].amount);
+        expect(asset).to.deep.equal(selectAsset(store, assetId));
       });
     });
   });
@@ -34,8 +36,9 @@ describe('Capacity Engine tests', () => {
     const [expectedCapacities] = capacities;
 
     expect(product.productId).to.be.equal(expectedCapacities.productId);
-    product.availableCapacity.forEach(({ amount }, i) => {
+    product.availableCapacity.forEach(({ assetId, amount, asset }, i) => {
       expect(amount.toString()).not.to.be.equal(expectedCapacities.availableCapacity[i]);
+      expect(asset).to.deep.equal(selectAsset(store, assetId));
     });
   });
 
