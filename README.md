@@ -28,9 +28,9 @@ restart constantly*
 ## Usage
 
 ### Quote Route
-- **URL**: `/v2/api/quote`
+- **URL**: `/v2/quote`
 - **Method**: `GET`
-- **OpenAPI**: `/v2/api/docs/#/Quote/get_api_v2_quote`
+- **OpenAPI**: [v2/api/docs/#/Quote/get_v2_quote](https://api.nexusmutual.io/v2/api/docs/#/Quote/get_v2_quote)
 - **Description**: The quote route uses a product id, a period and the cover amount for a given cover asset to return premium and the
 best available combination of pools for the premium.
 - **Quote Engine**: Calculation is based on batching the current capacities and mapping them with the
@@ -38,14 +38,14 @@ best available combination of pools for the premium.
   cheapest capacity.
 
 ### Capacity Route
-- **URL**: `v2/api/capacity`
+- **URL**: `/v2/capacity`
 - **Method**: `GET`
-- **OpenAPI**: `/v2/api/docs/#/Capacity/get_api_v2_capacity_`
+- **OpenAPI**: [v2/api/docs/#/Capacity/get_v2_capacity_](https://api.nexusmutual.io/v2/api/docs/#/Capacity/get_v2_capacity_)
 - **Description**: Returns the current capacity for all products for a period of 30 days if no period query param is specified.
 
 ### Capacity Route for a specific product
-- **URL**: `v2/api/capacity/{productId}`
+- **URL**: `/v2/capacity/{productId}`
 - **Method**: `GET`
-- **OpenAPI**: `/v2/api/docs/#/Capacity/get_api_v2_capacity__productId_`
+- **OpenAPI**: [v2/api/docs/#/Capacity/get_v2_capacity__productId_](https://api.nexusmutual.io/v2/api/docs/#/Capacity/get_v2_capacity__productId_)
 - **Description**: Returns the current capacity for a specific product for a period of 30 days if no period query param is specified.
 
