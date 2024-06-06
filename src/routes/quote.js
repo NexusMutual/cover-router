@@ -131,8 +131,7 @@ const { Zero } = ethers.constants;
  *                               description: An object containing asset info
  *                               properties:
  *                                 id:
- *                                   type: string
- *                                   format: integer
+ *                                   type: integer
  *                                   description: The id of the asset
  *                                 symbol:
  *                                   type: string
@@ -205,6 +204,7 @@ router.get(
       },
       capacities: quote.capacities.map(({ poolId, capacity }) => ({
         poolId: poolId.toString(),
+        // NOTE: capacity[n].assetId is currently a string (it should ideally a number - BREAKING CHANGE)
         capacity: capacity.map(({ assetId, amount, asset }) => ({ assetId, amount: amount.toString(), asset })),
       })),
     };

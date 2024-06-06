@@ -58,8 +58,7 @@ const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minA
  *                           description: An object containing asset info
  *                           properties:
  *                             id:
- *                               type: string
- *                               format: integer
+ *                               type: integer
  *                               description: The id of the asset
  *                             symbol:
  *                               type: string
@@ -144,8 +143,7 @@ router.get(
  *                         description: An object containing asset info
  *                         properties:
  *                           id:
- *                             type: string
- *                             format: integer
+ *                             type: integer
  *                             description: The id of the asset
  *                           symbol:
  *                             type: string
