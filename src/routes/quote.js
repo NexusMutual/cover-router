@@ -94,8 +94,7 @@ const { Zero } = ethers.constants;
  *                       description: An object containing cover asset info
  *                       properties:
  *                         id:
- *                           type: string
- *                           format: integer
+ *                           type: integer
  *                           description: The id of the cover asset
  *                         symbol:
  *                           type: string
