@@ -6,7 +6,7 @@ const {
   SET_PRODUCT,
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
-  REMOVE_OLD_PRODUCT_POOLS,
+  RESET_PRODUCT_POOLS,
 } = require('../store/actions');
 
 module.exports = async (store, chainApi, eventsApi) => {
@@ -20,7 +20,7 @@ module.exports = async (store, chainApi, eventsApi) => {
     const poolIds = await chainApi.fetchProductPoolsIds(productId);
 
     store.dispatch({
-      type: REMOVE_OLD_PRODUCT_POOLS,
+      type: RESET_PRODUCT_POOLS,
       payload: { productId, poolIds },
     });
 

@@ -4,7 +4,7 @@ const {
   SET_PRODUCT,
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
-  REMOVE_OLD_PRODUCT_POOLS,
+  RESET_PRODUCT_POOLS,
 } = require('./actions');
 
 const initialState = {
@@ -55,7 +55,7 @@ function reducer(state = initialState, { type, payload }) {
     return { ...state, trancheId: payload };
   }
 
-  if (type === REMOVE_OLD_PRODUCT_POOLS) {
+  if (type === RESET_PRODUCT_POOLS) {
     const { productId, poolIds } = payload;
     const oldProductPoolIds = state.productPoolIds[productId] || [];
     const poolProducts = { ...state.poolProducts };
