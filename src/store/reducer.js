@@ -60,7 +60,8 @@ function reducer(state = initialState, { type, payload }) {
     const oldProductPoolIds = state.productPoolIds[productId] || [];
     const poolProducts = { ...state.poolProducts };
 
-    const poolIdsToRemove = oldProductPoolIds.filter(poolId => !poolIds.includes(poolId));
+    const poolIdsSet = new Set(poolIds);
+    const poolIdsToRemove = oldProductPoolIds.filter(poolId => !poolIdsSet.has(poolId));
 
     for (const poolId of poolIdsToRemove) {
       delete poolProducts[`${productId}_${poolId}`];
