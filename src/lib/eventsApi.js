@@ -1,5 +1,7 @@
 const EventEmitter = require('events');
 
+const { BigNumber } = require('ethers');
+
 const { calculateTrancheId, calculateBucketId } = require('./helpers');
 
 const events = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
@@ -65,13 +67,14 @@ module.exports = async (provider, contracts) => {
 
   // subscribe to events on new staking pool
   stakingPoolFactory.on('StakingPoolCreated', async poolId => {
-    console.log(`Event: Pool ${poolId} created`);
-    emitter.emit('pool:change', poolId);
-    const stakingPool = contracts('StakingPool', poolId);
+    const poolIdParsed = BigNumber.isBigNumber(poolId) ? poolId.toNumber() : poolId;
+    console.log(`Event: Pool ${poolIdParsed} created`);
+    emitter.emit('pool:change', poolIdParsed);
+    const stakingPool = contracts('StakingPool', poolIdParsed);
     for (const eventName of events) {
       stakingPool.on(eventName, () => {
-        console.log(`Event: ${eventName} triggered for Pool ${poolId}`);
-        emitter.emit('pool:change', poolId);
+        console.log(`Event: ${eventName} triggered for Pool ${poolIdParsed}`);
+        emitter.emit('pool:change', poolIdParsed);
       });
     }
   });

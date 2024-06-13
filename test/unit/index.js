@@ -5,4 +5,5 @@ describe('unit tests', function () {
   require('./routes');
   require('./calculateOptimalPoolAllocation');
   require('./cache');
+  require('./synchronizer');
 });

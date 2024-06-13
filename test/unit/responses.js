@@ -122,14 +122,14 @@ const capacities = [
 ];
 
 const ethQuote = {
-  annualPrice: '279',
-  premiumInNXM: '2718347967479674796',
-  premiumInAsset: '27944726667418476',
-  totalCoverAmountInAsset: '1000042320824328192',
+  annualPrice: '199',
+  premiumInNXM: '194600000000000000',
+  premiumInAsset: '2000495843260837',
+  totalCoverAmountInAsset: '100024792163041872',
   poolAllocationRequests: [
     {
       poolId: '1',
-      coverAmountInAsset: '1000042320824328192',
+      coverAmountInAsset: '100024792163041872',
       skip: false,
     },
   ],

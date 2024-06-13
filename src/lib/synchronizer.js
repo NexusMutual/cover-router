@@ -6,6 +6,7 @@ const {
   SET_PRODUCT,
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
+  RESET_PRODUCT_POOLS,
 } = require('../store/actions');
 
 module.exports = async (store, chainApi, eventsApi) => {
@@ -17,6 +18,11 @@ module.exports = async (store, chainApi, eventsApi) => {
 
     const { capacityReductionRatio } = product;
     const poolIds = await chainApi.fetchProductPoolsIds(productId);
+
+    store.dispatch({
+      type: RESET_PRODUCT_POOLS,
+      payload: { productId, poolIds },
+    });
 
     for (const poolId of poolIds) {
       const poolProduct = await chainApi.fetchPoolProduct(

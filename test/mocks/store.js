@@ -75,7 +75,7 @@ const store = {
     },
     '0_3': {
       productId: 0,
-      poolId: 2,
+      poolId: 3,
       allocations: [
         BigNumber.from(0),
         BigNumber.from(0),
