@@ -16,6 +16,9 @@ const { selectAsset, selectAssetRate, selectProductPools, selectProduct } = requ
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
 
+const DELTA_PRIME_UNO_RE_PRODUCT_ID = 186;
+const DELTA_PRIME_CUSTOM_POOL_ID_PRIORITY = [18, 22, 1];
+
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
   const elapsed = now.sub(bumpedPriceUpdateTime);
   const priceDrop = elapsed.mul(PRICE_CHANGE_PER_DAY).div(3600 * 24);
@@ -185,6 +188,37 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice = fals
   return allocations;
 };
 
+/**
+ * Allocates a given amount to pools based on a custom pool ID priority list.
+ *
+ * @param {number} amountToAllocate - The amount to be allocated.
+ * @param {Array<object>} poolsData - An array of pool data objects.
+ * @param {Array<number>} customPoolIdPriority - A list of pool IDs in priority order.
+ * @return {object} An object containing the allocations by pool ID. (poolId => BigNumber amount)
+ */
+const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customPoolIdPriority) => {
+  const allocations = {};
+  let coverAmountLeft = amountToAllocate;
+
+  while (coverAmountLeft > 0 && customPoolIdPriority.length > 0) {
+    const poolId = customPoolIdPriority.shift();
+    const pool = poolsData.find(poolData => poolData.poolId === poolId);
+
+    const capacityLeft = pool.totalCapacity.sub(pool.initialCapacityUsed);
+    const poolAllocation = bnMin(capacityLeft, coverAmountLeft);
+
+    allocations[poolId] = allocations[poolId] ? allocations[poolId].add(poolAllocation) : poolAllocation;
+    coverAmountLeft = coverAmountLeft.gt(poolAllocation) ? coverAmountLeft.sub(poolAllocation) : 0;
+  }
+
+  if (coverAmountLeft > 0) {
+    // not enough total capacity available
+    return [];
+  }
+
+  return allocations;
+};
+
 const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const product = selectProduct(store, productId);
 
@@ -256,7 +290,11 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     };
   });
 
-  const allocations = calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
+  // Use a custom pool allocation priority for DeltaPrime (UnoRe)
+  const allocations =
+    productId === DELTA_PRIME_UNO_RE_PRODUCT_ID
+      ? customAllocationPriorityFixedPrice(amountToAllocate, poolsData, DELTA_PRIME_CUSTOM_POOL_ID_PRIORITY)
+      : calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
     poolId = parseInt(poolId);
@@ -305,4 +343,5 @@ module.exports = {
   calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
   calculateOptimalPoolAllocation,
+  customAllocationPriorityFixedPrice,
 };
