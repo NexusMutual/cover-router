@@ -11,13 +11,16 @@ const {
   SURGE_CHUNK_DIVISOR,
 } = require('./constants');
 const { calculateTrancheId, divCeil, bnMax, bnMin } = require('./helpers');
-const { selectAsset, selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
+const {
+  selectAsset,
+  selectAssetRate,
+  selectProductPools,
+  selectProduct,
+  selectProductPriorityPoolsFixedPrice,
+} = require('../store/selectors');
 
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
-
-const DELTA_PRIME_UNO_RE_PRODUCT_ID = 186;
-const DELTA_PRIME_CUSTOM_POOL_ID_PRIORITY = [18, 22, 1];
 
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
   const elapsed = now.sub(bumpedPriceUpdateTime);
@@ -290,11 +293,11 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     };
   });
 
-  // Use a custom pool allocation priority for DeltaPrime (UnoRe)
-  const allocations =
-    productId === DELTA_PRIME_UNO_RE_PRODUCT_ID
-      ? customAllocationPriorityFixedPrice(amountToAllocate, poolsData, DELTA_PRIME_CUSTOM_POOL_ID_PRIORITY)
-      : calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
+  const customPoolIdPriorityFixedPrice = selectProductPriorityPoolsFixedPrice(store, productId);
+
+  const allocations = customPoolIdPriorityFixedPrice
+    ? customAllocationPriorityFixedPrice(amountToAllocate, poolsData, customPoolIdPriorityFixedPrice)
+    : calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
     poolId = parseInt(poolId);

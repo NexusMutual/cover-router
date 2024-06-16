@@ -19,6 +19,10 @@ const initialState = {
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
   products: {}, // productId -> { product }
+  productPriorityPoolsFixedPrice: {
+    // NOTE: only fixed price products are currently supported
+    186: [18, 22, 1],
+  },
   trancheId: 0,
 };
 
