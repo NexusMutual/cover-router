@@ -207,10 +207,10 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
     const poolId = customPoolIdPriority.shift();
     const pool = poolsData.find(poolData => poolData.poolId === poolId);
 
-    const capacityLeft = pool.totalCapacity.sub(pool.initialCapacityUsed);
-    const poolAllocation = bnMin(capacityLeft, coverAmountLeft);
+    const availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
+    const poolAllocation = bnMin(availableCapacity, coverAmountLeft);
 
-    allocations[poolId] = allocations[poolId] ? allocations[poolId].add(poolAllocation) : poolAllocation;
+    allocations[poolId] = poolAllocation;
     coverAmountLeft = coverAmountLeft.gt(poolAllocation) ? coverAmountLeft.sub(poolAllocation) : 0;
   }
 
