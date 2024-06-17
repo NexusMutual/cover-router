@@ -22,9 +22,15 @@ const selectAsset = (store, assetId) => {
   return assets[assetId];
 };
 
+const selectProductPriorityPoolsFixedPrice = (store, productId) => {
+  const { productPriorityPoolsFixedPrice } = store.getState();
+  return productPriorityPoolsFixedPrice[productId];
+};
+
 module.exports = {
   selectAssetRate,
   selectAsset,
   selectProduct,
   selectProductPools,
+  selectProductPriorityPoolsFixedPrice,
 };

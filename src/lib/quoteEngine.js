@@ -11,7 +11,13 @@ const {
   SURGE_CHUNK_DIVISOR,
 } = require('./constants');
 const { calculateTrancheId, divCeil, bnMax, bnMin } = require('./helpers');
-const { selectAsset, selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
+const {
+  selectAsset,
+  selectAssetRate,
+  selectProductPools,
+  selectProduct,
+  selectProductPriorityPoolsFixedPrice,
+} = require('../store/selectors');
 
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
@@ -185,6 +191,37 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice = fals
   return allocations;
 };
 
+/**
+ * Allocates a given amount to pools based on a custom pool ID priority list.
+ *
+ * @param {number} amountToAllocate - The amount to be allocated.
+ * @param {Array<object>} poolsData - An array of pool data objects.
+ * @param {Array<number>} customPoolIdPriority - A list of pool IDs in priority order.
+ * @return {object} An object containing the allocations by pool ID. (poolId => BigNumber amount)
+ */
+const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customPoolIdPriority) => {
+  const allocations = {};
+  let coverAmountLeft = amountToAllocate;
+
+  while (coverAmountLeft > 0 && customPoolIdPriority.length > 0) {
+    const poolId = customPoolIdPriority.shift();
+    const pool = poolsData.find(poolData => poolData.poolId === poolId);
+
+    const availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
+    const poolAllocation = bnMin(availableCapacity, coverAmountLeft);
+
+    allocations[poolId] = poolAllocation;
+    coverAmountLeft = coverAmountLeft.gt(poolAllocation) ? coverAmountLeft.sub(poolAllocation) : 0;
+  }
+
+  if (coverAmountLeft > 0) {
+    // not enough total capacity available
+    return [];
+  }
+
+  return allocations;
+};
+
 const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const product = selectProduct(store, productId);
 
@@ -256,7 +293,11 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     };
   });
 
-  const allocations = calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
+  const customPoolIdPriorityFixedPrice = selectProductPriorityPoolsFixedPrice(store, productId);
+
+  const allocations = customPoolIdPriorityFixedPrice
+    ? customAllocationPriorityFixedPrice(amountToAllocate, poolsData, customPoolIdPriorityFixedPrice)
+    : calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
     poolId = parseInt(poolId);
@@ -305,4 +346,5 @@ module.exports = {
   calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
   calculateOptimalPoolAllocation,
+  customAllocationPriorityFixedPrice,
 };

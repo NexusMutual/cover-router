@@ -1,6 +1,6 @@
 {
   "name": "cover-router",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "Cover Router",
   "main": "src/index.js",
   "engines": {
@@ -11,7 +11,7 @@
     "lint": "eslint --max-warnings 0 .",
     "lint:fix": "npm run lint -- --fix",
     "start": "node src/index.js",
-    "test": "nyc --reporter=text mocha test --exit",
+    "test": "nyc --reporter=text mocha test/**/*.js --exit",
     "prepare": "husky"
   },
   "repository": {
