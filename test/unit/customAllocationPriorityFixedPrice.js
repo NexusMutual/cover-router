@@ -40,7 +40,7 @@ describe('customAllocationPriorityFixedPrice', () => {
     expect(allocations).to.deep.equal(expectedAllocations);
   });
 
-  it('returns empty array when there is no capacity available to allocate', async function () {
+  it('returns empty object when there is not enough capacity available to satisfy coverAmount', async function () {
     const amountToAllocate = BigNumber.from(1000);
     const poolsData = [
       { poolId: 1, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
@@ -48,6 +48,6 @@ describe('customAllocationPriorityFixedPrice', () => {
       { poolId: 22, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
     ];
     const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, [...poolIdPriority]);
-    expect(allocations).to.deep.equal([]);
+    expect(allocations).to.deep.equal({});
   });
 });
