@@ -409,7 +409,7 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('200').toString());
   });
 
-  it('return empty array when there is on capacity available to allocate', async function () {
+  it('return empty object when there is not enough capacity available to satisfy coverAmount', async function () {
     const pool1 = {
       basePrice: BigNumber.from('200'),
       initialCapacityUsed: parseEther('9500'),
@@ -430,7 +430,7 @@ describe('calculateOptimalPoolAllocation', function () {
 
     const amount = parseEther('1000');
     const allocations = calculateOptimalPoolAllocation(amount, pools);
-    expect(allocations.length).to.be.equal(0);
+    expect(allocations).to.deep.equal({});
   });
 
   it('computes optimal pool allocation across 4 pools', () => {
