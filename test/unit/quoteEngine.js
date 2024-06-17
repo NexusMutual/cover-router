@@ -3,7 +3,6 @@ const {
   utils: { parseEther, parseUnits },
 } = require('ethers');
 const { BigNumber } = require('ethers');
-const sinon = require('sinon');
 
 const { MIN_COVER_PERIOD } = require('../../src/lib/constants');
 const { quoteEngine } = require('../../src/lib/quoteEngine');
@@ -11,10 +10,6 @@ const mockStore = require('../mocks/store');
 
 describe('Quote Engine tests', () => {
   const store = { getState: () => mockStore };
-
-  afterEach(function () {
-    sinon.restore();
-  });
 
   it('should return quote in ETH for product 1 for 1 ETH for minimal cover period', () => {
     const productId = 1;
