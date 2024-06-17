@@ -123,7 +123,7 @@ const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, u
  * @param coverAmount
  * @param pools
  * @param useFixedPrice
- * @returns {{lowestCostAllocation: *, lowestCost: *}}
+ * @returns {{lowestCostAllocation: *, lowestCost: *}} - object
  */
 const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice = false) => {
   // Pool Id (number) -> Capacity Amount (BigNumber)
@@ -169,7 +169,7 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice = fals
 
     if (lowestPricePool.chunk.eq(0)) {
       // not enough total capacity available
-      return [];
+      return {};
     }
 
     const allocationAmount = bnMin(lowestPricePool.chunk, coverAmountLeft);
@@ -216,7 +216,7 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
 
   if (coverAmountLeft > 0) {
     // not enough total capacity available
-    return [];
+    return {};
   }
 
   return allocations;
