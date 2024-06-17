@@ -119,6 +119,34 @@ const capacities = [
     minAnnualPrice: '0.0775',
     maxAnnualPrice: '0.104190714614767679',
   },
+  {
+    productId: 4,
+    availableCapacity: [
+      {
+        assetId: 0,
+        amount: '37227212755184497584',
+        asset: assets[0],
+      },
+      {
+        assetId: 1,
+        amount: '104020098245136227727466',
+        asset: assets[1],
+      },
+      {
+        assetId: 6,
+        amount: '104020098195',
+        asset: assets[6],
+      },
+      {
+        assetId: 255,
+        amount: '3621310000000000000000',
+        asset: assets[255],
+      },
+    ],
+    allocatedNxm: '20004610000000000000000',
+    maxAnnualPrice: '0.077089706487431343',
+    minAnnualPrice: '0.02',
+  },
 ];
 
 const ethQuote = {
