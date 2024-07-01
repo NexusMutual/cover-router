@@ -3,7 +3,7 @@ const { BigNumber } = require('ethers');
 
 const { customAllocationPriorityFixedPrice } = require('../../src/lib/quoteEngine');
 
-describe.only('customAllocationPriorityFixedPrice', () => {
+describe('customAllocationPriorityFixedPrice', () => {
   const poolIdPriority = [18, 22, 1];
 
   it('returns allocation with all allocated to the first pool priority for fixed priced products', async () => {
