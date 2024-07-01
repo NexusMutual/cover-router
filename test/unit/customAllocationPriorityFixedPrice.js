@@ -13,7 +13,7 @@ describe('customAllocationPriorityFixedPrice', () => {
       { poolId: 18, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(100) },
       { poolId: 22, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(200) },
     ];
-    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, [...poolIdPriority]);
+    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
     expect(allocations).to.deep.equal({ 18: BigNumber.from(200) });
   });
 
@@ -24,7 +24,7 @@ describe('customAllocationPriorityFixedPrice', () => {
       { poolId: 18, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(300) },
       { poolId: 22, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(0) },
     ];
-    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, [...poolIdPriority]);
+    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
     expect(allocations).to.deep.equal({ 18: BigNumber.from(200), 22: BigNumber.from(400) });
   });
 
@@ -35,7 +35,7 @@ describe('customAllocationPriorityFixedPrice', () => {
       { poolId: 18, totalCapacity: BigNumber.from(500000), initialCapacityUsed: BigNumber.from(0) },
       { poolId: 22, totalCapacity: BigNumber.from(500000), initialCapacityUsed: BigNumber.from(200000) },
     ];
-    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, [...poolIdPriority]);
+    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
     const expectedAllocations = { 18: BigNumber.from(500000), 22: BigNumber.from(300000), 1: BigNumber.from(200000) };
     expect(allocations).to.deep.equal(expectedAllocations);
   });
@@ -47,7 +47,7 @@ describe('customAllocationPriorityFixedPrice', () => {
       { poolId: 18, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
       { poolId: 22, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
     ];
-    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, [...poolIdPriority]);
+    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
     expect(allocations).to.deep.equal({});
   });
 });
