@@ -6,6 +6,7 @@ const {
   SET_TRANCHE_ID,
   RESET_PRODUCT_POOLS,
 } = require('./actions');
+const config = require('../config');
 
 const initialState = {
   assetRates: {}, // assetId -> rate
@@ -21,9 +22,9 @@ const initialState = {
   products: {}, // productId -> { product }
   productPriorityPoolsFixedPrice: {
     // NOTE: only fixed price products are currently supported
-    186: [18, 22, 1], // DeltaPrime (UnoRe)
-    195: [1, 23, 22, 2, 5], // Dialectic Moonphase
-    196: [1, 23, 22, 2, 5], // Dialectic Chronograph
+    186: config.get('customPoolPriorityOrder186'), // DeltaPrime (UnoRe)
+    195: config.get('customPoolPriorityOrder195'), // Dialectic Moonphase
+    196: config.get('customPoolPriorityOrder196'), // Dialectic Chronograph
   },
   trancheId: 0,
 };
