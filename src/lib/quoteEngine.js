@@ -202,9 +202,10 @@ const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice = fals
 const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customPoolIdPriority) => {
   const allocations = {};
   let coverAmountLeft = amountToAllocate;
+  const customPoolIdPriorityCopy = customPoolIdPriority.slice(0); // avoid mutation on the customPoolIdPriority array
 
-  while (coverAmountLeft > 0 && customPoolIdPriority.length > 0) {
-    const poolId = customPoolIdPriority.shift();
+  while (coverAmountLeft > 0 && customPoolIdPriorityCopy.length > 0) {
+    const poolId = customPoolIdPriorityCopy.shift();
     const pool = poolsData.find(poolData => poolData.poolId === poolId);
 
     const availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
