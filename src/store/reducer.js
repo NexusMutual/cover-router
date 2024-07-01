@@ -21,7 +21,9 @@ const initialState = {
   products: {}, // productId -> { product }
   productPriorityPoolsFixedPrice: {
     // NOTE: only fixed price products are currently supported
-    186: [18, 22, 1],
+    186: [18, 22, 1], // DeltaPrime (UnoRe)
+    195: [1, 23, 22, 2, 5], // Dialectic Moonphase
+    196: [1, 23, 22, 2, 5], // Dialectic Chronograph
   },
   trancheId: 0,
 };
