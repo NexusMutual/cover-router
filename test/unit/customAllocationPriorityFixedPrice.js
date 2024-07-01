@@ -3,7 +3,7 @@ const { BigNumber } = require('ethers');
 
 const { customAllocationPriorityFixedPrice } = require('../../src/lib/quoteEngine');
 
-describe('customAllocationPriorityFixedPrice', () => {
+describe.only('customAllocationPriorityFixedPrice', () => {
   const poolIdPriority = [18, 22, 1];
 
   it('returns allocation with all allocated to the first pool priority for fixed priced products', async () => {
@@ -47,6 +47,23 @@ describe('customAllocationPriorityFixedPrice', () => {
       { poolId: 18, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
       { poolId: 22, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
     ];
+    const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
+    expect(allocations).to.deep.equal({});
+  });
+
+  it('should not mutate the poolIdPriority array', async function () {
+    const amountToAllocate = BigNumber.from(1000);
+    const poolsData = [
+      { poolId: 1, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
+      { poolId: 18, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
+      { poolId: 22, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(500) },
+    ];
+
+    // should not mutate the poolIdPriority array
+    await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
+    expect(poolIdPriority).to.deep.equal([18, 22, 1]);
+
+    // 2nd call should work as expected
     const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
     expect(allocations).to.deep.equal({});
   });
