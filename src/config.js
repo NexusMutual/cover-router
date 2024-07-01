@@ -17,14 +17,15 @@ requiredEnvVars.forEach(envVar => {
 
 // custom array format
 convict.addFormat({
-  name: 'array',
+  name: 'array-int',
   validate: function (val) {
     if (!Array.isArray(val)) {
       throw new Error('must be of type Array');
     }
   },
   coerce: function (val) {
-    return val.replace(/\s+/g, '').split(',');
+    const arr = val.replace(/\s+/g, '').split(',');
+    return arr.map(numString => parseInt(numString));
   },
 });
 
@@ -43,7 +44,7 @@ const config = convict({
   provider: {
     doc: 'Providers URL',
     env: 'PROVIDER_URL',
-    default: 'hello',
+    default: '',
   },
   pollingInterval: {
     doc: 'Polling interval for eth_getLogs in ms',
@@ -53,19 +54,19 @@ const config = convict({
   },
   customPoolPriorityOrder186: {
     doc: 'Custom Pool Priority Order for productId 186 - DeltaPrime (UnoRe)',
-    format: 'array',
+    format: 'array-int',
     env: 'PRIORITY_POOLS_ORDER_186',
     default: [18, 22, 1],
   },
   customPoolPriorityOrder195: {
     doc: 'Custom Pool Priority Order for productId 195 - Dialectic Moonphase',
-    format: 'array',
+    format: 'array-int',
     env: 'PRIORITY_POOLS_ORDER_195',
     default: [1, 23, 22, 2, 5],
   },
   customPoolPriorityOrder196: {
     doc: 'Custom Pool Priority Order for productId 196 - Dialectic Chronograph',
-    format: 'array',
+    format: 'array-int',
     env: 'PRIORITY_POOLS_ORDER_196',
     default: [1, 23, 22, 2, 5],
   },
