@@ -210,7 +210,7 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
     const poolId = customPoolIdPriorityCopy.shift();
     const pool = poolsData.find(poolData => poolData.poolId === poolId);
     if (!pool) {
-      console.warn(`Unable to find pool ${poolId} in poolsData array`, inspect(poolsData, { depth: null }));
+      console.info(`Unable to find pool ${poolId} in poolsData array. Skipping\n`, inspect(poolsData, { depth: null }));
       continue;
     }
 
