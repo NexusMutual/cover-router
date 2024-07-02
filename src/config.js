@@ -1,19 +1,4 @@
-require('dotenv').config();
-
 const convict = require('convict');
-
-const requiredEnvVars = [
-  'PROVIDER_URL',
-  'PRIORITY_POOLS_ORDER_186',
-  'PRIORITY_POOLS_ORDER_195',
-  'PRIORITY_POOLS_ORDER_196',
-];
-
-requiredEnvVars.forEach(envVar => {
-  if (!process.env[envVar]) {
-    throw new Error(`Missing ${envVar} env`);
-  }
-});
 
 // custom array format
 convict.addFormat({
@@ -22,10 +7,18 @@ convict.addFormat({
     if (!Array.isArray(val)) {
       throw new Error('must be of type Array');
     }
+    val.forEach(num => {
+      if (!Number.isInteger(num)) {
+        throw new Error('must contain only integers');
+      }
+    });
   },
   coerce: function (val) {
+    if (!val) {
+      return [];
+    }
     const arr = val.replace(/\s+/g, '').split(',');
-    return arr.map(numString => parseInt(numString));
+    return arr.map(numString => parseInt(numString, 10));
   },
 });
 
