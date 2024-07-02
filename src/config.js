@@ -15,7 +15,7 @@ convict.addFormat({
   },
   coerce: function (val) {
     if (!val) {
-      return [];
+      throw new Error('Missing array-int env var');
     }
     const arr = val.replace(/\s+/g, '').split(',');
     return arr.map(numString => parseInt(numString, 10));
