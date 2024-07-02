@@ -1,5 +1,7 @@
 const { BigNumber } = require('ethers');
 
+const config = require('../../src/config');
+
 const store = {
   assetRates: {
     0: BigNumber.from(10280040304526400n),
@@ -14,7 +16,7 @@ const store = {
     255: { id: 255, symbol: 'NXM', decimals: 18 },
   },
   productPriorityPoolsFixedPrice: {
-    4: [18, 22, 1],
+    4: config.get('customPoolPriorityOrder186'),
   },
   globalCapacityRatio: BigNumber.from(20000),
   poolProducts: {

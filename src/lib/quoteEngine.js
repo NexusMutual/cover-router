@@ -1,3 +1,5 @@
+const { inspect } = require('util');
+
 const { BigNumber, ethers } = require('ethers');
 
 const {
@@ -207,6 +209,10 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
   while (coverAmountLeft > 0 && customPoolIdPriorityCopy.length > 0) {
     const poolId = customPoolIdPriorityCopy.shift();
     const pool = poolsData.find(poolData => poolData.poolId === poolId);
+    if (!pool) {
+      console.warn(`Unable to find pool ${poolId} in poolsData array`, inspect(poolsData, { depth: null }));
+      continue;
+    }
 
     const availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
     const poolAllocation = bnMin(availableCapacity, coverAmountLeft);
@@ -306,6 +312,10 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     const amountToAllocate = allocations[poolId];
 
     const pool = poolsData.find(data => poolId.toString() === data.poolId.toString());
+    if (!pool) {
+      console.error('poolsData: ', inspect(poolsData, { depth: null }));
+      throw new Error(`Unable to find pool ${poolId} in poolsData`);
+    }
 
     const premiumPerYear = product.useFixedPrice
       ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
