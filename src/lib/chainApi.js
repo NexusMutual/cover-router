@@ -4,6 +4,7 @@ const { WeiPerEther } = ethers.constants;
 const createChainApi = async contracts => {
   // contract instances
   const cover = contracts('Cover');
+  const coverProducts = contracts('CoverProducts');
   const pool = contracts('Pool');
   const stakingPoolFactory = contracts('StakingPoolFactory');
   const stakingProducts = contracts('StakingProducts');
@@ -15,11 +16,11 @@ const createChainApi = async contracts => {
     return assetId === NXM_ASSET_ID ? WeiPerEther : pool.getInternalTokenPriceInAsset(assetId);
   };
 
-  const fetchGlobalCapacityRatio = async () => cover.globalCapacityRatio();
+  const fetchGlobalCapacityRatio = async () => cover.getGlobalCapacityRatio();
 
   const fetchStakingPoolCount = async () => stakingPoolFactory.stakingPoolCount();
 
-  const fetchProductCount = async () => cover.productsCount();
+  const fetchProductCount = async () => coverProducts.getProductsCount();
 
   const fetchPoolProductIds = async poolId => {
     const products = await stakingViewer.getPoolProducts(poolId);
@@ -32,19 +33,14 @@ const createChainApi = async contracts => {
   };
 
   const fetchProduct = async id => {
-    const { productType, capacityReductionRatio, useFixedPrice, isDeprecated } = await cover.products(id);
-    const { gracePeriod } = await cover.productTypes(productType);
+    const { productType, capacityReductionRatio, useFixedPrice, isDeprecated } = await coverProducts.getProduct(id);
+    const { gracePeriod } = await coverProducts.getProductType(productType);
     return { productType, capacityReductionRatio, useFixedPrice, gracePeriod, isDeprecated };
   };
 
   const fetchProducts = async () => {
-    const products = await cover.getProducts();
-    const productTypeCount = await cover.productTypesCount();
-    const productTypes = [];
-
-    for (let i = 0; i < productTypeCount; i++) {
-      productTypes.push(await cover.productTypes(i));
-    }
+    const products = await coverProducts.getProducts();
+    const productTypes = await coverProducts.getProductTypes();
 
     return products.map((product, id) => {
       const { productType, capacityReductionRatio, useFixedPrice, isDeprecated } = product;
