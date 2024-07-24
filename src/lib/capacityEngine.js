@@ -1,6 +1,6 @@
 const { ethers, BigNumber } = require('ethers');
 
-const { NXM_PER_ALLOCATION_UNIT } = require('./constants');
+const { NXM_PER_ALLOCATION_UNIT, MAX_COVER_PERIOD } = require('./constants');
 const { bnMax, bnMin, calculateTrancheId } = require('./helpers');
 const { calculateBasePrice, calculatePremiumPerYear, calculateFixedPricePremiumPerYear } = require('./quoteEngine');
 const { selectAsset, selectProduct, selectProductPools } = require('../store/selectors');
@@ -90,6 +90,8 @@ function capacityEngine(store, productIds, time, period = 30) {
     const gracePeriodExpiration = time.add(secondsPerDay.mul(period)).add(product.gracePeriod);
     const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
     const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
+    const firstUsableTrancheForMaxPeriodId = calculateTrancheId(time.add(MAX_COVER_PERIOD).add(product.gracePeriod));
+    const firstUsableTrancheForMaxPeriodIndex = firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
 
     const productPools = selectProductPools(store, productId);
 
@@ -119,8 +121,8 @@ function capacityEngine(store, productIds, time, period = 30) {
       let productData = {};
       let maxAnnualPrice = BigNumber.from(0);
 
-      // use the first 5 tranches (over 1 year) for calculating the max annual price
-      for (let i = 0; i < 5; i++) {
+      // use the first 6 tranches (over 1 year) for calculating the max annual price
+      for (let i = 0; i <= firstUsableTrancheForMaxPeriodIndex; i++) {
         const productTrancheData = calculateProductDataForTranche(productPools, i, false, now);
 
         if (i === firstUsableTrancheIndex) {
