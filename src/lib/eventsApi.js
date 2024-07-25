@@ -13,6 +13,7 @@ module.exports = async (provider, contracts) => {
   // contract instances
   const stakingPoolFactory = contracts('StakingPoolFactory');
   const cover = contracts('Cover');
+  const coverProducts = contracts('CoverProducts');
   const stakingProducts = contracts('StakingProducts');
 
   // tranche id checker
@@ -83,7 +84,7 @@ module.exports = async (provider, contracts) => {
     console.log(`Event: Product ${productId} update`);
     emitter.emit('product:change', productId);
   });
-  cover.on('ProductSet', productId => {
+  coverProducts.on('ProductSet', productId => {
     console.log(`Event: Product ${productId} set`);
     emitter.emit('product:change', productId);
   });

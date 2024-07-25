@@ -96,22 +96,22 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '627202118245255087296',
+        amount: '650955796175312058720',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '1752525132313136206805332',
+        amount: '1818897544564809351595684',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '1752525131469',
+        amount: '1818897543689',
         asset: assets[6],
       },
       {
         assetId: 255,
-        amount: '61011640000000000000000',
+        amount: '63322300000000000000000',
         asset: assets[255],
       },
     ],

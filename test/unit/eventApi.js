@@ -6,7 +6,8 @@ const contractFactory = require('../../src/lib/contracts');
 const eventsApiConstructor = require('../../src/lib/eventsApi');
 
 const stakingPoolEvents = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
-const coverEvents = ['ProductSet', 'CoverEdited'];
+const coverEvents = ['CoverEdited'];
+const coverProductsEvents = ['ProductSet'];
 const stakingProductsEvents = ['ProductUpdated'];
 const stakingPoolFactoryEvents = ['StakingPoolCreated'];
 
@@ -15,6 +16,7 @@ function contractFactoryMock(addresses, provider) {
 
   const mockedFactory = (name, id = 0, forceNew = false) => {
     if (name !== 'StakingPoolFactory') {
+      console.log(name, id, forceNew);
       return factory(name, id, forceNew);
     }
 
@@ -89,6 +91,29 @@ describe('Catching events', () => {
     await settleEvents();
     expect(eventCounter).to.be.equal(coverEvents.length);
     expect(productChangeCounter).to.be.equal(coverEvents.length);
+  });
+
+  it('should catch all events on coverProducts', async function () {
+    const cover = contracts('CoverProducts');
+    let eventCounter = 0;
+    let productChangeCounter = 0;
+    for (const eventName of coverProductsEvents) {
+      cover.on(eventName, () => {
+        eventCounter += 1;
+        console.log(`Event: ${eventName} triggered`);
+      });
+    }
+    eventsApi.on('product:change', () => {
+      productChangeCounter += 1;
+    });
+    for (const eventName of coverProductsEvents) {
+      cover.emit(eventName);
+    }
+
+    // pushing expect to end of the event queue
+    await settleEvents();
+    expect(eventCounter).to.be.equal(coverProductsEvents.length);
+    expect(productChangeCounter).to.be.equal(coverProductsEvents.length);
   });
 
   it('should catch all events on stakingProducts', async function () {
