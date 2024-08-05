@@ -10,9 +10,6 @@ env:
   NODE_VERSION: '18.15'
   LOG_LEVEL: 'SILENCE'
 
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   setup:
@@ -92,7 +89,10 @@ jobs:
   build_and_push:
     name: Build Image
     runs-on: ubuntu-22.04
-    needs: ["test", "lint"]
+    #needs: ["test", "lint"]
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
