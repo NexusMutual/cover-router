@@ -118,7 +118,7 @@ jobs:
           SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8) >> $GITHUB_ENV
           REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2) >> $GITHUB_ENV
           echo BRANCH_NAME=${GITHUB_REF#refs/heads/} >> $GITHUB_ENV
-          docker build -t "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" -f kube/Dockerfile.app .
+          docker build -t "${REGISTRY}/${REPO_NAME}:${{ env.BRANCH_NAME }}-${SHORT_SHA}" -f kube/Dockerfile.app .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
