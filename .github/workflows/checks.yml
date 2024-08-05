@@ -32,36 +32,18 @@ jobs:
 
 
   scan:
-    permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    runs-on: ubuntu-22.04
     name: Scan
-    runs-on: "ubuntu-20.04"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          scan-type: fs
-          ignore-unfixed: true
-          output: trivy.txt
-
-      - name: Publish Trivy Output to Summary
+      - name: Scan
         run: |
-          if [[ -s trivy.txt ]]; then
-            {
-              echo "### Security Output"
-              echo "<details><summary>Click to expand</summary>"
-              echo ""
-              echo '```'
-              cat trivy.txt
-              echo '```'
-              echo "</details>"
-            } >> $GITHUB_STEP_SUMMARY
-          fi
+          export TRIVY_VERSION="0.54.1"
+          wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
+          echo "Scanning filesystem"
+          ./trivy filesystem .
 
   lint:
     runs-on: ubuntu-22.04
