@@ -12,8 +12,8 @@ FROM gcr.io/distroless/nodejs20-debian12
 
 WORKDIR /usr/src/app
 
-COPY --from=base /usr/src/app/dist .
 COPY --from=base /usr/src/app/node_modules .
+COPY ./ /usr/src/app/ .
 
 #ENTRYPOINT [ "/sbin/tini","--", "node", "src/index.js" ]
 CMD [ "src/index.js" ]
