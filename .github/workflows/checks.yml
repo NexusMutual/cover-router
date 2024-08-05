@@ -32,33 +32,33 @@ jobs:
 
 
   scan:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 5
-    needs: setup
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    name: Scan 
+    runs-on: "ubuntu-20.04"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-      - uses: actions/cache@v3
-        id: cache
-        with:
-          path: node_modules
-          key: node-modules-cache-node-${{ env.NODE_VERSION }}-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Run Trivy vulnerability scanner in fs mode
-        uses: anandg112/trivy-action@feat/add-skip-dirs-option
+      - name: Build an image from Dockerfile
+        run: |
+          docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
-          scan-type: 'fs'
-#          scan-ref: '.'
-          ignore-unfixed: true
+          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'trivy-results-fs.sarif'
-          severity: 'CRITICAL'
-          skip-dirs: "ignored-dir"
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   lint:
     runs-on: ubuntu-22.04
@@ -111,7 +111,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ secrets.AWS_REGION}}
+          aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE }} #arn:aws:iam::123456789100:role/my-github-actions-role
           role-session-name: ${{ github.run_id }}
           output-credentials: true
