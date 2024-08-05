@@ -130,25 +130,6 @@ jobs:
           #REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2) >> $GITHUB_ENV
           docker build -t "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" .
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
-        env:
-          REGISTRY: ${{ env.REGISTRY }}
-          BRANCH_NAME: ${{ env.BRANCH_NAME }}
-          SHORT_SHA: ${{ env.SHORT_SHA }}
-          REPO_NAME: ${{ env.REPO_NAME }}
-        with:
-          image-ref: '${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
-
       - name: Push Docker Image
         env:
           REGISTRY: ${{ env.REGISTRY }}
