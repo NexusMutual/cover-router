@@ -42,10 +42,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build an image from Dockerfile
-        run: |
-          docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
-
       - name: Run Trivy vulnerability scanner in repo mode
         uses: aquasecurity/trivy-action@0.20.0
         with:
