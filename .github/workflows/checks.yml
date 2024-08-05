@@ -109,21 +109,36 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set Env
+        run: |
+          echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
+          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_ENV
+
       - name: Build Docker Image
         env:
-          IMAGE_TAG: ${{ steps.extract_branch.outputs.branch }}.${{ env.SHORT_SHA }}
+          REGISTRY: ${{ env.REGISTRY }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          SHORT_SHA: ${{ env.SHORT_SHA }}
+          REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-          echo "Build image for $(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)"
-          REGISTRY=${{ steps.login-ecr.outputs.registry }} >> $GITHUB_ENV
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8) >> $GITHUB_ENV
-          REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2) >> $GITHUB_ENV
-          docker build -t "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" -f kube/Dockerfile.app .
+          echo "Build image for ${REPO_NAME} branch ${BRANCH_NAME}"
+          #REGISTRY=${{ steps.login-ecr.outputs.registry }} >> $GITHUB_ENV
+          #BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          #SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8) >> $GITHUB_ENV
+          #REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2) >> $GITHUB_ENV
+          docker build -t "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          SHORT_SHA: ${{ env.SHORT_SHA }}
+          REPO_NAME: ${{ env.REPO_NAME }}
         with:
-          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
+          image-ref: '${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}'
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results.sarif'
@@ -135,12 +150,17 @@ jobs:
           sarif_file: 'trivy-results.sarif'
 
       - name: Push Docker Image
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          SHORT_SHA: ${{ env.SHORT_SHA }}
+          REPO_NAME: ${{ env.REPO_NAME }}
         run: |
           echo "Push image to ECR"
-          REGISTRY=${{ steps.login-ecr.outputs.registry }} >> $GITHUB_ENV
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8) >> $GITHUB_ENV
-          REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2) >> $GITHUB_ENV
+          #REGISTRY=${{ steps.login-ecr.outputs.registry }} >> $GITHUB_ENV
+          #BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          #SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8) >> $GITHUB_ENV
+          #REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2) >> $GITHUB_ENV
           docker push "${REGISTRY}/:${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
 
     outputs:
