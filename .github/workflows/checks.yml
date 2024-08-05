@@ -30,6 +30,36 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci --ignore-scripts
 
+
+  scan:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: node_modules
+          key: node-modules-cache-node-${{ env.NODE_VERSION }}-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: anandg112/trivy-action@feat/add-skip-dirs-option
+        with:
+          scan-type: 'fs'
+#          scan-ref: '.'
+          ignore-unfixed: true
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results-fs.sarif'
+          severity: 'CRITICAL'
+          skip-dirs: "ignored-dir"
+
   lint:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
@@ -70,21 +100,10 @@ jobs:
       - name: Test
         run: npm test
 
-  scan:
-    runs-on: ubuntu-22.04
-    needs: test
-    steps:
-      - name: file scaning
-        run: |
-          export TRIVY_VERSION="0.54.1"
-          wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
-          echo "Scanning filesystem"
-          ./trivy filesystem .
-          #./trivy filesystem --scanners config,vuln --exit-code 0 --format template --template "@/contrib/sarif.tpl" -o 'trivy-results.sarif' .
-
   build_and_push:
     name: Build Image
     runs-on: ubuntu-22.04
+    needs: ["test", "lint"]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
