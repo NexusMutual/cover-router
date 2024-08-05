@@ -69,3 +69,104 @@ jobs:
 
       - name: Test
         run: npm test
+
+  scan:
+    runs-on: ubuntu-22.04
+    needs: test
+    steps:
+      - name: file scaning
+        run: |
+          export TRIVY_VERSION="0.54.1"
+          wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
+          echo "Scanning filesystem"
+          ./trivy filesystem .
+          #./trivy filesystem --scanners config,vuln --exit-code 0 --format template --template "@/contrib/sarif.tpl" -o 'trivy-results.sarif' .
+
+  build_and_push:
+    name: Build Image
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${AWS_REGION}
+          role-to-assume: ${AWS_ROLE} #arn:aws:iam::123456789100:role/my-github-actions-role
+          role-session-name: ${{ github.run_id }}
+          output-credentials: true
+
+      - name: Amazon ECR Login
+        uses: aws-actions/amazon-ecr-login@v1.3.0
+
+      - name: Build Docker Image
+        env:
+          IMAGE_TAG: ${{ steps.extract_branch.outputs.branch }}.${{ env.SHORT_SHA }}
+        run: |
+          echo "Build image for $(${{ github.repository }}|grep -oP '(/.*)' | cut -f2- -d/)"
+          REGISTRY=${{ steps.login-ecr.outputs.registry }} >> $GITHUB_ENV
+          BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/}) >> $GITHUB_ENV
+          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8) >> $GITHUB_ENV
+          REPO_NAME=$(${{ github.repository }}|grep -oP '(/.*)' | cut -f2- -d/) >> $GITHUB_ENV
+          docker build -t "${REGISTRY}/:${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" -f kube/Dockerfile.app .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Push Docker Image
+        env:
+          IMAGE_TAG: ${{ steps.extract_branch.outputs.branch }}.${{ env.SHORT_SHA }}
+        run: |
+          echo "Push image to ECR"
+          REGISTRY=${{ steps.login-ecr.outputs.registry }} >> $GITHUB_ENV
+          BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/}) >> $GITHUB_ENV
+          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8) >> $GITHUB_ENV
+          REPO_NAME=$(${{ github.repository }}|grep -oP '(/.*)' | cut -f2- -d/) >> $GITHUB_ENV
+          docker push "${REGISTRY}/:${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
+
+    outputs:
+      registry: ${{ steps.login-ecr.outputs.registry }}
+
+  #Deploy:
+  #  name: Deploy
+  #  runs-on: ubuntu-latest
+  #  needs: [build_image_and_push]
+  #  steps:
+  #    - name: Install Dependencies
+  #      run: |
+  #        sudo apt update -y && sudo apt install jq wget -y
+  #        sudo wget https://github.com/mikefarah/yq/releases/download/v4.24.2/yq_linux_amd64 -O /usr/bin/yq &&
+  #        sudo chmod +x /usr/bin/yq
+  #
+  #    - name: Clone Infrastructure Repository
+  #      uses: GuillaumeFalourd/clone-github-repo-action@v2
+  #      with:
+  #        owner: 'NexusMutual'
+  #        repository: 'infrastructure'
+  #        access-token: ${{ secrets.HELM_GITHUB_TOKEN  }}
+  #
+  #    - name: Update Tag in Helm Values for Infrastructure
+  #      env:
+  #        REGISTRY=${{ env.REGISTRY }}
+  #        BRANCH_NAME=${{ env.BRANCH_NAME }}
+  #        SHORT_SHA=${{ env.SHORT_SHA }}
+  #        REPO_NAME=${{ env.REPO_NAME }}
+  #      run: |
+  #          cd infrastructure/argocd/values/application/${REPO_NAME} &&  yq -i '.${REPO_NAME}.image.tag = "'$IMAGE_TAG'" ' values.yaml
+  #          git config --global user.email "devops@cloudhero.io"
+  #          git config --global user.name "CloudHero"
+  #          git add .
+  #          git commit --allow-empty -m "updated image tag to ${SHORT_SHA}"
+  #          git push origin main
