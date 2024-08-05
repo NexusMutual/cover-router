@@ -7,7 +7,7 @@ COPY ./package*.json ./
 RUN npm ci
 
 #FROM node:16-alpine
-FROM gcr.io/distroless/nodejs:20
+FROM gcr.io/distroless/nodejs20-debian12
 
 RUN apk add --no-cache tini
 
