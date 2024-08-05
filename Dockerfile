@@ -10,11 +10,10 @@ RUN npm ci --prefer-offline --no-audit --no-fund
 #FROM node:16-alpine
 FROM gcr.io/distroless/nodejs20-debian12
 
-RUN apk add --no-cache tini
-
 WORKDIR /usr/src/app
 
 COPY --from=base /usr/src/app/dist .
 COPY --from=base /usr/src/app/node_modules .
 
-ENTRYPOINT [ "/sbin/tini","--", "node", "src/index.js" ]
+#ENTRYPOINT [ "/sbin/tini","--", "node", "src/index.js" ]
+CMD [ "src/index.js" ]
