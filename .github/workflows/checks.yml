@@ -106,7 +106,8 @@ jobs:
           output-credentials: true
 
       - name: Amazon ECR Login
-        uses: aws-actions/amazon-ecr-login@v1.3.0
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker Image
         env:
