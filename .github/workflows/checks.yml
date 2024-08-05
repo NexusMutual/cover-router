@@ -10,6 +10,10 @@ env:
   NODE_VERSION: '18.15'
   LOG_LEVEL: 'SILENCE'
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   setup:
     runs-on: ubuntu-22.04
