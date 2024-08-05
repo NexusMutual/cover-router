@@ -114,7 +114,7 @@ jobs:
         run: |
           echo "Build image for $(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)"
           REGISTRY=${{ steps.login-ecr.outputs.registry }} >> $GITHUB_ENV
-          BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/}) >> $GITHUB_ENV
+          BRANCH_NAME=$(echo BRANCH_NAME=${GITHUB_REF#refs/heads/}) >> $GITHUB_ENV
           SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8) >> $GITHUB_ENV
           REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2) >> $GITHUB_ENV
           docker build -t "${REGISTRY}/:${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" -f kube/Dockerfile.app .
