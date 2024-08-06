@@ -6,6 +6,7 @@ WORKDIR /usr/src/app
 COPY ./package*.json ./
 
 RUN npm ci --prefer-offline --no-audit --no-fund
+RUN npm install dotenv
 
 #FROM node:16-alpine
 FROM gcr.io/distroless/nodejs20-debian12
