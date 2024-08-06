@@ -171,7 +171,7 @@ jobs:
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-            cd infrastructure/argocd/values/application/${REPO_NAME} &&  yq -i '.nexusmutual.image.tag = "'$SHORT_SHA'" ' values.yaml
+            cd infrastructure/argocd/values/application/${REPO_NAME} &&  yq -i '.nexusmutual.image.tag = "'$BRANCH_NAME-$SHORT_SHA'" ' values.yaml
             git config --global user.email "devops@cloudhero.io"
             git config --global user.name "CloudHero"
             git add .
