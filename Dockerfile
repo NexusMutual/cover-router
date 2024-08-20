@@ -1,6 +1,5 @@
 FROM node:20-alpine AS base
 
-ARG PORT=5000
 WORKDIR /usr/src/app
 RUN apk add --no-cache tini
 
@@ -12,7 +11,7 @@ COPY ./ ./
 ENTRYPOINT [ "/sbin/tini","--", "node", "src/index.js" ]
 
 #FROM node:16-alpine
-#FROM base 
+#FROM base
 #FROM gcr.io/distroless/nodejs20-debian12
 #
 #WORKDIR /usr/src/app

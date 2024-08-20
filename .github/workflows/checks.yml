@@ -89,6 +89,7 @@ jobs:
   build_and_push:
     name: Build Image
     runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/master'  # Run only on master branch
     needs: ["test", "lint"]
     permissions:
       id-token: write
@@ -100,8 +101,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: eu-west-2 #${{ secrets.AWS_REGION }}
-          role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/github-oidc #${{ secrets.AWS_ROLE }}
+          aws-region: eu-west-2
+          role-to-assume: ${{ secrets.AWS_ROLE }} #arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/github-oidc
           role-session-name: ${{ github.run_id }}
           output-credentials: true
 
@@ -139,9 +140,10 @@ jobs:
     outputs:
       registry: ${{ steps.login-ecr.outputs.registry }}
 
-  Deploy:
+  deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'  # Run only on master branch
     needs: ["setup", "test", "lint", "scan", "build_and_push"]
     steps:
       - name: Set Env
@@ -156,14 +158,14 @@ jobs:
           sudo apt update -y && sudo apt install jq wget -y
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.24.2/yq_linux_amd64 -O /usr/bin/yq &&
           sudo chmod +x /usr/bin/yq
-  
+
       - name: Clone Infrastructure Repository
         uses: GuillaumeFalourd/clone-github-repo-action@v2
         with:
           owner: 'NexusMutual'
           repository: 'infrastructure'
           access-token: ${{ secrets.GIT_TOKEN  }}
-  
+
       - name: Update Tag in Helm Values for Infrastructure
         env:
           REGISTRY: ${{ env.REGISTRY }}
