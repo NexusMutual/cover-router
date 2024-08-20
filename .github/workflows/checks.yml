@@ -106,7 +106,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
-          role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/github-oidc
+          role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: ${{ github.run_id }}
           output-credentials: true
 
