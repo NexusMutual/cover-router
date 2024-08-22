@@ -89,22 +89,6 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Checkout tools repo
-        uses: actions/checkout@v4
-        with:
-          repository: NexusMutual/infrastructure
-          path: infrastructure
-          token: ${{ secrets.GIT_TOKEN  }}
-      - name: test commit
-        run: |
-            cd infrastructure/argocd/values/application/${REPO_NAME}
-            echo "infrastructure repository" >> README.md
-            git config --global user.email "devops@cloudhero.io"
-            git config --global user.name "CloudHero"
-            git add .
-            git commit --allow-empty -m "test commit"
-            git push origin master
-
 
   build_and_push:
     name: Build Image
@@ -179,13 +163,12 @@ jobs:
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.24.2/yq_linux_amd64 -O /usr/bin/yq &&
           sudo chmod +x /usr/bin/yq
 
-      - name: Clone Infrastructure Repository
-        uses: GuillaumeFalourd/clone-github-repo-action@v2
+      - name: Checkout tools repo
+        uses: actions/checkout@v4
         with:
-          owner: 'NexusMutual'
-          repository: 'infrastructure'
-          access-token: ${{ secrets.GIT_TOKEN  }}
-
+          repository: NexusMutual/infrastructure
+          path: infrastructure
+          token: ${{ secrets.GIT_TOKEN  }}
       - name: Update Tag in Helm Values for Infrastructure
         env:
           REGISTRY: ${{ env.REGISTRY }}
@@ -193,9 +176,9 @@ jobs:
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-            cd infrastructure/argocd/values/application/${REPO_NAME} &&  yq -i '.nexusmutual.image.tag = "'$TAG_NAME-$SHORT_SHA'" ' values.yaml
+          cd infrastructure/argocd/values/application/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/' values.yaml
             git config --global user.email "devops@cloudhero.io"
             git config --global user.name "CloudHero"
             git add .
-            git commit --allow-empty -m "updated image tag to ${SHORT_SHA}"
+            git commit --allow-empty -m "updated image tag to ${SHORT_SHA} for ${REPO_NAME}"
             git push origin master
