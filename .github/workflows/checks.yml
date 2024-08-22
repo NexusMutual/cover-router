@@ -160,17 +160,17 @@ jobs:
       - name: Checkout tools repo
         uses: actions/checkout@v4
         with:
-          repository: NexusMutual/infrastructure
-          path: infrastructure
+          repository: NexusMutual/argocd
+          path: argocd
           token: ${{ secrets.GIT_TOKEN  }}
-      - name: Update Tag in Helm Values for Infrastructure
+      - name: Update Tag in Helm Values for argocd
         env:
           REGISTRY: ${{ env.REGISTRY }}
           TAG_NAME: ${{ env.TAG_NAME }}
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-            cd infrastructure/argocd/values/application/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/' values.yaml
+            cd argocd/argocd/values/application/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/' values.yaml
             git config --global user.email "devops@cloudhero.io"
             git config --global user.name "CloudHero"
             git add .
