@@ -170,7 +170,7 @@ jobs:
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-            cd argocd/argocd/values/application/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/' values.yaml
+            cd argocd/values/application/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/' values.yaml
             git config --global user.email "devops@cloudhero.io"
             git config --global user.name "CloudHero"
             git add .
