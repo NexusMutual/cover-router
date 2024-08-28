@@ -111,12 +111,10 @@ jobs:
           fi
 
       - name: Configure AWS Credentials
-        env:
-          AWS_ROLE_TO_ASSUME: ${{ env.AWS_ROLE_TO_ASSUME }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
-          role-to-assume: ${AWS_ROLE_TO_ASSUME }
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ github.run_id }}
           output-credentials: true
 
@@ -136,6 +134,7 @@ jobs:
         env:
           REGISTRY: ${{ env.REGISTRY }}
           TAG_NAME: ${{ env.TAG_NAME }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
@@ -151,6 +150,7 @@ jobs:
         env:
           REGISTRY: ${{ env.REGISTRY }}
           TAG_NAME: ${{ env.TAG_NAME }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
@@ -184,6 +184,7 @@ jobs:
         env:
           REGISTRY: ${{ env.REGISTRY }}
           TAG_NAME: ${{ env.TAG_NAME }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
