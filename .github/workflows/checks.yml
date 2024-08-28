@@ -155,7 +155,11 @@ jobs:
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
           echo "Push image to ECR"
-          docker push "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            docker push "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
+          else
+            docker push "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
+          fi
 
     outputs:
       registry: ${{ steps.login-ecr.outputs.registry }}
