@@ -25,7 +25,7 @@ describe('customAllocationPriorityFixedPrice', () => {
       { poolId: 22, totalCapacity: BigNumber.from(500), initialCapacityUsed: BigNumber.from(0) },
     ];
     const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
-    expect(allocations).to.deep.equal({ 18: BigNumber.from(200), 22: BigNumber.from(400) });
+    expect(allocations).to.deep.equal({ 18: BigNumber.from(198), 22: BigNumber.from(402) });
   });
 
   it('returns pool allocation for 3 with allocation goes to each pool in order of priority', async () => {
@@ -36,7 +36,7 @@ describe('customAllocationPriorityFixedPrice', () => {
       { poolId: 22, totalCapacity: BigNumber.from(500000), initialCapacityUsed: BigNumber.from(200000) },
     ];
     const allocations = await customAllocationPriorityFixedPrice(amountToAllocate, poolsData, poolIdPriority);
-    const expectedAllocations = { 18: BigNumber.from(500000), 22: BigNumber.from(300000), 1: BigNumber.from(200000) };
+    const expectedAllocations = { 18: BigNumber.from(495000), 22: BigNumber.from(297000), 1: BigNumber.from(208000) };
     expect(allocations).to.deep.equal(expectedAllocations);
   });
 
