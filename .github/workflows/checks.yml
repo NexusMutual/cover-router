@@ -111,10 +111,12 @@ jobs:
           fi
 
       - name: Configure AWS Credentials
+        env:
+          AWS_ROLE_TO_ASSUME: ${{ env.AWS_ROLE_TO_ASSUME }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${AWS_ROLE_TO_ASSUME }
           role-session-name: ${{ github.run_id }}
           output-credentials: true
 
