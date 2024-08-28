@@ -126,6 +126,7 @@ jobs:
         run: |
           echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
           echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
           echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_ENV
 
@@ -136,8 +137,13 @@ jobs:
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-          echo "Build image for '${REPO_NAME}' with tag '${TAG_NAME}'"
-          docker build -t "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" .
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "Build image for '${REPO_NAME}' with tag '${TAG_NAME}'"
+            docker build -t "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" .
+          else
+            echo "Build image for '${REPO_NAME}' with tag '${BRANCH_NAME}'"
+            docker build -t "${REGISTRY}/${REPO_NAME}:${BRNACH_NAME}-${SHORT_SHA}" .
+          fi
 
       - name: Push Docker Image
         env:
@@ -162,6 +168,7 @@ jobs:
         run: |
           echo "REGISTRY=${{ needs.build_and_push.outputs.registry }}" >> $GITHUB_ENV
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
           echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
           echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_ENV
 
@@ -178,7 +185,11 @@ jobs:
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-            cd argocd/values/application/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/' values.yaml
+            if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+              cd argocd/values/production/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/' values.yaml
+            else
+              cd argocd/values/staging/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${BRANCH_NAME}-${SHORT_SHA}/' values.yaml
+            fi
             git config --global user.email "devops@cloudhero.io"
             git config --global user.name "CloudHero"
             git add .
