@@ -193,9 +193,9 @@ jobs:
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
             if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-              cd argocd/values/production/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/' values.yaml
+              cd argocd/values/production/${REPO_NAME} &&  sed -i "/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/" values.yaml
             else
-              cd argocd/values/staging/${REPO_NAME} &&  sed -i '/tag:/s/tag:.*/tag: ${BRANCH_NAME}-${SHORT_SHA}/' values.yaml
+              cd argocd/values/staging/${REPO_NAME} &&  sed -i "/tag:/s/tag:.*/tag: ${BRANCH_NAME}-${SHORT_SHA}/" values.yaml
             fi
             git config --global user.email "devops@cloudhero.io"
             git config --global user.name "CloudHero"
