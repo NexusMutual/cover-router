@@ -89,11 +89,10 @@ jobs:
       - name: Test
         run: npm test
 
-
   build_and_push:
     name: Build Image
     runs-on: ubuntu-22.04
-    if: startsWith(github.ref, 'refs/tags/')  # Run only on tags
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/dev'
     needs: ["test", "lint"]
     permissions:
       id-token: write
@@ -102,11 +101,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set AWS Role
+        id: set-role
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "AWS_ROLE_TO_ASSUME=${{ secrets.AWS_ROLE }}" >> $GITHUB_ENV
+          else
+            echo "AWS_ROLE_TO_ASSUME=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+          fi
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
-          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ github.run_id }}
           output-credentials: true
 
@@ -147,7 +155,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')  # Run only on tags
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/dev'
     needs: ["setup", "test", "lint", "scan", "build_and_push"]
     steps:
       - name: Set Env
