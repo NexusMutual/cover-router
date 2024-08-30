@@ -214,7 +214,7 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
       continue;
     }
 
-    const availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
+    const availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed).mul(99).div(100);
     const poolAllocation = bnMin(availableCapacity, coverAmountLeft);
 
     allocations[poolId] = poolAllocation;
