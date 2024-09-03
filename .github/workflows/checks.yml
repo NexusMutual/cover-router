@@ -15,13 +15,12 @@ env:
   NODE_VERSION: '18.15'
   LOG_LEVEL: 'SILENCE'
 
-
 jobs:
   setup:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -55,7 +54,7 @@ jobs:
     timeout-minutes: 5
     needs: setup
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -75,7 +74,7 @@ jobs:
     timeout-minutes: 5
     needs: setup
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -93,20 +92,29 @@ jobs:
   build_and_push:
     name: Build Image
     runs-on: ubuntu-22.04
-    if: startsWith(github.ref, 'refs/tags/')  # Run only on tags
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/dev'
     needs: ["test", "lint"]
     permissions:
       id-token: write
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set AWS Role
+        id: set-role
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "AWS_ROLE_TO_ASSUME=${{ secrets.AWS_ROLE }}" >> $GITHUB_ENV
+          else
+            echo "AWS_ROLE_TO_ASSUME=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+          fi
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
-          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ github.run_id }}
           output-credentials: true
 
@@ -118,6 +126,7 @@ jobs:
         run: |
           echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
           echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
           echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_ENV
 
@@ -125,21 +134,32 @@ jobs:
         env:
           REGISTRY: ${{ env.REGISTRY }}
           TAG_NAME: ${{ env.TAG_NAME }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-          echo "Build image for '${REPO_NAME}' with tag '${TAG_NAME}'"
-          docker build -t "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" .
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "Build image for '${REPO_NAME}' with tag '${TAG_NAME}'"
+            docker build -t "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" .
+          else
+            echo "Build image for '${REPO_NAME}' with tag '${BRANCH_NAME}'"
+            docker build -t "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" .
+          fi
 
       - name: Push Docker Image
         env:
           REGISTRY: ${{ env.REGISTRY }}
           TAG_NAME: ${{ env.TAG_NAME }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
           echo "Push image to ECR"
-          docker push "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            docker push "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
+          else
+            docker push "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
+          fi
 
     outputs:
       registry: ${{ steps.login-ecr.outputs.registry }}
@@ -147,39 +167,38 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')  # Run only on tags
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/dev'
     needs: ["setup", "test", "lint", "scan", "build_and_push"]
     steps:
       - name: Set Env
         run: |
           echo "REGISTRY=${{ needs.build_and_push.outputs.registry }}" >> $GITHUB_ENV
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
           echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
           echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_ENV
 
-      - name: Install Dependencies
-        run: |
-          sudo apt update -y && sudo apt install jq wget -y
-          sudo wget https://github.com/mikefarah/yq/releases/download/v4.24.2/yq_linux_amd64 -O /usr/bin/yq &&
-          sudo chmod +x /usr/bin/yq
-  
-      - name: Clone Infrastructure Repository
-        uses: GuillaumeFalourd/clone-github-repo-action@v2
+      - name: Checkout tools repo
+        uses: actions/checkout@v4
         with:
-          owner: 'NexusMutual'
-          repository: 'infrastructure'
-          access-token: ${{ secrets.GIT_TOKEN  }}
-  
-      - name: Update Tag in Helm Values for Infrastructure
+          repository: NexusMutual/argocd
+          path: argocd
+          token: ${{ secrets.GIT_TOKEN  }}
+      - name: Update Tag in Helm Values for argocd
         env:
           REGISTRY: ${{ env.REGISTRY }}
           TAG_NAME: ${{ env.TAG_NAME }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
           SHORT_SHA: ${{ env.SHORT_SHA }}
           REPO_NAME: ${{ env.REPO_NAME }}
         run: |
-            cd infrastructure/argocd/values/application/${REPO_NAME} &&  yq -i '.nexusmutual.image.tag = "'$TAG_NAME-$SHORT_SHA'" ' values.yaml
+            if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+              cd argocd/values/production/${REPO_NAME} &&  sed -i "/tag:/s/tag:.*/tag: ${TAG_NAME}-${SHORT_SHA}/" values.yaml
+            else
+              cd argocd/values/staging/${REPO_NAME} &&  sed -i "/tag:/s/tag:.*/tag: ${BRANCH_NAME}-${SHORT_SHA}/" values.yaml
+            fi
             git config --global user.email "devops@cloudhero.io"
             git config --global user.name "CloudHero"
             git add .
-            git commit --allow-empty -m "updated image tag to ${SHORT_SHA}"
+            git commit --allow-empty -m "updated image tag to ${SHORT_SHA} for ${REPO_NAME}"
             git push origin master
