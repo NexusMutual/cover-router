@@ -49,3 +49,4 @@ best available combination of pools for the premium.
 - **OpenAPI**: [v2/api/docs/#/Capacity/get_v2_capacity__productId_](https://api.nexusmutual.io/v2/api/docs/#/Capacity/get_v2_capacity__productId_)
 - **Description**: Returns the current capacity for a specific product for a period of 30 days if no period query param is specified.
 
+
