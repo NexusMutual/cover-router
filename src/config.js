@@ -63,6 +63,18 @@ const config = convict({
     env: 'PRIORITY_POOLS_ORDER_196',
     default: [1, 23, 22, 2, 5],
   },
+  customPoolPriorityOrder227: {
+    doc: 'Custom Pool Priority Order for productId 227 - Base DeFi Pass',
+    format: 'array-int',
+    env: 'PRIORITY_POOLS_ORDER_227',
+    default: [8, 23, 22, 2, 1, 5],
+  },
+  customPoolPriorityOrder233: {
+    doc: 'Custom Pool Priority Order for productId 233 - Relative Finance',
+    format: 'array-int',
+    env: 'PRIORITY_POOLS_ORDER_233',
+    default: [22, 2, 1, 23],
+  },
 });
 
 config.validate({ allowed: 'strict' });
