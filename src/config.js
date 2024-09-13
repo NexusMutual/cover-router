@@ -18,13 +18,7 @@ convict.addFormat({
       throw new Error('Missing array-int env var');
     }
     const arr = val.replace(/\s+/g, '').split(',');
-    return arr.map(numString => {
-      const num = parseInt(numString, 10);
-      if (isNaN(num)) {
-        throw new Error(`Invalid integer in array: ${numString}`);
-      }
-      return num;
-    });
+    return arr.map(numString => parseInt(numString, 10));
   },
 });
 
