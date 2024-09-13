@@ -25,6 +25,8 @@ const initialState = {
     186: config.get('customPoolPriorityOrder186'), // DeltaPrime (UnoRe)
     195: config.get('customPoolPriorityOrder195'), // Dialectic Moonphase
     196: config.get('customPoolPriorityOrder196'), // Dialectic Chronograph
+    227: config.get('customPoolPriorityOrder227'), // Base DeFi Pass
+    233: config.get('customPoolPriorityOrder233'), // Relative Finance
   },
   trancheId: 0,
 };

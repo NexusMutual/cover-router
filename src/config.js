@@ -18,7 +18,13 @@ convict.addFormat({
       throw new Error('Missing array-int env var');
     }
     const arr = val.replace(/\s+/g, '').split(',');
-    return arr.map(numString => parseInt(numString, 10));
+    return arr.map(numString => {
+      const num = parseInt(numString, 10);
+      if (isNaN(num)) {
+        throw new Error(`Invalid integer in array: ${numString}`);
+      }
+      return num;
+    });
   },
 });
 
@@ -62,6 +68,18 @@ const config = convict({
     format: 'array-int',
     env: 'PRIORITY_POOLS_ORDER_196',
     default: [1, 23, 22, 2, 5],
+  },
+  customPoolPriorityOrder227: {
+    doc: 'Custom Pool Priority Order for productId 227 - Base DeFi Pass',
+    format: 'array-int',
+    env: 'PRIORITY_POOLS_ORDER_227',
+    default: [8, 23, 22, 2, 1, 5],
+  },
+  customPoolPriorityOrder233: {
+    doc: 'Custom Pool Priority Order for productId 233 - Relative Finance',
+    format: 'array-int',
+    env: 'PRIORITY_POOLS_ORDER_233',
+    default: [22, 2, 1, 23],
   },
 });
 
