@@ -1,5 +1,10 @@
 const { BigNumber } = require('ethers');
 
+process.env.PRIORITY_POOLS_ORDER_186 = '18,22,1';
+process.env.PRIORITY_POOLS_ORDER_195 = '1,23,22,2,5';
+process.env.PRIORITY_POOLS_ORDER_196 = '1,23,22,2,5';
+
+// require config after setting env variable
 const config = require('../../src/config');
 
 const store = {
@@ -16,7 +21,7 @@ const store = {
     255: { id: 255, symbol: 'NXM', decimals: 18 },
   },
   productPriorityPoolsFixedPrice: {
-    4: config.get('customPoolPriorityOrder186'),
+    4: config.get('customPriorityPoolsOrder')[186],
   },
   globalCapacityRatio: BigNumber.from(20000),
   poolProducts: {
