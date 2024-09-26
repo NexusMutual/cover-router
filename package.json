@@ -37,6 +37,8 @@
     "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
     "chai": "^4.3.7",
     "eslint": "^8.33.0",
     "eslint-config-prettier": "^8.6.0",
