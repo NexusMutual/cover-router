@@ -16,16 +16,17 @@ describe('productPriorityPoolsFixedPrice state', () => {
   });
 
   it('should populate initialState.productPriorityPoolsFixedPrice with valid arrays of integers', () => {
-    process.env.PRIORITY_POOLS_ORDER_186 = '18,22,1';
-    process.env.PRIORITY_POOLS_ORDER_195 = '1,23,22,2,5';
-    process.env.PRIORITY_POOLS_ORDER_196 = '1,23,22,2,5';
+    // NOTE: the env vars are set in the mocks/store.js file
 
-    // Import modules after setting environment variables
+    // Import modules after environment variables are set
     const { initialState } = require('../../src/store/reducer');
 
+    // Updated expectations for productPriorityPoolsFixedPrice
     expect(initialState.productPriorityPoolsFixedPrice['186']).to.deep.equal([18, 22, 1]);
     expect(initialState.productPriorityPoolsFixedPrice['195']).to.deep.equal([1, 23, 22, 2, 5]);
     expect(initialState.productPriorityPoolsFixedPrice['196']).to.deep.equal([1, 23, 22, 2, 5]);
+    expect(initialState.productPriorityPoolsFixedPrice['227']).to.deep.equal([8, 23, 22, 2, 1, 5]);
+    expect(initialState.productPriorityPoolsFixedPrice['233']).to.deep.equal([22, 2, 1, 23]);
   });
 
   it('should throw an error for invalid custom priority pools order values', () => {
