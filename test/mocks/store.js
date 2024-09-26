@@ -3,6 +3,8 @@ const { BigNumber } = require('ethers');
 process.env.PRIORITY_POOLS_ORDER_186 = '18,22,1';
 process.env.PRIORITY_POOLS_ORDER_195 = '1,23,22,2,5';
 process.env.PRIORITY_POOLS_ORDER_196 = '1,23,22,2,5';
+process.env.PRIORITY_POOLS_ORDER_227 = '8,23,22,2,1,5';
+process.env.PRIORITY_POOLS_ORDER_233 = '22,2,1,23';
 
 // require config after setting env variable
 const config = require('../../src/config');
