@@ -6,4 +6,3 @@ npm run lint
 if [ "$PRE_PUSH_RUN_TEST" = "true" ]; then
   npm test
 fi
-
