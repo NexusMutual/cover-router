@@ -7,6 +7,17 @@ const { selectAsset, selectProduct, selectProductPools } = require('../store/sel
 
 const { WeiPerEther, Zero } = ethers.constants;
 
+const SECONDS_PER_DAY = BigNumber.from(24 * 3600);
+
+/**
+ * Calculates capacity and pricing data for a specific tranche of product pools.
+ *
+ * @param {Array<Object>} productPools - Array of product pool objects.
+ * @param {number} firstUsableTrancheIndex - Index of the first usable tranche.
+ * @param {boolean} useFixedPrice - Flag indicating whether to use fixed pricing.
+ * @param {BigNumber} now - Current timestamp in seconds.
+ * @returns {Object} An object containing capacity used, capacity available, minimum price, and total premium.
+ */
 function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, useFixedPrice, now) {
   return productPools.reduce(
     (accumulated, pool) => {
@@ -18,9 +29,10 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
       const total = trancheCapacities.reduce((total, capacity) => total.add(capacity), Zero);
 
       const unused = trancheCapacities.reduce((available, capacity, index) => {
+        const allocationDifference = capacity.sub(allocations[index]);
         return index < firstUsableTrancheIndex
-          ? available.add(bnMin(capacity.sub(allocations[index]), Zero)) // only carry over the negative
-          : available.add(capacity.sub(allocations[index]));
+          ? available.add(bnMin(allocationDifference, Zero)) // only carry over the negative
+          : available.add(allocationDifference);
       }, Zero);
 
       const availableCapacity = bnMax(unused, Zero);
@@ -71,31 +83,81 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
   );
 }
 
-function capacityEngine(store, productIds, time, period = 30) {
-  const { assets, assetRates } = store.getState();
-  const capacities = [];
-  const ids = productIds.length === 0 ? Object.keys(store.getState().products) : [...productIds];
-  const now = BigNumber.from(Date.now()).div(1000);
+/**
+ * Retrieves all product IDs that are associated with a specific pool.
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {number|string} poolId - The ID of the pool to filter products by.
+ * @returns {Array<string>} An array of product IDs associated with the specified pool.
+ */
+function getProductsInPool(store, poolId) {
+  const { products } = store.getState();
+  return Object.keys(products).filter(productId => {
+    const productPools = selectProductPools(store, productId, poolId);
+    return productPools?.length > 0;
+  });
+}
 
-  for (const productId of ids) {
+/**
+ * Calculates tranche indices for capacity calculations based on time and product data.
+ *
+ * @param {BigNumber} time - The current timestamp in seconds.
+ * @param {Object} product - The product object containing product details.
+ * @param {number} period - The coverage period in days.
+ * @returns {Object} Contains indices for the first usable tranche / first usable tranche for the maximum period.
+ */
+function calculateTrancheInfo(time, product, period) {
+  const firstActiveTrancheId = calculateTrancheId(time);
+  const gracePeriodExpiration = time.add(SECONDS_PER_DAY.mul(period)).add(product.gracePeriod);
+  const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
+  const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
+  const firstUsableTrancheForMaxPeriodId = calculateTrancheId(time.add(MAX_COVER_PERIOD).add(product.gracePeriod));
+  const firstUsableTrancheForMaxPeriodIndex = firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
+
+  return {
+    firstUsableTrancheIndex,
+    firstUsableTrancheForMaxPeriodIndex,
+  };
+}
+
+/**
+ * Calculates the capacity and pricing information for products and pools.
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {Object} [options={}] - Optional parameters for capacity calculation.
+ * @param {number|null} [options.poolId=null] - The ID of the pool to filter products by.
+ * @param {Array<number>} [options.productIds=[]] - Array of product IDs to process.
+ * @param {number} [options.period=30] - The coverage period in days.
+ * @returns {Array<Object>} An array of capacity information objects for each product.
+ */
+function capacityEngine(store, { poolId = null, productIds = [], period = 30 } = {}) {
+  const { assets, assetRates, products } = store.getState();
+  const now = BigNumber.from(Date.now()).div(1000);
+  const capacities = [];
+
+  let productIdsToProcess;
+  if (productIds.length > 0) {
+    productIdsToProcess = [...productIds];
+  } else if (poolId !== null) {
+    // If only poolId is provided, get all products in that pool
+    productIdsToProcess = getProductsInPool(store, poolId);
+  } else {
+    // If neither productIds nor poolId is provided, process all products
+    productIdsToProcess = Object.keys(products);
+  }
+
+  for (const productId of productIdsToProcess) {
     const product = selectProduct(store, productId);
 
     if (!product) {
       continue;
     }
 
-    const secondsPerDay = BigNumber.from(24 * 3600);
-
-    const firstActiveTrancheId = calculateTrancheId(time);
-    const gracePeriodExpiration = time.add(secondsPerDay.mul(period)).add(product.gracePeriod);
-    const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
-    const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
-    const firstUsableTrancheForMaxPeriodId = calculateTrancheId(time.add(MAX_COVER_PERIOD).add(product.gracePeriod));
-    const firstUsableTrancheForMaxPeriodIndex = firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
-
-    const productPools = selectProductPools(store, productId);
+    const { firstUsableTrancheIndex, firstUsableTrancheForMaxPeriodIndex } = calculateTrancheInfo(now, product, period);
+    const productPools = selectProductPools(store, productId, poolId);
 
     if (product.useFixedPrice) {
+      // Fixed Price
       const productData = calculateProductDataForTranche(productPools, firstUsableTrancheIndex, true, now);
 
       const { capacityAvailableNXM, capacityUsedNXM, minPrice, totalPremium } = productData;
@@ -118,6 +180,7 @@ function capacityEngine(store, productIds, time, period = 30) {
         maxAnnualPrice,
       });
     } else {
+      // Non-fixed Price
       let productData = {};
       let maxAnnualPrice = BigNumber.from(0);
 
