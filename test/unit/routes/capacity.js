@@ -1,8 +1,6 @@
 const { expect } = require('chai');
-const sinon = require('sinon');
 const supertest = require('supertest');
 
-const selectorsModule = require('../../../src/store/selectors');
 const initApp = require('../../mocks/server');
 const { capacities, poolProductCapacities } = require('../responses');
 
