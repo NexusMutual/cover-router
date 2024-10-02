@@ -36,7 +36,7 @@ describe('Capacity Engine tests', function () {
 
   it('should return capacity for 1 product across all pools when productId is provided and poolId is not', function () {
     const productId = '0';
-    const [product] = capacityEngine(store, { productIds: [productId] }); // Removed poolId and period
+    const [product] = capacityEngine(store, { productIds: [productId] });
 
     const expectedCapacities = capacities[Number(productId)];
 
@@ -49,7 +49,7 @@ describe('Capacity Engine tests', function () {
 
   it('should return undefined for non-existing product', function () {
     const nonExistingProductId = '999';
-    const [product] = capacityEngine(store, { productIds: [nonExistingProductId] }); // Removed poolId and period
+    const [product] = capacityEngine(store, { productIds: [nonExistingProductId] });
     expect(product).to.be.equal(undefined);
   });
 
