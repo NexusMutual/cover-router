@@ -10,6 +10,8 @@ Computes the optimal capacity allocation in order to get the best price on cover
     - [Quote Route](#quote-route)
     - [Capacity Route](#capacity-route)
     - [Capacity Route for a specific product](#capacity-route-for-a-specific-product)
+    - [Capacity Route for all products in a pool](#capacity-route-for-all-products-in-a-pool)
+    - [Capacity Route for a specific product in a pool](#capacity-route-for-a-specific-product-in-a-pool)
 
 ## Setup
 
@@ -49,4 +51,24 @@ best available combination of pools for the premium.
 - **OpenAPI**: [v2/api/docs/#/Capacity/get_v2_capacity__productId_](https://api.nexusmutual.io/v2/api/docs/#/Capacity/get_v2_capacity__productId_)
 - **Description**: Returns the current capacity for a specific product for a period of 30 days if no period query param is specified.
 
+### Capacity Route for all products in a pool
+- **URL**: `/v2/capacity/pools/{poolId}`
+- **Method**: `GET`
+- **OpenAPI**: [v2/api/docs/#/Capacity/get_v2_capacity_pools__poolId_](https://api.nexusmutual.io/v2/api/docs/#/Capacity/
+get_v2_capacity_pools__poolId_)
 
+- **Description**: Returns the current capacity for all products in a specific pool for a period of 30 days if no period query param is specified.
+- **Parameters**:
+  - `poolId`: Required path parameter specifying the pool ID.
+  - `period`: Optional query parameter specifying the period in days (default is 30, range is 28-365).
+
+### Capacity Route for a specific product in a pool
+- **URL**: `/v2/capacity/pools/{poolId}/products/{productId}`
+- **Method**: `GET`
+- **OpenAPI**: [v2/api/docs/#/Capacity/get_v2_capacity_pools__poolId__products__productId_](https://api.nexusmutual.io/v2/api/docs/#/Capacity/get_v2_capacity_pools__poolId__products__productId_)
+                
+- **Description**: Returns the current capacity for a specific product in a specific pool for a period of 30 days if no period query param is specified.
+- **Parameters**:
+  - `poolId`: Required path parameter specifying the pool ID.
+  - `productId`: Required path parameter specifying the product ID.
+  - `period`: Optional query parameter specifying the period in days (default is 30, range is 28-365).
