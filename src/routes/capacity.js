@@ -1,22 +1,23 @@
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
-const capacityEngine = require('../lib/capacityEngine');
+const { capacityEngine } = require('../lib/capacityEngine');
 const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();
 const { formatUnits } = ethers.utils;
 
-const formatCapacityResult = ({ productId, availableCapacity, usedCapacity, minAnnualPrice, maxAnnualPrice }) => ({
-  productId,
-  availableCapacity: availableCapacity.map(({ assetId, amount, asset }) => ({
+const formatCapacityResult = capacity => ({
+  productId: capacity.productId,
+  availableCapacity: capacity.availableCapacity.map(({ assetId, amount, asset }) => ({
     assetId,
     amount: amount.toString(),
     asset,
   })),
-  allocatedNxm: usedCapacity.toString(),
-  minAnnualPrice: formatUnits(minAnnualPrice),
-  maxAnnualPrice: formatUnits(maxAnnualPrice),
+  allocatedNxm: capacity.usedCapacity.toString(),
+  utilizationRate: capacity.utilizationRate,
+  minAnnualPrice: formatUnits(capacity.minAnnualPrice),
+  maxAnnualPrice: formatUnits(capacity.maxAnnualPrice),
 });
 
 /**
@@ -303,6 +304,10 @@ router.get(
  *           type: string
  *           format: integer
  *           description: The used capacity amount for active covers on the product.
+ *         utilizationRate:
+ *           type: number
+ *           format: float
+ *           description: The ratio of used capacity to total capacity, expressed as a value between 0 and 1.
  *         minAnnualPrice:
  *           type: string
  *           description: The minimal annual price is a percentage value between 0-1.

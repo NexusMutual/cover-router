@@ -10,6 +10,22 @@ const { WeiPerEther, Zero } = ethers.constants;
 const SECONDS_PER_DAY = BigNumber.from(24 * 3600);
 
 /**
+ * Calculates the utilization rate of the capacity.
+ *
+ * @param {Array<Object>} capacityInAssets - Array of asset objects containing assetId and amount.
+ * @param {BigNumber} capacityUsedNXM - The amount of capacity used in NXM.
+ * @returns {BigNumber} The utilization rate as a BigNumber. Returns undefined is capacity in NXM is missing
+ */
+function getUtilizationRate(capacityInAssets, capacityUsedNXM) {
+  const availableCapacityInNxm = capacityInAssets.find(asset => asset.assetId === 255)?.amount;
+  if (!availableCapacityInNxm || !capacityUsedNXM) {
+    return undefined;
+  }
+  const totalCapacity = availableCapacityInNxm.add(capacityUsedNXM);
+  return capacityUsedNXM.mul(10000).div(totalCapacity).toNumber() / 10000;
+}
+
+/**
  * Calculates capacity and pricing data for a specific tranche of product pools.
  *
  * @param {Array<Object>} productPools - Array of product pool objects.
@@ -176,6 +192,7 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30 } =
         productId: Number(productId),
         availableCapacity: capacityInAssets,
         usedCapacity: capacityUsedNXM,
+        utilizationRate: getUtilizationRate(capacityInAssets, capacityUsedNXM),
         minAnnualPrice: minPrice,
         maxAnnualPrice,
       });
@@ -212,6 +229,7 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30 } =
         productId: Number(productId),
         availableCapacity: capacityInAssets,
         usedCapacity: capacityUsedNXM,
+        utilizationRate: getUtilizationRate(capacityInAssets, capacityUsedNXM),
         minAnnualPrice: minPrice,
         maxAnnualPrice,
       });
@@ -221,4 +239,7 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30 } =
   return capacities;
 }
 
-module.exports = capacityEngine;
+module.exports = {
+  capacityEngine,
+  getUtilizationRate,
+};
