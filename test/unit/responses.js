@@ -35,6 +35,7 @@ const capacities = [
         asset: assets[255],
       },
     ],
+    utilizationRate: 0.4405,
   },
   {
     productId: 1,
@@ -63,6 +64,7 @@ const capacities = [
         asset: assets[255],
       },
     ],
+    utilizationRate: 0,
   },
   {
     productId: 2,
@@ -91,6 +93,7 @@ const capacities = [
         asset: assets[255],
       },
     ],
+    utilizationRate: 0,
   },
   {
     productId: 3,
@@ -119,6 +122,7 @@ const capacities = [
     allocatedNxm: '32725200000000000000000',
     minAnnualPrice: '0.0775',
     maxAnnualPrice: '0.104190714614767679',
+    utilizationRate: 0.3491,
   },
   {
     productId: 4,
@@ -147,6 +151,7 @@ const capacities = [
     allocatedNxm: '20004610000000000000000',
     maxAnnualPrice: '0.077089706487431343',
     minAnnualPrice: '0.02',
+    utilizationRate: 0.8467,
   },
 ];
 
@@ -181,6 +186,7 @@ const poolProductCapacities = {
       allocatedNxm: '0',
       minAnnualPrice: '0.02',
       maxAnnualPrice: '0.03',
+      utilizationRate: 0,
     },
     {
       productId: 1,
@@ -209,6 +215,7 @@ const poolProductCapacities = {
       allocatedNxm: '0',
       minAnnualPrice: '0.02',
       maxAnnualPrice: '0.03',
+      utilizationRate: 0,
     },
     {
       productId: 2,
@@ -237,6 +244,7 @@ const poolProductCapacities = {
       allocatedNxm: '0',
       minAnnualPrice: '0.02',
       maxAnnualPrice: '0.02',
+      utilizationRate: 0,
     },
   ],
 };
@@ -324,6 +332,7 @@ const getQuote = assetId => ({
 });
 
 module.exports = {
+  assets,
   capacities,
   poolProductCapacities,
   getQuote,
