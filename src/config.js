@@ -35,7 +35,6 @@ const envVars = process.env;
 for (const [key, value] of Object.entries(envVars)) {
   if (key.startsWith('PRIORITY_POOLS_ORDER_')) {
     const productId = key.split('_').pop();
-    // Convert string array to array of integers with validation
     const intArray = value.split(',').map((num, index) => {
       const parsed = parseInt(num.trim(), 10);
       if (isNaN(parsed)) {
