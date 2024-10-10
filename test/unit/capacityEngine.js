@@ -30,7 +30,7 @@ describe('Capacity Engine tests', function () {
 
       response.forEach((product, i) => {
         expect(product.productId).to.be.equal(capacities[i].productId);
-        expect(product.utilizationRate).to.be.equal(capacities[i].utilizationRate);
+        expect(product.utilizationRate.toNumber()).to.be.equal(capacities[i].utilizationRate);
 
         product.availableCapacity.forEach(({ assetId, amount, asset }, j) => {
           expect(amount.toString()).to.be.equal(capacities[i].availableCapacity[j].amount);
@@ -46,7 +46,7 @@ describe('Capacity Engine tests', function () {
       const expectedCapacity = capacities[Number(productId)];
 
       expect(product.productId).to.be.equal(expectedCapacity.productId);
-      expect(product.utilizationRate).to.be.equal(expectedCapacity.utilizationRate);
+      expect(product.utilizationRate.toNumber()).to.be.equal(expectedCapacity.utilizationRate);
 
       product.availableCapacity.forEach(({ assetId, amount, asset }, i) => {
         expect(amount.toString()).not.to.be.equal(expectedCapacity.availableCapacity[i]);
@@ -69,7 +69,7 @@ describe('Capacity Engine tests', function () {
 
       expect(product.productId).to.equal(Number(productId));
       expect(product.usedCapacity.toString()).to.equal(expectedCapacity.allocatedNxm);
-      expect(product.utilizationRate).to.be.equal(expectedCapacity.utilizationRate);
+      expect(product.utilizationRate.toNumber()).to.be.equal(expectedCapacity.utilizationRate);
       expect(product.minAnnualPrice.toString()).to.equal(parseEther(expectedCapacity.minAnnualPrice).toString());
       expect(product.maxAnnualPrice.toString()).to.equal(parseEther(expectedCapacity.maxAnnualPrice).toString());
       expect(product.availableCapacity).to.have.lengthOf(expectedCapacity.availableCapacity.length);
@@ -91,7 +91,7 @@ describe('Capacity Engine tests', function () {
         const productPools = mockStore.productPoolIds[product.productId];
         expect(productPools).to.include(poolId);
         expect(product.usedCapacity.toString()).to.equal(expectedCapacity.allocatedNxm);
-        expect(product.utilizationRate).to.be.equal(expectedCapacity.utilizationRate);
+        expect(product.utilizationRate.toNumber()).to.be.equal(expectedCapacity.utilizationRate);
         expect(product.minAnnualPrice.toString()).to.equal(parseEther(expectedCapacity.minAnnualPrice).toString());
         expect(product.maxAnnualPrice.toString()).to.equal(parseEther(expectedCapacity.maxAnnualPrice).toString());
         expect(product.availableCapacity).to.have.lengthOf(expectedCapacity.availableCapacity.length);
@@ -150,7 +150,7 @@ describe('Capacity Engine tests', function () {
       const utilizationRate = getUtilizationRate(summedCapacity.availableCapacity, summedCapacity.usedCapacity);
       expect(summedCapacity.productId).to.equal(allPoolsProduct.productId);
       expect(summedCapacity.usedCapacity.toString()).to.equal(allPoolsProduct.usedCapacity.toString());
-      expect(utilizationRate).to.be.equal(allPoolsProduct.utilizationRate);
+      expect(utilizationRate.toNumber()).to.be.equal(allPoolsProduct.utilizationRate.toNumber());
       expect(summedCapacity.minAnnualPrice.toString()).to.equal(allPoolsProduct.minAnnualPrice.toString());
       expect(summedCapacity.maxAnnualPrice.toString()).to.equal(allPoolsProduct.maxAnnualPrice.toString());
 
@@ -187,7 +187,9 @@ describe('Capacity Engine tests', function () {
 
       const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
 
-      expect(utilizationRate).to.equal(0.3333);
+      const expectedRate = BigNumber.from(3333); // (50 / (100 + 50)) * 10000 = 3333 basis points
+
+      expect(utilizationRate.toNumber()).to.be.closeTo(expectedRate.toNumber(), 1);
     });
 
     it('should return 1 when ALL capacity is used (no available capacity)', function () {
@@ -196,7 +198,7 @@ describe('Capacity Engine tests', function () {
 
       const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
 
-      expect(utilizationRate).to.equal(1);
+      expect(utilizationRate.toNumber()).to.equal(10000);
     });
 
     it('should handle multiple assets and return the correct utilization rate', function () {
@@ -208,7 +210,9 @@ describe('Capacity Engine tests', function () {
 
       const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
 
-      expect(utilizationRate).to.equal(0.3333);
+      const expectedRate = BigNumber.from(3333); // (100 / (200 + 100)) * 10000 = 3333 basis points
+
+      expect(utilizationRate.toNumber()).to.be.closeTo(expectedRate.toNumber(), 1);
     });
 
     it('should return undefined when no asset with assetId 255 is present', function () {
