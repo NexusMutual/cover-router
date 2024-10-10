@@ -25,6 +25,10 @@ function getUtilizationRate(capacityInAssets, capacityUsedNXM) {
   }
 
   const totalCapacity = availableCapacityInNxm.add(capacityUsedNXM);
+  if (totalCapacity.isZero()) {
+    return BigNumber.from(0);
+  }
+
   return capacityUsedNXM.mul(BASIS_POINTS).div(totalCapacity);
 }
 
