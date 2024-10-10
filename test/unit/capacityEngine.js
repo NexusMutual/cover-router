@@ -215,13 +215,23 @@ describe('Capacity Engine tests', function () {
       expect(utilizationRate.toNumber()).to.be.closeTo(expectedRate.toNumber(), 1);
     });
 
-    it('should return undefined when no asset with assetId 255 is present', function () {
+    it('should return undefined if utilizationRate cannot be calculated because of missing data', function () {
+      // missing capacity in NXM (255)
       const capacityInAssets = [{ assetId: 1, amount: parseEther('100'), asset: assets[1] }];
       const capacityUsedNXM = parseEther('50');
 
       const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
 
       expect(utilizationRate).to.equal(undefined);
+    });
+
+    it('should return undefined when there is no capacity available', function () {
+      const capacityInAssets = [{ assetId: 255, amount: Zero, asset: assets[255] }];
+      const capacityUsedNXM = Zero;
+
+      const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
+
+      expect(utilizationRate.toNumber()).to.equal(0);
     });
   });
 });
