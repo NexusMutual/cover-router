@@ -41,7 +41,7 @@ const capacities = [
         asset: assets[255],
       },
     ],
-    utilizationRate: 0.4405,
+    utilizationRate: 4405,
   },
   {
     productId: 1,
@@ -143,7 +143,7 @@ const capacities = [
     allocatedNxm: '32725200000000000000000',
     minAnnualPrice: '0.0775',
     maxAnnualPrice: '0.104190714614767679',
-    utilizationRate: 0.3491,
+    utilizationRate: 3491,
   },
   {
     productId: 4,
@@ -177,7 +177,7 @@ const capacities = [
     allocatedNxm: '20004610000000000000000',
     maxAnnualPrice: '0.077089706487431343',
     minAnnualPrice: '0.02',
-    utilizationRate: 0.8467,
+    utilizationRate: 8467,
   },
 ];
 
