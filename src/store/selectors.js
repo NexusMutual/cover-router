@@ -8,13 +8,25 @@ const selectProduct = (store, productId) => {
   return products[productId];
 };
 
-const selectProductPools = (store, productId) => {
+/**
+ * Retrieves the product pools associated with a specific product ID, optionally filtered by a pool ID.
+ *
+ * @param {Object} store - The Redux store containing the application state.
+ * @param {number} productId - The ID of the product for which to retrieve pools.
+ * @param {number|null} [poolId=null] - The ID of the pool to filter by.
+ *                                      If not provided, all pools associated with the product are returned.
+ * @returns {Array<Object>} Array of product pool objects associated with the specified product (and pool, if provided).
+ */
+const selectProductPools = (store, productId, poolId = null) => {
   const { poolProducts, productPoolIds } = store.getState();
   const poolIds = productPoolIds[productId] || [];
-  return poolIds.map(poolId => {
+
+  if (poolId) {
     const key = `${productId}_${poolId}`;
-    return poolProducts[key];
-  });
+    return poolIds.includes(poolId) ? [poolProducts[key]] : [];
+  }
+
+  return poolIds.map(id => poolProducts[`${productId}_${id}`]);
 };
 
 const selectAsset = (store, assetId) => {
