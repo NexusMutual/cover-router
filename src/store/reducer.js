@@ -20,16 +20,15 @@ const initialState = {
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
   products: {}, // productId -> { product }
-  productPriorityPoolsFixedPrice: {
-    // NOTE: only fixed price products are currently supported
-    186: config.get('customPoolPriorityOrder186'), // DeltaPrime (UnoRe)
-    195: config.get('customPoolPriorityOrder195'), // Dialectic Moonphase
-    196: config.get('customPoolPriorityOrder196'), // Dialectic Chronograph
-    227: config.get('customPoolPriorityOrder227'), // Base DeFi Pass
-    233: config.get('customPoolPriorityOrder233'), // Relative Finance
-  },
+  productPriorityPoolsFixedPrice: {},
   trancheId: 0,
 };
+
+// Automatically populate productPriorityPoolsFixedPrice
+const customPriorityPoolsOrder = config.get('customPriorityPoolsOrder') || {};
+for (const [productId, orderArray] of Object.entries(customPriorityPoolsOrder)) {
+  initialState.productPriorityPoolsFixedPrice[productId] = orderArray;
+}
 
 function reducer(state = initialState, { type, payload }) {
   if (type === SET_PRODUCT) {

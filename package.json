@@ -1,6 +1,6 @@
 {
   "name": "cover-router",
-  "version": "2.3.5",
+  "version": "2.3.6",
   "description": "Cover Router",
   "main": "src/index.js",
   "engines": {
@@ -25,18 +25,19 @@
   },
   "homepage": "https://github.com/NexusMutual/cover-router#readme",
   "dependencies": {
-    "@nexusmutual/deployments": "^2.8.0",
+    "@nexusmutual/deployments": "^2.9.0",
     "convict": "^6.2.4",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "express": "^4.18.2",
-    "husky": "^9.0.11",
     "node-fetch": "^2.6.9",
     "redux": "^4.2.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
     "chai": "^4.3.7",
     "eslint": "^8.33.0",
     "eslint-config-prettier": "^8.6.0",
@@ -48,6 +49,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-standard": "^5.0.0",
+    "husky": "^9.1.6",
     "mocha": "^10.2.0",
     "nodemon": "^3.1.2",
     "nyc": "^15.1.0",

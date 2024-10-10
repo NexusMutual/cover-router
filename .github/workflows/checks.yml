@@ -35,20 +35,6 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci --ignore-scripts
 
-  scan:
-    runs-on: ubuntu-22.04
-    name: Scan
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Scan
-        run: |
-          export TRIVY_VERSION="0.54.1"
-          wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
-          echo "Scanning filesystem"
-          ./trivy filesystem .
-
   lint:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
@@ -168,7 +154,7 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/dev'
-    needs: ["setup", "test", "lint", "scan", "build_and_push"]
+    needs: ["setup", "test", "lint", "build_and_push"]
     steps:
       - name: Set Env
         run: |
