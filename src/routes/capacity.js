@@ -15,7 +15,7 @@ const formatCapacityResult = capacity => ({
     asset,
   })),
   allocatedNxm: capacity.usedCapacity.toString(),
-  utilizationRate: capacity.utilizationRate,
+  utilizationRate: capacity.utilizationRate.toNumber(),
   minAnnualPrice: formatUnits(capacity.minAnnualPrice),
   maxAnnualPrice: formatUnits(capacity.maxAnnualPrice),
 });
@@ -306,8 +306,8 @@ router.get(
  *           description: The used capacity amount for active covers on the product.
  *         utilizationRate:
  *           type: number
- *           format: float
- *           description: The ratio of used capacity to total capacity, expressed as a value between 0 and 1.
+ *           format: integer
+ *           description: The percentage of used capacity to total capacity, expressed as basis points (0-10,000).
  *         minAnnualPrice:
  *           type: string
  *           description: The minimal annual price is a percentage value between 0-1.
