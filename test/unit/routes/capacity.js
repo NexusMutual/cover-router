@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const supertest = require('supertest');
 
 const initApp = require('../../mocks/server');
-const { capacities, poolProductCapacities } = require('../responses');
+const { capacities, poolProductCapacities, productCapacityPerPools } = require('../responses');
 
 describe('Capacity Routes', () => {
   let server;
@@ -39,8 +39,20 @@ describe('Capacity Routes', () => {
       const productId = 0;
       const url = `/v2/capacity/${productId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
-      expect(response).to.be.deep.equal(capacities[0]);
+      expect(response).to.be.deep.equal(capacities[productId]);
     });
+
+    it('should have capacityPerPool if queryParam withPools=true', async function () {
+      const productId = 0;
+      const url = `/v2/capacity/${productId}?withPools=true`;
+      const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
+
+      const expectedCapacity = capacities[productId];
+      expectedCapacity.capacityPerPool = productCapacityPerPools[productId];
+
+      expect(response).to.be.deep.equal(expectedCapacity);
+    });
+    // should get return capacityPerPool if queryParam withPool=true
 
     it('should return 400 Invalid Product Id for non-existent productId', async function () {
       const nonExistentProductId = 999;
