@@ -295,6 +295,53 @@ router.get(
  * @openapi
  * components:
  *   schemas:
+ *     AssetInfo:
+ *       type: object
+ *       description: An object containing asset info
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: The id of the asset
+ *         symbol:
+ *           type: string
+ *           description: The symbol of the asset
+ *         decimals:
+ *           type: integer
+ *           description: The decimals of the asset
+ *           example: 18
+ *     AvailableCapacity:
+ *       type: object
+ *       properties:
+ *         assetId:
+ *           type: integer
+ *           description: The asset id
+ *         amount:
+ *           type: string
+ *           format: integer
+ *           description: The capacity amount expressed in the asset
+ *         asset:
+ *           $ref: '#/components/schemas/AssetInfo'
+ *     PoolCapacity:
+ *       type: object
+ *       properties:
+ *         poolId:
+ *           type: integer
+ *           description: The pool id
+ *         availableCapacity:
+ *           type: array
+ *           description: The maximum available capacity for the pool's product.
+ *           items:
+ *             $ref: '#/components/schemas/AvailableCapacity'
+ *         allocatedNxm:
+ *           type: string
+ *           format: integer
+ *           description: The used capacity amount for active covers on the pool.
+ *         minAnnualPrice:
+ *           type: string
+ *           description: The minimal annual price is a percentage value between 0-1.
+ *         maxAnnualPrice:
+ *           type: string
+ *           description: The maximal annual price is a percentage value between 0-1.
  *     CapacityResult:
  *       type: object
  *       properties:
@@ -305,29 +352,7 @@ router.get(
  *           type: array
  *           description: The maximum available capacity for the product.
  *           items:
- *             type: object
- *             properties:
- *               assetId:
- *                 type: integer
- *                 description: The asset id
- *               amount:
- *                 type: string
- *                 format: integer
- *                 description: The capacity amount expressed in the asset
- *               asset:
- *                 type: object
- *                 description: An object containing asset info
- *                 properties:
- *                   id:
- *                     type: integer
- *                     description: The id of the asset
- *                   symbol:
- *                     type: string
- *                     description: The symbol of the asset
- *                   decimals:
- *                     type: integer
- *                     description: The decimals of the asset
- *                     example: 18
+ *             $ref: '#/components/schemas/AvailableCapacity'
  *         allocatedNxm:
  *           type: string
  *           format: integer
@@ -342,6 +367,13 @@ router.get(
  *         maxAnnualPrice:
  *           type: string
  *           description: The maximal annual price is a percentage value between 0-1.
+ *         capacityPerPool:
+ *           type: array
+ *           description: >-
+ *             The capacity per pool. This field is only included when the query parameter `withPools=true`.
+ *             If `withPools` is false or not provided, this field will be undefined and not present in the response.
+ *           items:
+ *             $ref: '#/components/schemas/PoolCapacity'
  */
 
 module.exports = router;
