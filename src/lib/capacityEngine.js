@@ -187,9 +187,10 @@ function calculateTrancheInfo(time, product, period) {
  * @param {number|null} [options.poolId=null] - The ID of the pool to filter products by.
  * @param {Array<number>} [options.productIds=[]] - Array of product IDs to process.
  * @param {number} [options.period=30] - The coverage period in days.
+ * @param {boolean} [options.withPools=false] - Flag indicating whether to include capacityPerPool data field.
  * @returns {Array<Object>} An array of capacity information objects for each product.
  */
-function capacityEngine(store, { poolId = null, productIds = [], period = 30 } = {}) {
+function capacityEngine(store, { poolId = null, productIds = [], period = 30, withPools = false } = {}) {
   const { assets, assetRates, products } = store.getState();
   const now = BigNumber.from(Date.now()).div(1000);
   const capacities = [];
@@ -213,46 +214,29 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30 } =
     }
 
     const { firstUsableTrancheIndex, firstUsableTrancheForMaxPeriodIndex } = calculateTrancheInfo(now, product, period);
+
     // Use productPools from poolId if available; otherwise, select all pools for productId
     const productPools = selectProductPools(store, productId, poolId);
 
+    let aggregatedData = {};
+    let capacityPerPool = [];
+    let maxAnnualPrice = Zero;
+
     if (product.useFixedPrice) {
       // Fixed Price
-      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+      ({ aggregatedData, capacityPerPool } = calculateProductDataForTranche(
         productPools,
         firstUsableTrancheIndex,
         true,
         now,
         assets,
         assetRates,
-      );
-      const { capacityAvailableNXM, capacityUsedNXM, minPrice, totalPremium } = aggregatedData;
+      ));
 
-      const maxAnnualPrice = capacityAvailableNXM.isZero()
-        ? Zero
-        : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
-
-      const capacityInAssets = Object.keys(assets).map(assetId => ({
-        assetId: Number(assetId),
-        amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
-        asset: selectAsset(store, assetId),
-      }));
-
-      capacities.push({
-        productId: Number(productId),
-        availableCapacity: capacityInAssets,
-        usedCapacity: capacityUsedNXM,
-        utilizationRate: getUtilizationRate(capacityAvailableNXM, capacityUsedNXM),
-        minAnnualPrice: minPrice,
-        maxAnnualPrice,
-        capacityPerPool,
-      });
+      const { capacityAvailableNXM, totalPremium } = aggregatedData;
+      maxAnnualPrice = capacityAvailableNXM.isZero() ? Zero : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
     } else {
       // Non-fixed Price
-      let aggregatedData = {};
-      let maxAnnualPrice = BigNumber.from(0);
-      let capacityPerPool = [];
-
       // use the first 6 tranches (over 1 year) for calculating the max annual price
       for (let i = 0; i <= firstUsableTrancheForMaxPeriodIndex; i++) {
         const { aggregatedData: trancheData, capacityPerPool: trancheCapacityPerPool } = calculateProductDataForTranche(
@@ -277,30 +261,39 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30 } =
 
         maxAnnualPrice = bnMax(maxAnnualPrice, maxTrancheAnnualPrice);
       }
-
-      const { capacityAvailableNXM, capacityUsedNXM, minPrice } = aggregatedData;
-      const capacityInAssets = Object.keys(assets).map(assetId => ({
-        assetId: Number(assetId),
-        amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
-        asset: selectAsset(store, assetId),
-      }));
-
-      capacities.push({
-        productId: Number(productId),
-        availableCapacity: capacityInAssets,
-        usedCapacity: capacityUsedNXM,
-        utilizationRate: getUtilizationRate(capacityAvailableNXM, capacityUsedNXM),
-        minAnnualPrice: minPrice,
-        maxAnnualPrice,
-        capacityPerPool,
-      });
     }
+
+    const { capacityAvailableNXM, capacityUsedNXM, minPrice } = aggregatedData;
+    const capacityInAssets = Object.keys(assets).map(assetId => ({
+      assetId: Number(assetId),
+      amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
+      asset: assets[assetId],
+    }));
+
+    const capacityData = {
+      productId: Number(productId),
+      availableCapacity: capacityInAssets,
+      usedCapacity: capacityUsedNXM,
+      utilizationRate: getUtilizationRate(capacityAvailableNXM, capacityUsedNXM),
+      minAnnualPrice: minPrice,
+      maxAnnualPrice,
+    };
+
+    if (withPools) {
+      capacityData.capacityPerPool = capacityPerPool;
+    }
+
+    capacities.push(capacityData);
   }
 
   return capacities;
 }
 
 module.exports = {
-  capacityEngine,
   getUtilizationRate,
+  calculateAvailableCapacity,
+  calculateProductDataForTranche,
+  getProductsInPool,
+  calculateTrancheInfo,
+  capacityEngine,
 };
