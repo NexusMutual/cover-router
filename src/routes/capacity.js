@@ -66,9 +66,12 @@ router.get(
     try {
       const period = BigNumber.from(periodQuery);
       const store = req.app.get('store');
-      const response = capacityEngine(store, { period });
+      const capacities = capacityEngine(store, { period });
 
-      res.json(response.map(capacity => formatCapacityResult(capacity)));
+      const response = capacities.map(capacity => formatCapacityResult(capacity));
+      console.log(inspect(capacities, { depth: null }));
+
+      res.json(response);
     } catch (error) {
       console.error(error);
       return res.status(500).send({ error: 'Internal Server Error', response: null });
@@ -108,6 +111,7 @@ router.get(
   asyncRoute(async (req, res) => {
     const productId = Number(req.params.productId);
     const periodQuery = Number(req.query.period) || 30;
+    const withPools = req.query.withPools === 'true';
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
@@ -119,13 +123,16 @@ router.get(
     try {
       const period = BigNumber.from(periodQuery);
       const store = req.app.get('store');
-      const [capacity] = capacityEngine(store, { productIds: [productId], period });
+      const [capacity] = capacityEngine(store, { productIds: [productId], period, withPools });
 
       if (!capacity) {
         return res.status(400).send({ error: 'Invalid Product Id', response: null });
       }
 
-      res.json(formatCapacityResult(capacity));
+      const response = formatCapacityResult(capacity);
+      console.log(inspect(response, { depth: null }));
+
+      res.json(response);
     } catch (error) {
       console.error(error);
       return res.status(500).send({ error: 'Internal Server Error', response: null });
@@ -188,13 +195,16 @@ router.get(
     try {
       const period = BigNumber.from(periodQuery);
       const store = req.app.get('store');
-      const response = capacityEngine(store, { poolId, period });
+      const capacities = capacityEngine(store, { poolId, period });
 
-      if (response.length === 0) {
+      if (capacities.length === 0) {
         return res.status(404).send({ error: 'Pool not found', response: null });
       }
 
-      res.json(response.map(capacity => formatCapacityResult(capacity)));
+      const response = capacities.map(capacity => formatCapacityResult(capacity));
+      console.log(inspect(response, { depth: null }));
+
+      res.json(response);
     } catch (error) {
       console.error(error);
       return res.status(500).send({ error: 'Internal Server Error', response: null });
@@ -265,10 +275,15 @@ router.get(
       const period = BigNumber.from(periodQuery);
       const store = req.app.get('store');
       const [capacity] = capacityEngine(store, { poolId, productIds: [productId], period });
+
       if (!capacity) {
         return res.status(404).send({ error: 'Product not found in the specified pool', response: null });
       }
-      res.json(formatCapacityResult(capacity));
+
+      const response = formatCapacityResult(capacity);
+      console.log(inspect(response, { depth: null }));
+
+      res.json(response);
     } catch (error) {
       console.error(error);
       return res.status(500).send({ error: 'Internal Server Error', response: null });
