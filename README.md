@@ -49,7 +49,7 @@ best available combination of pools for the premium.
 - **URL**: `/v2/capacity/{productId}`
 - **Method**: `GET`
 - **OpenAPI**: [v2/api/docs/#/Capacity/get_v2_capacity__productId_](https://api.nexusmutual.io/v2/api/docs/#/Capacity/get_v2_capacity__productId_)
-- **Description**: Returns the current capacity for a specific product for a period of 30 days if no period query param is specified.
+- **Description**: Returns the current capacity for a specific product for a period of 30 days if no period query param is specified. Additionally, if the query parameter `withPools=true` is provided, the response will include the `capacityPerPool` field with detailed capacity information per pool.
 
 ### Capacity Route for all products in a pool
 - **URL**: `/v2/capacity/pools/{poolId}`

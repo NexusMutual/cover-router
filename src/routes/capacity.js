@@ -1,3 +1,5 @@
+const { inspect } = require('node:util');
+
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
@@ -18,6 +20,17 @@ const formatCapacityResult = capacity => ({
   utilizationRate: capacity.utilizationRate.toNumber(),
   minAnnualPrice: formatUnits(capacity.minAnnualPrice),
   maxAnnualPrice: formatUnits(capacity.maxAnnualPrice),
+  capacityPerPool: capacity.capacityPerPool?.map(c => ({
+    poolId: c.poolId,
+    availableCapacity: c.availableCapacity.map(({ assetId, amount, asset }) => ({
+      assetId,
+      amount: amount.toString(),
+      asset,
+    })),
+    allocatedNxm: c.allocatedNxm.toString(),
+    minAnnualPrice: formatUnits(c.minAnnualPrice),
+    maxAnnualPrice: formatUnits(c.maxAnnualPrice),
+  })),
 });
 
 /**
@@ -53,9 +66,12 @@ router.get(
     try {
       const period = BigNumber.from(periodQuery);
       const store = req.app.get('store');
-      const response = capacityEngine(store, { period });
+      const capacities = capacityEngine(store, { period });
 
-      res.json(response.map(capacity => formatCapacityResult(capacity)));
+      const response = capacities.map(capacity => formatCapacityResult(capacity));
+      console.log(inspect(capacities, { depth: null }));
+
+      res.json(response);
     } catch (error) {
       console.error(error);
       return res.status(500).send({ error: 'Internal Server Error', response: null });
@@ -95,6 +111,7 @@ router.get(
   asyncRoute(async (req, res) => {
     const productId = Number(req.params.productId);
     const periodQuery = Number(req.query.period) || 30;
+    const withPools = req.query.withPools === 'true';
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
@@ -106,13 +123,16 @@ router.get(
     try {
       const period = BigNumber.from(periodQuery);
       const store = req.app.get('store');
-      const [capacity] = capacityEngine(store, { productIds: [productId], period });
+      const [capacity] = capacityEngine(store, { productIds: [productId], period, withPools });
 
       if (!capacity) {
         return res.status(400).send({ error: 'Invalid Product Id', response: null });
       }
 
-      res.json(formatCapacityResult(capacity));
+      const response = formatCapacityResult(capacity);
+      console.log(inspect(response, { depth: null }));
+
+      res.json(response);
     } catch (error) {
       console.error(error);
       return res.status(500).send({ error: 'Internal Server Error', response: null });
@@ -175,13 +195,16 @@ router.get(
     try {
       const period = BigNumber.from(periodQuery);
       const store = req.app.get('store');
-      const response = capacityEngine(store, { poolId, period });
+      const capacities = capacityEngine(store, { poolId, period });
 
-      if (response.length === 0) {
+      if (capacities.length === 0) {
         return res.status(404).send({ error: 'Pool not found', response: null });
       }
 
-      res.json(response.map(capacity => formatCapacityResult(capacity)));
+      const response = capacities.map(capacity => formatCapacityResult(capacity));
+      console.log(inspect(response, { depth: null }));
+
+      res.json(response);
     } catch (error) {
       console.error(error);
       return res.status(500).send({ error: 'Internal Server Error', response: null });
@@ -252,10 +275,15 @@ router.get(
       const period = BigNumber.from(periodQuery);
       const store = req.app.get('store');
       const [capacity] = capacityEngine(store, { poolId, productIds: [productId], period });
+
       if (!capacity) {
         return res.status(404).send({ error: 'Product not found in the specified pool', response: null });
       }
-      res.json(formatCapacityResult(capacity));
+
+      const response = formatCapacityResult(capacity);
+      console.log(inspect(response, { depth: null }));
+
+      res.json(response);
     } catch (error) {
       console.error(error);
       return res.status(500).send({ error: 'Internal Server Error', response: null });
@@ -267,6 +295,53 @@ router.get(
  * @openapi
  * components:
  *   schemas:
+ *     AssetInfo:
+ *       type: object
+ *       description: An object containing asset info
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: The id of the asset
+ *         symbol:
+ *           type: string
+ *           description: The symbol of the asset
+ *         decimals:
+ *           type: integer
+ *           description: The decimals of the asset
+ *           example: 18
+ *     AvailableCapacity:
+ *       type: object
+ *       properties:
+ *         assetId:
+ *           type: integer
+ *           description: The asset id
+ *         amount:
+ *           type: string
+ *           format: integer
+ *           description: The capacity amount expressed in the asset
+ *         asset:
+ *           $ref: '#/components/schemas/AssetInfo'
+ *     PoolCapacity:
+ *       type: object
+ *       properties:
+ *         poolId:
+ *           type: integer
+ *           description: The pool id
+ *         availableCapacity:
+ *           type: array
+ *           description: The maximum available capacity for the pool's product.
+ *           items:
+ *             $ref: '#/components/schemas/AvailableCapacity'
+ *         allocatedNxm:
+ *           type: string
+ *           format: integer
+ *           description: The used capacity amount for active covers on the pool.
+ *         minAnnualPrice:
+ *           type: string
+ *           description: The minimal annual price is a percentage value between 0-1.
+ *         maxAnnualPrice:
+ *           type: string
+ *           description: The maximal annual price is a percentage value between 0-1.
  *     CapacityResult:
  *       type: object
  *       properties:
@@ -277,29 +352,7 @@ router.get(
  *           type: array
  *           description: The maximum available capacity for the product.
  *           items:
- *             type: object
- *             properties:
- *               assetId:
- *                 type: integer
- *                 description: The asset id
- *               amount:
- *                 type: string
- *                 format: integer
- *                 description: The capacity amount expressed in the asset
- *               asset:
- *                 type: object
- *                 description: An object containing asset info
- *                 properties:
- *                   id:
- *                     type: integer
- *                     description: The id of the asset
- *                   symbol:
- *                     type: string
- *                     description: The symbol of the asset
- *                   decimals:
- *                     type: integer
- *                     description: The decimals of the asset
- *                     example: 18
+ *             $ref: '#/components/schemas/AvailableCapacity'
  *         allocatedNxm:
  *           type: string
  *           format: integer
@@ -314,6 +367,13 @@ router.get(
  *         maxAnnualPrice:
  *           type: string
  *           description: The maximal annual price is a percentage value between 0-1.
+ *         capacityPerPool:
+ *           type: array
+ *           description: >-
+ *             The capacity per pool. This field is only included when the query parameter `withPools=true`.
+ *             If `withPools` is false or not provided, this field will be undefined and not present in the response.
+ *           items:
+ *             $ref: '#/components/schemas/PoolCapacity'
  */
 
 module.exports = router;
