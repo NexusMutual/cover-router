@@ -3,7 +3,7 @@ const { ethers, BigNumber } = require('ethers');
 const { NXM_PER_ALLOCATION_UNIT, MAX_COVER_PERIOD } = require('./constants');
 const { bnMax, bnMin, calculateTrancheId } = require('./helpers');
 const { calculateBasePrice, calculatePremiumPerYear, calculateFixedPricePremiumPerYear } = require('./quoteEngine');
-const { selectAsset, selectProduct, selectProductPools } = require('../store/selectors');
+const { selectProduct, selectProductPools } = require('../store/selectors');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
@@ -32,6 +32,26 @@ function getUtilizationRate(capacityAvailableNXM, capacityUsedNXM) {
 }
 
 /**
+ * Calculates available capacity for a pool.
+ *
+ * @param {Array<BigNumber>} trancheCapacities - Array of capacity BigNumbers.
+ * @param {Array<BigNumber>} allocations - Array of allocation BigNumbers.
+ * @param {number} firstUsableTrancheIndex - Index of the first usable tranche.
+ * @returns {BigNumber} The available capacity as a BigNumber.
+ */
+function calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex) {
+  const unused = trancheCapacities.reduce((available, capacity, index) => {
+    const allocationDifference = capacity.sub(allocations[index]);
+    const allocationToAdd =
+      index < firstUsableTrancheIndex
+        ? bnMin(allocationDifference, Zero) // only carry over the negative
+        : allocationDifference;
+    return available.add(allocationToAdd);
+  }, Zero);
+  return bnMax(unused, Zero);
+}
+
+/**
  * Calculates capacity and pricing data for a specific tranche of product pools.
  *
  * @param {Array<Object>} productPools - Array of product pool objects.
@@ -51,37 +71,29 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
   };
 
   const capacityPerPool = productPools.map(pool => {
-    const { allocations, trancheCapacities, targetPrice, bumpedPrice, bumpedPriceUpdateTime, poolId, poolName } = pool;
+    const { allocations, trancheCapacities, targetPrice, bumpedPrice, bumpedPriceUpdateTime, poolId } = pool;
 
     // calculating the capacity in allocation points
     const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
     const total = trancheCapacities.reduce((total, capacity) => total.add(capacity), Zero);
 
-    const unused = trancheCapacities.reduce((available, capacity, index) => {
-      const allocationDifference = capacity.sub(allocations[index]);
-      return index < firstUsableTrancheIndex
-        ? available.add(bnMin(allocationDifference, Zero)) // only carry over the negative
-        : available.add(allocationDifference);
-    }, Zero);
-
-    const availableCapacity = bnMax(unused, Zero);
+    const availableCapacity = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
 
     // convert to nxm
     const totalInNXM = total.mul(NXM_PER_ALLOCATION_UNIT);
-    const usedInNxm = used.mul(NXM_PER_ALLOCATION_UNIT);
+    const usedInNXM = used.mul(NXM_PER_ALLOCATION_UNIT);
     const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
 
-    aggregatedData.capacityUsedNXM = aggregatedData.capacityUsedNXM.add(usedInNxm);
+    aggregatedData.capacityUsedNXM = aggregatedData.capacityUsedNXM.add(usedInNXM);
     aggregatedData.capacityAvailableNXM = aggregatedData.capacityAvailableNXM.add(availableInNXM);
 
     if (availableCapacity.isZero()) {
       return {
         poolId,
-        poolName,
         availableCapacity: [],
-        allocatedNxm: usedInNxm.toString(),
-        minAnnualPrice: '0',
-        maxAnnualPrice: '0',
+        allocatedNxm: usedInNXM.toString(),
+        minAnnualPrice: Zero,
+        maxAnnualPrice: Zero,
       };
     }
 
@@ -94,7 +106,7 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     // and calculate the premium per year
     const unitPremium = useFixedPrice
       ? calculateFixedPricePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice)
-      : calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice, usedInNxm, totalInNXM);
+      : calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice, usedInNXM, totalInNXM);
 
     const poolMinPrice = WeiPerEther.mul(unitPremium).div(NXM_PER_ALLOCATION_UNIT);
 
@@ -103,28 +115,27 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     // so we're summing up the premium for all pools and then calculate the average at the end
     const poolPremium = useFixedPrice
       ? calculateFixedPricePremiumPerYear(availableInNXM, basePrice)
-      : calculatePremiumPerYear(availableInNXM, basePrice, usedInNxm, totalInNXM);
+      : calculatePremiumPerYear(availableInNXM, basePrice, usedInNXM, totalInNXM);
 
     const poolMaxPrice = availableInNXM.isZero() ? Zero : WeiPerEther.mul(poolPremium).div(availableInNXM);
 
-    aggregatedData.minPrice = aggregatedData.minPrice.eq(Zero)
-      ? poolMinPrice
-      : bnMin(aggregatedData.minPrice, poolMinPrice);
+    if (aggregatedData.minPrice.isZero() || poolMinPrice.lt(aggregatedData.minPrice)) {
+      aggregatedData.minPrice = poolMinPrice;
+    }
     aggregatedData.totalPremium = aggregatedData.totalPremium.add(poolPremium);
 
     const availableCapacityInAssets = Object.keys(assets).map(assetId => ({
       assetId: Number(assetId),
-      amount: availableInNXM.mul(assetRates[assetId]).div(WeiPerEther).toString(),
+      amount: availableInNXM.mul(assetRates[assetId]).div(WeiPerEther),
       asset: assets[assetId],
     }));
 
     return {
       poolId,
-      poolName,
       availableCapacity: availableCapacityInAssets,
-      allocatedNxm: usedInNxm.toString(),
-      minAnnualPrice: poolMinPrice.toString(),
-      maxAnnualPrice: poolMaxPrice.toString(),
+      allocatedNxm: usedInNXM,
+      minAnnualPrice: poolMinPrice,
+      maxAnnualPrice: poolMaxPrice,
     };
   });
 
