@@ -1,3 +1,5 @@
+const { inspect } = require('node:util');
+
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
@@ -18,6 +20,17 @@ const formatCapacityResult = capacity => ({
   utilizationRate: capacity.utilizationRate.toNumber(),
   minAnnualPrice: formatUnits(capacity.minAnnualPrice),
   maxAnnualPrice: formatUnits(capacity.maxAnnualPrice),
+  capacityPerPool: capacity.capacityPerPool?.map(c => ({
+    poolId: c.poolId,
+    availableCapacity: c.availableCapacity.map(({ assetId, amount, asset }) => ({
+      assetId,
+      amount: amount.toString(),
+      asset,
+    })),
+    allocatedNxm: c.allocatedNxm.toString(),
+    minAnnualPrice: formatUnits(c.minAnnualPrice),
+    maxAnnualPrice: formatUnits(c.maxAnnualPrice),
+  })),
 });
 
 /**
