@@ -87,6 +87,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set Env
+        run: |
+          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
+          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_ENV
+
+      - name: Build Docker Image
+        env:
+          TAG_NAME: ${{ env.TAG_NAME }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          SHORT_SHA: ${{ env.SHORT_SHA }}
+          REPO_NAME: ${{ env.REPO_NAME }}
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "Build image for '${REPO_NAME}' with tag '${TAG_NAME}'"
+            docker build -t "${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" .
+          else
+            echo "Build image for '${REPO_NAME}' with tag '${BRANCH_NAME}'"
+            docker build -t "${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" .
+          fi
+
       - name: Set AWS Role
         id: set-role
         run: |
@@ -108,33 +130,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set Env
-        run: |
-          echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
-          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-          echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
-          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_ENV
-
-      - name: Build Docker Image
-        env:
-          REGISTRY: ${{ env.REGISTRY }}
-          TAG_NAME: ${{ env.TAG_NAME }}
-          BRANCH_NAME: ${{ env.BRANCH_NAME }}
-          SHORT_SHA: ${{ env.SHORT_SHA }}
-          REPO_NAME: ${{ env.REPO_NAME }}
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "Build image for '${REPO_NAME}' with tag '${TAG_NAME}'"
-            docker build -t "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" .
-          else
-            echo "Build image for '${REPO_NAME}' with tag '${BRANCH_NAME}'"
-            docker build -t "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" .
-          fi
 
       - name: Push Docker Image
         env:
-          REGISTRY: ${{ env.REGISTRY }}
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           TAG_NAME: ${{ env.TAG_NAME }}
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
           SHORT_SHA: ${{ env.SHORT_SHA }}
@@ -142,8 +141,10 @@ jobs:
         run: |
           echo "Push image to ECR"
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            docker tag "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" "${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
             docker push "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
           else
+            docker tag "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" "${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
             docker push "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
           fi
 
@@ -188,3 +189,60 @@ jobs:
             git add .
             git commit --allow-empty -m "updated image tag to ${SHORT_SHA} for ${REPO_NAME}"
             git push origin master
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: ["setup", "lint", "test", "build_and_push", "deploy"]
+    if: failure()
+    steps:
+      - name: Send Slack Notification for Failure
+        id: notifiy-failure-to-slack
+        uses: slackapi/slack-github-action@v1.27.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Workflow Failed: ${{ github.workflow }}",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n<${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref }}|${{ github.ref_name }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job Status:* Failure"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Triggered by:*\n${{ github.actor }}"
+                    }
+                  ]
+                }
+              ]
+            }
