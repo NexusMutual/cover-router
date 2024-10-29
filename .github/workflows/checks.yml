@@ -141,10 +141,10 @@ jobs:
         run: |
           echo "Push image to ECR"
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            docker tag "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" "${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
+            docker tag "${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}" "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
             docker push "${REGISTRY}/${REPO_NAME}:${TAG_NAME}-${SHORT_SHA}"
           else
-            docker tag "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" "${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
+            docker tag "${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}" "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
             docker push "${REGISTRY}/${REPO_NAME}:${BRANCH_NAME}-${SHORT_SHA}"
           fi
 
