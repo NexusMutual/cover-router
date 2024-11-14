@@ -3,6 +3,7 @@ const assets = {
   0: { id: 0, symbol: 'ETH', decimals: 18 },
   1: { id: 1, symbol: 'DAI', decimals: 18 },
   6: { id: 6, symbol: 'USDC', decimals: 6 },
+  7: { id: 7, symbol: 'cbBTC', decimals: 8 },
   255: { id: 255, symbol: 'NXM', decimals: 18 },
 };
 
@@ -27,6 +28,11 @@ const capacities = [
         assetId: 6,
         amount: '13305160144',
         asset: assets[6],
+      },
+      {
+        assetId: 7,
+        amount: '38109316',
+        asset: assets[7],
       },
       {
         assetId: 255,
@@ -57,6 +63,11 @@ const capacities = [
         asset: assets[6],
       },
       {
+        assetId: 7,
+        amount: '42157197',
+        asset: assets[7],
+      },
+      {
         assetId: 255,
         amount: '512400000000000000000',
         asset: assets[255],
@@ -85,6 +96,11 @@ const capacities = [
         asset: assets[6],
       },
       {
+        assetId: 7,
+        amount: '38109316',
+        asset: assets[7],
+      },
+      {
         assetId: 255,
         amount: '463200000000000000000',
         asset: assets[255],
@@ -96,22 +112,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '627202118245255087296',
+        amount: '650955796175312058720',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '1752525132313136206805332',
+        amount: '1818897544564809351595684',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '1752525131469',
+        amount: '1818897543689',
         asset: assets[6],
       },
       {
+        assetId: 7,
+        amount: '5209778910',
+        asset: assets[7],
+      },
+      {
         assetId: 255,
-        amount: '61011640000000000000000',
+        amount: '63322300000000000000000',
         asset: assets[255],
       },
     ],
@@ -136,6 +157,11 @@ const capacities = [
         assetId: 6,
         amount: '104020098195',
         asset: assets[6],
+      },
+      {
+        assetId: 7,
+        amount: '297939658',
+        asset: assets[7],
       },
       {
         assetId: 255,
@@ -220,6 +246,11 @@ const getQuote = assetId => ({
           assetId: '6',
           amount: '2826484797',
           asset: assets[6],
+        },
+        {
+          assetId: '7',
+          amount: '8095761',
+          asset: assets[7],
         },
         {
           assetId: '255',
