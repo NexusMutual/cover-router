@@ -1,4 +1,4 @@
-name: Fast-forward dev to master
+name: Fast-forward release-candidate to master
 
 on:
   workflow_dispatch:
