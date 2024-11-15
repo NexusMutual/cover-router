@@ -33,7 +33,7 @@ jobs:
 
   fast-forward-dev:
     needs: fast-forward
-    uses: ./.github/workflows/w-fast-forward.yml
+    uses: NexusMutual/workflows/.github/workflows/fast-forward.yml@master
     with:
       environment: production
       source-ref: master
