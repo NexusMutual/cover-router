@@ -1,0 +1,43 @@
+name: Fast-forward dev to master
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  fast-forward:
+    uses: NexusMutual/workflows/.github/workflows/fast-forward.yml@master
+    with:
+      environment: production
+      source-ref: release-candidate
+      target-ref: master
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  tag-image:
+    uses: NexusMutual/workflows/.github/workflows/tag-image.yml@master
+    needs: fast-forward
+    with:
+      environment: production
+      image: ${{ github.repository }}
+      ref: master
+      target-tag: latest
+    secrets:
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  fast-forward-dev:
+    needs: fast-forward
+    uses: ./.github/workflows/w-fast-forward.yml
+    with:
+      environment: production
+      source-ref: master
+      target-ref: dev
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}

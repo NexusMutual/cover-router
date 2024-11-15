@@ -1,0 +1,93 @@
+name: Merge to master
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  bump:
+    uses: NexusMutual/workflows/.github/workflows/bump.yml@master
+    with:
+      ref: 'master'
+      bump-command: npm version patch --no-git-tag-version
+      environment: production
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  build:
+    needs: bump
+    uses: NexusMutual/workflows/.github/workflows/build.yml@master
+    with:
+      ref: 'master'
+      environment: production
+      image: ${{ github.repository }}
+    secrets:
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  tag-image:
+    needs: build
+    uses: NexusMutual/workflows/.github/workflows/tag-image.yml@master
+    with:
+      environment: production
+      image: ${{ github.repository }}
+      ref: 'master'
+      target-tag: ${{ github.ref_name == 'master' && 'latest' || 'staging' }}
+    secrets:
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  rebase-dev:
+    needs: build
+    uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
+    with:
+      target-ref: dev
+      base-ref: master
+      environment: production
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  reset-release-candidate:
+    needs: rebase-dev
+    uses: NexusMutual/workflows/.github/workflows/reset.yml@master
+    with:
+      target-ref: release-candidate
+      base-ref: dev
+      environment: production
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  rebuild-staging:
+    needs: reset-release-candidate
+    uses: NexusMutual/workflows/.github/workflows/build.yml@master
+    with:
+      ref: release-candidate
+      environment: production
+      image: ${{ github.repository }}
+    secrets:
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  retag-staging:
+    needs: rebuild-staging
+    uses: NexusMutual/workflows/.github/workflows/tag-image.yml@master
+    with:
+      environment: production
+      image: ${{ github.repository }}
+      ref: release-candidate
+      target-tag: staging
+    secrets:
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
