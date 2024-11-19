@@ -143,7 +143,7 @@ const capacities = [
     allocatedNxm: '32725200000000000000000',
     minAnnualPrice: '0.0775',
     maxAnnualPrice: '0.104190714614767679',
-    utilizationRate: 3491,
+    utilizationRate: 3407,
   },
   {
     productId: 4,
@@ -204,6 +204,11 @@ const poolProductCapacities = {
           asset: { id: 6, symbol: 'USDC', decimals: 6 },
         },
         {
+          assetId: 7,
+          amount: '30013555',
+          asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
+        },
+        {
           assetId: 255,
           amount: '364800000000000000000',
           asset: { id: 255, symbol: 'NXM', decimals: 18 },
@@ -233,6 +238,11 @@ const poolProductCapacities = {
           asset: { id: 6, symbol: 'USDC', decimals: 6 },
         },
         {
+          assetId: 7,
+          amount: '30013555',
+          asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
+        },
+        {
           assetId: 255,
           amount: '364800000000000000000',
           asset: { id: 255, symbol: 'NXM', decimals: 18 },
@@ -260,6 +270,11 @@ const poolProductCapacities = {
           assetId: 6,
           amount: '10478675347',
           asset: { id: 6, symbol: 'USDC', decimals: 6 },
+        },
+        {
+          assetId: 7,
+          amount: '30013555',
+          asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
         },
         {
           assetId: 255,
