@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const ethers = require('ethers');
 const sinon = require('sinon');
 
-const { assets, capacities, poolProductCapacities } = require('./responses');
+const { capacities, poolProductCapacities } = require('./responses');
 const { capacityEngine, getUtilizationRate } = require('../../src/lib/capacityEngine'); // Import the function to test
 const { selectAsset } = require('../../src/store/selectors');
 const mockStore = require('../mocks/store');
@@ -147,7 +147,8 @@ describe('Capacity Engine tests', function () {
       }, initObject);
 
       // Assert that all fields match
-      const utilizationRate = getUtilizationRate(summedCapacity.availableCapacity, summedCapacity.usedCapacity);
+      const capacityAvailableNXM = summedCapacity.availableCapacity.find(c => c.assetId === 255)?.amount;
+      const utilizationRate = getUtilizationRate(capacityAvailableNXM, summedCapacity.usedCapacity);
       expect(summedCapacity.productId).to.equal(allPoolsProduct.productId);
       expect(summedCapacity.usedCapacity.toString()).to.equal(allPoolsProduct.usedCapacity.toString());
       expect(utilizationRate.toNumber()).to.be.equal(allPoolsProduct.utilizationRate.toNumber());
@@ -182,10 +183,10 @@ describe('Capacity Engine tests', function () {
 
   describe('getUtilizationRate tests', function () {
     it('should calculate utilization rate correctly when there is available capacity', function () {
-      const capacityInAssets = [{ assetId: 255, amount: parseEther('100'), asset: assets[255] }];
+      const capacityAvailableNXM = parseEther('100');
       const capacityUsedNXM = parseEther('50');
 
-      const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
+      const utilizationRate = getUtilizationRate(capacityAvailableNXM, capacityUsedNXM);
 
       const expectedRate = BigNumber.from(3333); // (50 / (100 + 50)) * 10000 = 3333 basis points
 
@@ -193,43 +194,28 @@ describe('Capacity Engine tests', function () {
     });
 
     it('should return 1 when ALL capacity is used (no available capacity)', function () {
-      const capacityInAssets = [{ assetId: 255, amount: Zero, asset: assets[255] }];
+      const capacityAvailableNXM = Zero;
       const capacityUsedNXM = parseEther('150');
 
-      const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
+      const utilizationRate = getUtilizationRate(capacityAvailableNXM, capacityUsedNXM);
 
       expect(utilizationRate.toNumber()).to.equal(10000);
     });
 
-    it('should handle multiple assets and return the correct utilization rate', function () {
-      const capacityInAssets = [
-        { assetId: 255, amount: parseEther('200'), asset: assets[255] },
-        { assetId: 1, amount: parseEther('100'), asset: assets[1] },
-      ];
-      const capacityUsedNXM = parseEther('100');
-
-      const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
-
-      const expectedRate = BigNumber.from(3333); // (100 / (200 + 100)) * 10000 = 3333 basis points
-
-      expect(utilizationRate.toNumber()).to.be.closeTo(expectedRate.toNumber(), 1);
-    });
-
     it('should return undefined if utilizationRate cannot be calculated because of missing data', function () {
-      // missing capacity in NXM (255)
-      const capacityInAssets = [{ assetId: 1, amount: parseEther('100'), asset: assets[1] }];
+      const capacityAvailableNXM = undefined;
       const capacityUsedNXM = parseEther('50');
 
-      const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
+      const utilizationRate = getUtilizationRate(capacityAvailableNXM, capacityUsedNXM);
 
       expect(utilizationRate).to.equal(undefined);
     });
 
     it('should return undefined when there is no capacity available', function () {
-      const capacityInAssets = [{ assetId: 255, amount: Zero, asset: assets[255] }];
+      const capacityAvailableNXM = Zero;
       const capacityUsedNXM = Zero;
 
-      const utilizationRate = getUtilizationRate(capacityInAssets, capacityUsedNXM);
+      const utilizationRate = getUtilizationRate(capacityAvailableNXM, capacityUsedNXM);
 
       expect(utilizationRate.toNumber()).to.equal(0);
     });
