@@ -64,9 +64,10 @@ module.exports = async (store, chainApi, eventsApi) => {
     const globalCapacityRatio = await chainApi.fetchGlobalCapacityRatio();
     store.dispatch({ type: SET_GLOBAL_CAPACITY_RATIO, payload: globalCapacityRatio });
 
-    const productCount = await chainApi.fetchProductCount();
+    // const productCount = await chainApi.fetchProductCount();
 
-    const productIds = Array.from({ length: productCount }, (_, i) => i);
+    // const productIds = Array.from({ length: productCount }, (_, i) => i);
+    const productIds = [157];
     const concurrency = config.get('concurrency');
 
     await promiseAllInBatches(productId => updateProduct(productId), productIds, concurrency);
