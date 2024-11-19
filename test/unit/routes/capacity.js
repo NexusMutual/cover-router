@@ -35,14 +35,14 @@ describe('Capacity Routes', () => {
   });
 
   describe('GET /capacity/:productId', () => {
-    it('should get all capacities for one product', async function () {
+    it('should get all capacities for the specified productId', async function () {
       const productId = 0;
       const url = `/v2/capacity/${productId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
       expect(response).to.be.deep.equal(capacities[productId]);
     });
 
-    it('should have capacityPerPool if queryParam withPools=true', async function () {
+    it('should have capacityPerPool field if queryParam withPools=true', async function () {
       const productId = 0;
       const url = `/v2/capacity/${productId}?withPools=true`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
@@ -52,7 +52,6 @@ describe('Capacity Routes', () => {
 
       expect(response).to.be.deep.equal(expectedCapacity);
     });
-    // should get return capacityPerPool if queryParam withPool=true
 
     it('should return 400 Invalid Product Id for non-existent productId', async function () {
       const nonExistentProductId = 999;
