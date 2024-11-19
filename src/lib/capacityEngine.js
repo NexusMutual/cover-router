@@ -13,18 +13,17 @@ const BASIS_POINTS = 10000;
 /**
  * Calculates the utilization rate of the capacity.
  *
- * @param {Array<Object>} capacityInAssets - Array of asset objects containing assetId and amount.
+ * @param {BigNumber} capacityAvailableNXM - The amount of capacity available in NXM.
  * @param {BigNumber} capacityUsedNXM - The amount of capacity used in NXM.
  * @returns {BigNumber} The utilization rate as a BigNumber, expressed in basis points (0-10,000).
  *                      Returns undefined if capacity in NXM is missing.
  */
-function getUtilizationRate(capacityInAssets, capacityUsedNXM) {
-  const availableCapacityInNxm = capacityInAssets.find(asset => asset.assetId === 255)?.amount;
-  if (!availableCapacityInNxm || !capacityUsedNXM) {
+function getUtilizationRate(capacityAvailableNXM, capacityUsedNXM) {
+  if (!capacityAvailableNXM || !capacityUsedNXM) {
     return undefined;
   }
 
-  const totalCapacity = availableCapacityInNxm.add(capacityUsedNXM);
+  const totalCapacity = capacityAvailableNXM.add(capacityUsedNXM);
   if (totalCapacity.isZero()) {
     return BigNumber.from(0);
   }
@@ -199,7 +198,7 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30 } =
         productId: Number(productId),
         availableCapacity: capacityInAssets,
         usedCapacity: capacityUsedNXM,
-        utilizationRate: getUtilizationRate(capacityInAssets, capacityUsedNXM),
+        utilizationRate: getUtilizationRate(capacityAvailableNXM, capacityUsedNXM),
         minAnnualPrice: minPrice,
         maxAnnualPrice,
       });
@@ -236,7 +235,7 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30 } =
         productId: Number(productId),
         availableCapacity: capacityInAssets,
         usedCapacity: capacityUsedNXM,
-        utilizationRate: getUtilizationRate(capacityInAssets, capacityUsedNXM),
+        utilizationRate: getUtilizationRate(capacityAvailableNXM, capacityUsedNXM),
         minAnnualPrice: minPrice,
         maxAnnualPrice,
       });
