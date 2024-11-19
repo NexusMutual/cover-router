@@ -124,6 +124,7 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     }
     aggregatedData.totalPremium = aggregatedData.totalPremium.add(poolPremium);
 
+    // The available capacity of a product for a particular pool
     const availableCapacityInAssets = Object.keys(assets).map(assetId => ({
       assetId: Number(assetId),
       amount: availableInNXM.mul(assetRates[assetId]).div(WeiPerEther),
@@ -264,6 +265,7 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30, wi
     }
 
     const { capacityAvailableNXM, capacityUsedNXM, minPrice } = aggregatedData;
+    // The available capacity of a product across all pools
     const capacityInAssets = Object.keys(assets).map(assetId => ({
       assetId: Number(assetId),
       amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
