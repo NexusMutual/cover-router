@@ -93,13 +93,80 @@ router.get(
  *       schema:
  *         type: integer
  *         description: The product id
+ *     - in: query
+ *       name: withPools
+ *       required: false
+ *       schema:
+ *         type: boolean
+ *         default: false
+ *         description: When true, includes `capacityPerPool` field in the response
  *     responses:
  *       200:
- *         description: Returns capacity data for a product
+ *         description: Returns capacity data for a product. If withPools=true, includes capacityPerPool data.
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/CapacityResult'
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/CapacityResult'
+ *                 - $ref: '#/components/schemas/CapacityResultWithPools'
+ *             examples:
+ *               withoutPools:
+ *                 summary: Response when withPools=false
+ *                 value:
+ *                   productId: 1
+ *                   availableCapacity: [
+ *                     {
+ *                       assetId: 1,
+ *                       amount: "1000000000000000000",
+ *                       asset: {
+ *                         id: 1,
+ *                         symbol: "ETH",
+ *                         decimals: 18
+ *                       }
+ *                     }
+ *                   ]
+ *                   allocatedNxm: "500000000000000000"
+ *                   utilizationRate: 5000
+ *                   minAnnualPrice: "0.025"
+ *                   maxAnnualPrice: "0.1"
+ *               withPools:
+ *                 summary: Response when withPools=true
+ *                 value:
+ *                   productId: 1
+ *                   availableCapacity: [
+ *                     {
+ *                       assetId: 1,
+ *                       amount: "1000000000000000000",
+ *                       asset: {
+ *                         id: 1,
+ *                         symbol: "ETH",
+ *                         decimals: 18
+ *                       }
+ *                     }
+ *                   ]
+ *                   allocatedNxm: "500000000000000000"
+ *                   utilizationRate: 5000
+ *                   minAnnualPrice: "0.025"
+ *                   maxAnnualPrice: "0.1"
+ *                   capacityPerPool: [
+ *                     {
+ *                       poolId: 1,
+ *                       availableCapacity: [
+ *                         {
+ *                           assetId: 1,
+ *                           amount: "500000000000000000",
+ *                           asset: {
+ *                             id: 1,
+ *                             symbol: "ETH",
+ *                             decimals: 18
+ *                           }
+ *                         }
+ *                       ],
+ *                       allocatedNxm: "250000000000000000",
+ *                       minAnnualPrice: "0.025",
+ *                       maxAnnualPrice: "0.1"
+ *                     }
+ *                   ]
  *       400:
  *         description: Invalid productId or period
  *       500:
@@ -321,59 +388,54 @@ router.get(
  *           description: The capacity amount expressed in the asset
  *         asset:
  *           $ref: '#/components/schemas/AssetInfo'
+ *     BaseCapacityFields:
+ *       type: object
+ *       properties:
+ *         availableCapacity:
+ *           type: array
+ *           description: The maximum available capacity.
+ *           items:
+ *             $ref: '#/components/schemas/AvailableCapacity'
+ *         allocatedNxm:
+ *           type: string
+ *           format: integer
+ *           description: The used capacity amount for active covers.
+ *         minAnnualPrice:
+ *           type: string
+ *           description: The minimal annual price is a percentage value between 0-1.
+ *         maxAnnualPrice:
+ *           type: string
+ *           description: The maximal annual price is a percentage value between 0-1.
  *     PoolCapacity:
- *       type: object
- *       properties:
- *         poolId:
- *           type: integer
- *           description: The pool id
- *         availableCapacity:
- *           type: array
- *           description: The maximum available capacity for the pool's product.
- *           items:
- *             $ref: '#/components/schemas/AvailableCapacity'
- *         allocatedNxm:
- *           type: string
- *           format: integer
- *           description: The used capacity amount for active covers on the pool.
- *         minAnnualPrice:
- *           type: string
- *           description: The minimal annual price is a percentage value between 0-1.
- *         maxAnnualPrice:
- *           type: string
- *           description: The maximal annual price is a percentage value between 0-1.
+ *       allOf:
+ *         - $ref: '#/components/schemas/BaseCapacityFields'
+ *         - type: object
+ *           properties:
+ *             poolId:
+ *               type: integer
+ *               description: The pool id
  *     CapacityResult:
- *       type: object
- *       properties:
- *         productId:
- *           type: integer
- *           description: The product id
- *         availableCapacity:
- *           type: array
- *           description: The maximum available capacity for the product.
- *           items:
- *             $ref: '#/components/schemas/AvailableCapacity'
- *         allocatedNxm:
- *           type: string
- *           format: integer
- *           description: The used capacity amount for active covers on the product.
- *         utilizationRate:
- *           type: number
- *           format: integer
- *           description: The percentage of used capacity to total capacity, expressed as basis points (0-10,000).
- *         minAnnualPrice:
- *           type: string
- *           description: The minimal annual price is a percentage value between 0-1.
- *         maxAnnualPrice:
- *           type: string
- *           description: The maximal annual price is a percentage value between 0-1.
- *         capacityPerPool:
- *           type: array
- *           description: >-
- *             The capacity per pool. This field is only included when the query parameter `withPools=true`.
- *             If `withPools` is false or not provided, this field will be undefined and not present in the response.
- *           items:
- *             $ref: '#/components/schemas/PoolCapacity'
+ *       allOf:
+ *         - $ref: '#/components/schemas/BaseCapacityFields'
+ *         - type: object
+ *           properties:
+ *             productId:
+ *               type: integer
+ *               description: The product id
+ *             utilizationRate:
+ *               type: number
+ *               format: integer
+ *               description: The percentage of used capacity to total capacity, expressed as basis points (0-10,000).
+ *     CapacityResultWithPools:
+ *       allOf:
+ *         - $ref: '#/components/schemas/CapacityResult'
+ *         - type: object
+ *           properties:
+ *             capacityPerPool:
+ *               type: array
+ *               description: The capacity per pool.
+ *               items:
+ *                 $ref: '#/components/schemas/PoolCapacity'
  */
 
 module.exports = router;
