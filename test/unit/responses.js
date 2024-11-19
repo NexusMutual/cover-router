@@ -215,6 +215,15 @@ const productCapacityPerPools = {
           assetId: 6,
         },
         {
+          amount: '8095761',
+          asset: {
+            decimals: 8,
+            id: 7,
+            symbol: 'cbBTC',
+          },
+          assetId: 7,
+        },
+        {
           amount: '98400000000000000000',
           asset: {
             decimals: 18,
@@ -257,6 +266,15 @@ const productCapacityPerPools = {
             symbol: 'USDC',
           },
           assetId: 6,
+        },
+        {
+          amount: '30013555',
+          asset: {
+            decimals: 8,
+            id: 7,
+            symbol: 'cbBTC',
+          },
+          assetId: 7,
         },
         {
           amount: '364800000000000000000',
