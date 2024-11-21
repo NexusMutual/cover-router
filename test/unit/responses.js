@@ -7,6 +7,7 @@ const assets = {
   255: { id: 255, symbol: 'NXM', decimals: 18 },
 };
 
+// capacities response for product across ALL pools
 const capacities = [
   {
     productId: 0,
@@ -40,6 +41,7 @@ const capacities = [
         asset: assets[255],
       },
     ],
+    utilizationRate: 4405,
   },
   {
     productId: 1,
@@ -73,6 +75,7 @@ const capacities = [
         asset: assets[255],
       },
     ],
+    utilizationRate: 0,
   },
   {
     productId: 2,
@@ -106,6 +109,7 @@ const capacities = [
         asset: assets[255],
       },
     ],
+    utilizationRate: 0,
   },
   {
     productId: 3,
@@ -139,6 +143,7 @@ const capacities = [
     allocatedNxm: '32725200000000000000000',
     minAnnualPrice: '0.0775',
     maxAnnualPrice: '0.104190714614767679',
+    utilizationRate: 3407,
   },
   {
     productId: 4,
@@ -172,8 +177,118 @@ const capacities = [
     allocatedNxm: '20004610000000000000000',
     maxAnnualPrice: '0.077089706487431343',
     minAnnualPrice: '0.02',
+    utilizationRate: 8467,
   },
 ];
+
+// capacities response for product by pool
+const poolProductCapacities = {
+  // poolId 2
+  2: [
+    {
+      productId: 0,
+      availableCapacity: [
+        {
+          assetId: 0,
+          amount: '3750158703091230720',
+          asset: { id: 0, symbol: 'ETH', decimals: 18 },
+        },
+        {
+          assetId: 1,
+          amount: '10478675352241508148979',
+          asset: { id: 1, symbol: 'DAI', decimals: 18 },
+        },
+        {
+          assetId: 6,
+          amount: '10478675347',
+          asset: { id: 6, symbol: 'USDC', decimals: 6 },
+        },
+        {
+          assetId: 7,
+          amount: '30013555',
+          asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
+        },
+        {
+          assetId: 255,
+          amount: '364800000000000000000',
+          asset: { id: 255, symbol: 'NXM', decimals: 18 },
+        },
+      ],
+      allocatedNxm: '0',
+      minAnnualPrice: '0.02',
+      maxAnnualPrice: '0.03',
+      utilizationRate: 0,
+    },
+    {
+      productId: 1,
+      availableCapacity: [
+        {
+          assetId: 0,
+          amount: '3750158703091230720',
+          asset: { id: 0, symbol: 'ETH', decimals: 18 },
+        },
+        {
+          assetId: 1,
+          amount: '10478675352241508148979',
+          asset: { id: 1, symbol: 'DAI', decimals: 18 },
+        },
+        {
+          assetId: 6,
+          amount: '10478675347',
+          asset: { id: 6, symbol: 'USDC', decimals: 6 },
+        },
+        {
+          assetId: 7,
+          amount: '30013555',
+          asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
+        },
+        {
+          assetId: 255,
+          amount: '364800000000000000000',
+          asset: { id: 255, symbol: 'NXM', decimals: 18 },
+        },
+      ],
+      allocatedNxm: '0',
+      minAnnualPrice: '0.02',
+      maxAnnualPrice: '0.03',
+      utilizationRate: 0,
+    },
+    {
+      productId: 2,
+      availableCapacity: [
+        {
+          assetId: 0,
+          amount: '3750158703091230720',
+          asset: { id: 0, symbol: 'ETH', decimals: 18 },
+        },
+        {
+          assetId: 1,
+          amount: '10478675352241508148979',
+          asset: { id: 1, symbol: 'DAI', decimals: 18 },
+        },
+        {
+          assetId: 6,
+          amount: '10478675347',
+          asset: { id: 6, symbol: 'USDC', decimals: 6 },
+        },
+        {
+          assetId: 7,
+          amount: '30013555',
+          asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
+        },
+        {
+          assetId: 255,
+          amount: '364800000000000000000',
+          asset: { id: 255, symbol: 'NXM', decimals: 18 },
+        },
+      ],
+      allocatedNxm: '0',
+      minAnnualPrice: '0.02',
+      maxAnnualPrice: '0.02',
+      utilizationRate: 0,
+    },
+  ],
+};
 
 const ethQuote = {
   annualPrice: '199',
@@ -263,6 +378,8 @@ const getQuote = assetId => ({
 });
 
 module.exports = {
+  assets,
   capacities,
+  poolProductCapacities,
   getQuote,
 };
