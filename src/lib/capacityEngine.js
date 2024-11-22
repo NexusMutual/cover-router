@@ -55,10 +55,9 @@ function getProductsInPool(store, poolId) {
  *
  * @param {BigNumber} now - The current timestamp in seconds.
  * @param {BigNumber} gracePeriod - The product's grace period in seconds.
- * @param {number} period - The coverage period in days.
  * @returns {number} The index difference between the first usable tranche for max period and the first active tranche.
  */
-function calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod, period) {
+function calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod) {
   const firstActiveTrancheId = calculateTrancheId(now);
   const firstUsableTrancheForMaxPeriodId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
   return firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;

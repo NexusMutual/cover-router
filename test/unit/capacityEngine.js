@@ -562,9 +562,8 @@ describe('Capacity Engine tests', function () {
     it('should calculate index correctly for minimum grace period', function () {
       const now = BigNumber.from(1000);
       const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
-      const period = 30;
 
-      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod, period);
+      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
 
       const firstActiveTrancheId = calculateTrancheId(now);
       const expectedTrancheId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
@@ -574,21 +573,8 @@ describe('Capacity Engine tests', function () {
     it('should calculate index correctly for maximum grace period', function () {
       const now = BigNumber.from(1000);
       const gracePeriod = BigNumber.from(365 * SECONDS_PER_DAY);
-      const period = 30;
 
-      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod, period);
-
-      const firstActiveTrancheId = calculateTrancheId(now);
-      const expectedTrancheId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
-      expect(result).to.equal(expectedTrancheId - firstActiveTrancheId);
-    });
-
-    it('should handle period parameter correctly', function () {
-      const now = BigNumber.from(1000);
-      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
-      const period = 365; // Max period
-
-      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod, period);
+      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
 
       const firstActiveTrancheId = calculateTrancheId(now);
       const expectedTrancheId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
