@@ -1,6 +1,6 @@
 const { ethers, BigNumber } = require('ethers');
 
-const { MAX_COVER_PERIOD } = require('./constants');
+const { MAX_COVER_PERIOD, SECONDS_PER_DAY } = require('./constants');
 const {
   bnMax,
   calculateTrancheId,
@@ -70,11 +70,14 @@ function calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod) {
  * @param {Object} [options={}] - Optional parameters for capacity calculation.
  * @param {number|null} [options.poolId=null] - The ID of the pool to filter products by.
  * @param {Array<number>} [options.productIds=[]] - Array of product IDs to process.
- * @param {number} [options.period=30] - The coverage period in days.
+ * @param {number} [options.periodSeconds=30*SECONDS_PER_DAY] - The coverage period in seconds
  * @param {boolean} [options.withPools=false] - Flag indicating whether to include capacityPerPool data field.
  * @returns {Array<Object>} An array of capacity information objects for each product.
  */
-function capacityEngine(store, { poolId = null, productIds = [], period = 30, withPools = false } = {}) {
+function capacityEngine(
+  store,
+  { poolId = null, productIds = [], periodSeconds = SECONDS_PER_DAY.mul(30), withPools = false } = {},
+) {
   const { assets, assetRates, products } = store.getState();
   const now = BigNumber.from(Date.now()).div(1000);
   const capacities = [];
@@ -97,12 +100,8 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30, wi
       continue;
     }
 
-    const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, period);
-    const firstUsableTrancheForMaxPeriodIndex = calculateFirstUsableTrancheForMaxPeriodIndex(
-      now,
-      product.gracePeriod,
-      period,
-    );
+    const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, periodSeconds);
+    const firstUsableTrancheForMaxPeriodIndex = calculateFirstUsableTrancheForMaxPeriodIndex(now, product.gracePeriod);
 
     // Use productPools from poolId if available; otherwise, select all pools for productId
     const productPools = selectProductPools(store, productId, poolId);

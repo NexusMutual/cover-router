@@ -204,7 +204,17 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
   return allocations;
 };
 
-const quoteEngine = (store, productId, amount, period, coverAsset) => {
+/**
+ * Calculates the premium and allocations for a given insurance product based on the specified parameters.
+ *
+ * @param {object} store - The application state store.
+ * @param {number} productId - The ID of the product to quote.
+ * @param {BigNumber} amount - The amount of coverage requested.
+ * @param {number} periodSeconds - The cover period in seconds.
+ * @param {string} coverAsset - The assetId of the asset to be covered.
+ * @returns {Array<object>} - An array of objects containing pool allocations and premiums.
+ */
+const quoteEngine = (store, productId, amount, periodSeconds, coverAsset) => {
   const product = selectProduct(store, productId);
 
   if (!product) {
@@ -224,7 +234,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const assetRates = store.getState().assetRates;
 
   const now = BigNumber.from(Date.now()).div(1000);
-  const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, period);
+  const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, periodSeconds);
   const coverAmountInNxm = amount.mul(WeiPerEther).div(assetRate);
 
   // rounding up to nearest allocation unit
@@ -291,7 +301,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
       : calculatePremiumPerYear(amountToAllocate, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
 
-    const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
+    const premiumInNxm = premiumPerYear.mul(periodSeconds).div(ONE_YEAR);
     const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);
 
     const capacityInNxm = pool.totalCapacity.sub(pool.initialCapacityUsed);
