@@ -69,14 +69,13 @@ router.get(
     try {
       const store = req.app.get('store');
       const pricingResult = pricingEngine(store, productId);
-      console.debug('pricingResult: ', require('util').inspect(pricingResult, { depth: null }));
 
       if (!pricingResult) {
         return res.status(404).send({ error: 'Product not found', response: null });
       }
 
       const response = formatPricingResult(pricingResult);
-      console.log('fomratted', inspect(response, { depth: null }));
+      console.log(inspect(response, { depth: null }));
 
       res.json(response);
     } catch (error) {
