@@ -26,6 +26,7 @@ const selectProductPools = (store, productId, poolId = null) => {
     return poolIds.includes(poolId) ? [poolProducts[key]] : [];
   }
 
+  // List of product data across all pools
   return poolIds.map(id => poolProducts[`${productId}_${id}`]);
 };
 
