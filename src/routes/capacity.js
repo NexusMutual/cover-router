@@ -1,5 +1,3 @@
-const { inspect } = require('node:util');
-
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
@@ -70,7 +68,7 @@ router.get(
       const capacities = capacityEngine(store, { periodSeconds });
 
       const response = capacities.map(capacity => formatCapacityResult(capacity));
-      console.log(inspect(capacities, { depth: null }));
+      console.log(JSON.stringify(capacities, null, 2));
 
       res.json(response);
     } catch (error) {
@@ -198,7 +196,7 @@ router.get(
       }
 
       const response = formatCapacityResult(capacity);
-      console.log(inspect(response, { depth: null }));
+      console.log(JSON.stringify(response, null, 2));
 
       res.json(response);
     } catch (error) {
@@ -270,7 +268,7 @@ router.get(
       }
 
       const response = capacities.map(capacity => formatCapacityResult(capacity));
-      console.log(inspect(response, { depth: null }));
+      console.log(JSON.stringify(response, null, 2));
 
       res.json(response);
     } catch (error) {
@@ -349,7 +347,7 @@ router.get(
       }
 
       const response = formatCapacityResult(capacity);
-      console.log(inspect(response, { depth: null }));
+      console.log(JSON.stringify(response, null, 2));
 
       res.json(response);
     } catch (error) {

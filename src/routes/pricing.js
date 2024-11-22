@@ -1,5 +1,3 @@
-const { inspect } = require('node:util');
-
 const express = require('express');
 
 const { asyncRoute } = require('../lib/helpers');
@@ -75,7 +73,7 @@ router.get(
       }
 
       const response = formatPricingResult(pricingResult);
-      console.log(inspect(response, { depth: null }));
+      console.log(JSON.stringify(response, null, 2));
 
       res.json(response);
     } catch (error) {
