@@ -54,7 +54,7 @@ const calculateBucketId = time => {
 
 /**
  * Calculates the first usable tranche index based on the current time, grace period, and period.
- * 
+ *
  * @param {BigNumber|number} now - The current unix timestamp seconds as a BigNumber or native JS number.
  * @param {BigNumber|number} gracePeriod - The grace period of the product in seconds
  * @param {BigNumber|number} period - The cover period in seconds

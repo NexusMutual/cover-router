@@ -14,7 +14,6 @@ const { WeiPerEther, Zero } = ethers.constants;
 
 describe('helpers', () => {
   describe('calculateFirstUsableTrancheIndex', () => {
-
     it('should calculate correct index with minimum values (35 days grace, 28 days period)', () => {
       const now = BigNumber.from(1000000);
       const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
