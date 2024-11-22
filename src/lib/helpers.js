@@ -52,9 +52,17 @@ const calculateBucketId = time => {
   return Math.floor(timeNumber / BUCKET_DURATION);
 };
 
-const calculateFirstUsableTrancheIndex = (now, gracePeriod, periodDays) => {
+/**
+ * Calculates the first usable tranche index based on the current time, grace period, and period.
+ * 
+ * @param {BigNumber|number} now - The current unix timestamp seconds as a BigNumber or native JS number.
+ * @param {BigNumber|number} gracePeriod - The grace period of the product in seconds
+ * @param {BigNumber|number} period - The cover period in seconds
+ * @returns {number} The index of the first usable tranche.
+ */
+const calculateFirstUsableTrancheIndex = (now, gracePeriod, period) => {
   const nowBigNumber = BigNumber.isBigNumber(now) ? now : BigNumber.from(now);
-  const gracePeriodExpiration = nowBigNumber.add(gracePeriod).add(SECONDS_PER_DAY.mul(periodDays));
+  const gracePeriodExpiration = nowBigNumber.add(gracePeriod).add(period);
   const firstActiveTrancheId = calculateTrancheId(now);
   const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
   return firstUsableTrancheId - firstActiveTrancheId;
