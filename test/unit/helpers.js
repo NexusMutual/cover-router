@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const ethers = require('ethers');
 
-const { TRANCHE_DURATION, NXM_PER_ALLOCATION_UNIT } = require('../../src/lib/constants');
+const { TRANCHE_DURATION, NXM_PER_ALLOCATION_UNIT, SECONDS_PER_DAY } = require('../../src/lib/constants');
 const {
   calculateFirstUsableTrancheIndex,
   calculateProductDataForTranche,
@@ -14,69 +14,68 @@ const { WeiPerEther, Zero } = ethers.constants;
 
 describe('helpers', () => {
   describe('calculateFirstUsableTrancheIndex', () => {
-    const DAY_SECONDS = 24 * 60 * 60; // seconds in a day
 
     it('should calculate correct index with minimum values (35 days grace, 28 days period)', () => {
       const now = BigNumber.from(1000000);
-      const gracePeriod = BigNumber.from(35 * DAY_SECONDS);
-      const period = BigNumber.from(28 * DAY_SECONDS);
+      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
+      const period = BigNumber.from(28 * SECONDS_PER_DAY);
 
       const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
 
       // Expected tranches = (gracePeriod + period) / TRANCHE_DURATION
-      const expectedTrancheIndex = Math.floor(((35 + 28) * DAY_SECONDS) / TRANCHE_DURATION);
+      const expectedTrancheIndex = Math.floor(((35 + 28) * SECONDS_PER_DAY) / TRANCHE_DURATION);
       expect(result).to.equal(expectedTrancheIndex);
     });
 
     it('should calculate correct index with maximum values (365 days grace, 365 days period)', () => {
       const now = BigNumber.from(1000000);
-      const gracePeriod = BigNumber.from(365 * DAY_SECONDS);
-      const period = BigNumber.from(365 * DAY_SECONDS);
+      const gracePeriod = BigNumber.from(365 * SECONDS_PER_DAY);
+      const period = BigNumber.from(365 * SECONDS_PER_DAY);
 
       const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
 
-      const expectedTrancheIndex = Math.floor(((365 + 365) * DAY_SECONDS) / TRANCHE_DURATION);
+      const expectedTrancheIndex = Math.floor(((365 + 365) * SECONDS_PER_DAY) / TRANCHE_DURATION);
       expect(result).to.equal(expectedTrancheIndex);
     });
 
     it('should handle period of 0', () => {
       const now = BigNumber.from(1000000);
-      const gracePeriod = BigNumber.from(35 * DAY_SECONDS);
+      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
       const period = BigNumber.from(0);
 
       const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
 
-      const expectedTrancheIndex = Math.floor((35 * DAY_SECONDS) / TRANCHE_DURATION);
+      const expectedTrancheIndex = Math.floor((35 * SECONDS_PER_DAY) / TRANCHE_DURATION);
       expect(result).to.equal(expectedTrancheIndex);
     });
 
     it('should handle native number for now parameter', () => {
       const now = 1000000; // number instead of BigNumber
-      const gracePeriod = BigNumber.from(35 * DAY_SECONDS);
-      const period = BigNumber.from(28 * DAY_SECONDS);
+      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
+      const period = BigNumber.from(28 * SECONDS_PER_DAY);
 
       const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
 
-      const expectedTrancheIndex = Math.floor(((35 + 28) * DAY_SECONDS) / TRANCHE_DURATION);
+      const expectedTrancheIndex = Math.floor(((35 + 28) * SECONDS_PER_DAY) / TRANCHE_DURATION);
       expect(result).to.equal(expectedTrancheIndex);
     });
 
     it('should handle BigNumber for period parameter', () => {
       const now = BigNumber.from(1000000);
-      const gracePeriod = BigNumber.from(35 * DAY_SECONDS);
-      const period = BigNumber.from(28 * DAY_SECONDS); // explicitly testing BigNumber period
+      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
+      const period = BigNumber.from(28 * SECONDS_PER_DAY); // explicitly testing BigNumber period
 
       const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
 
-      const expectedTrancheIndex = Math.floor(((35 + 28) * DAY_SECONDS) / TRANCHE_DURATION);
+      const expectedTrancheIndex = Math.floor(((35 + 28) * SECONDS_PER_DAY) / TRANCHE_DURATION);
       expect(result).to.equal(expectedTrancheIndex);
     });
 
     it('should handle different timestamps that would result in same tranche', () => {
       const now1 = BigNumber.from(1000000);
       const now2 = BigNumber.from(1000000 + TRANCHE_DURATION - 1);
-      const gracePeriod = BigNumber.from(35 * DAY_SECONDS);
-      const period = BigNumber.from(28 * DAY_SECONDS);
+      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
+      const period = BigNumber.from(28 * SECONDS_PER_DAY);
 
       const result1 = calculateFirstUsableTrancheIndex(now1, gracePeriod, period);
       const result2 = calculateFirstUsableTrancheIndex(now2, gracePeriod, period);
