@@ -6,4 +6,5 @@ describe('unit tests', function () {
   require('./calculateOptimalPoolAllocation');
   require('./cache');
   require('./synchronizer');
+  require('./helpers');
 });

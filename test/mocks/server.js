@@ -3,8 +3,7 @@ require('dotenv').config();
 const express = require('express');
 
 const mockStore = require('./store');
-const capacityRouter = require('../../src/routes/capacity');
-const quoteRouter = require('../../src/routes/quote');
+const { capacityRouter, quoteRouter, reindexRouter, pricingRouter } = require('../../src/routes');
 
 const main = () => {
   // state
@@ -26,6 +25,8 @@ const main = () => {
   // initiate routes
   app.use('/v2', capacityRouter);
   app.use('/v2', quoteRouter);
+  app.use('/v2', reindexRouter);
+  app.use('/v2', pricingRouter);
 
   return app;
 };
