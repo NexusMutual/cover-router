@@ -14,8 +14,6 @@ const {
 const { BigNumber } = ethers;
 const { WeiPerEther, Zero } = ethers.constants;
 
-const SECONDS_PER_DAY = BigNumber.from(24 * 60 * 60);
-
 /* Bignumber Utils */
 
 const bnMax = (a, b) => (a.gt(b) ? a : b);
