@@ -1,15 +1,27 @@
 const { expect } = require('chai');
 const ethers = require('ethers');
 
-const { TRANCHE_DURATION, NXM_PER_ALLOCATION_UNIT, SECONDS_PER_DAY } = require('../../src/lib/constants');
+const {
+  NXM_PER_ALLOCATION_UNIT,
+  PRICE_CHANGE_PER_DAY,
+  SECONDS_PER_DAY,
+  SURGE_THRESHOLD_DENOMINATOR,
+  SURGE_THRESHOLD_RATIO,
+  TARGET_PRICE_DENOMINATOR,
+  TRANCHE_DURATION,
+} = require('../../src/lib/constants');
 const {
   calculateFirstUsableTrancheIndex,
   calculateProductDataForTranche,
   calculateAvailableCapacity,
+  calculateBasePrice,
+  calculatePremiumPerYear,
+  calculateFixedPricePremiumPerYear,
 } = require('../../src/lib/helpers');
 const mockStore = require('../mocks/store');
 
 const { BigNumber } = ethers;
+const { parseEther } = ethers.utils;
 const { WeiPerEther, Zero } = ethers.constants;
 
 describe('helpers', () => {
@@ -255,6 +267,26 @@ describe('helpers', () => {
       expect(result.toString()).to.equal('100');
     });
 
+    it('should calculate available capacity correctly when all tranches are usable', function () {
+      const trancheCapacities = [BigNumber.from(100), BigNumber.from(200), BigNumber.from(300)];
+      const allocations = [BigNumber.from(50), BigNumber.from(100), BigNumber.from(150)];
+      const firstUsableTrancheIndex = 0;
+
+      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+
+      expect(result.toString()).to.equal('300'); // (100-50) + (200-100) + (300-150) = 300
+    });
+
+    it('should handle unusable tranches correctly', function () {
+      const trancheCapacities = [BigNumber.from(100), BigNumber.from(200), BigNumber.from(300)];
+      const allocations = [BigNumber.from(50), BigNumber.from(100), BigNumber.from(150)];
+      const firstUsableTrancheIndex = 1;
+
+      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+
+      expect(result.toString()).to.equal('250'); // 0 + (200-100) + (300-150) = 250
+    });
+
     it('should handle negative differences before firstUsableTrancheIndex', () => {
       const overAllocated = [
         BigNumber.from(150), // over by 50
@@ -282,6 +314,138 @@ describe('helpers', () => {
       const result = calculateAvailableCapacity([], [], firstUsableTrancheIndex);
 
       expect(result.toString()).to.equal('0');
+    });
+
+    it('should handle case where allocations exceed capacities', function () {
+      const trancheCapacities = [BigNumber.from(100), BigNumber.from(200)];
+      const allocations = [BigNumber.from(150), BigNumber.from(250)];
+      const firstUsableTrancheIndex = 0;
+
+      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+
+      expect(result.toString()).to.equal('0');
+    });
+  });
+
+  describe('calculateBasePrice', () => {
+    const targetPrice = BigNumber.from('1000');
+    const bumpedPrice = BigNumber.from('2000');
+
+    it('should return bumpedPrice when no time has elapsed', () => {
+      const now = BigNumber.from(Math.floor(Date.now() / 1000));
+      const bumpedPriceUpdateTime = now;
+
+      const result = calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
+      expect(result.toString()).to.equal(bumpedPrice.toString());
+    });
+
+    it('should return targetPrice when price drop exceeds difference', () => {
+      const twoDaysFromNow = BigNumber.from(Math.floor(Date.now() / 1000)).add(SECONDS_PER_DAY.mul(2)); // 2 days later
+      const bumpedPriceUpdateTime = BigNumber.from('1000');
+      const smallBumpedPrice = targetPrice.add('500'); // Small bump that will drop below target
+
+      const result = calculateBasePrice(targetPrice, smallBumpedPrice, bumpedPriceUpdateTime, twoDaysFromNow);
+      expect(result.toString()).to.equal(targetPrice.toString());
+    });
+
+    it('should calculate correct price drop over time', () => {
+      const bumpedPriceUpdateTime = BigNumber.from('1000'); // use fixed timestamp to avoid issues
+      const oneDayFromNow = bumpedPriceUpdateTime.add(SECONDS_PER_DAY); // Exactly 1 day later
+
+      const result = calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, oneDayFromNow);
+      const expectedDrop = PRICE_CHANGE_PER_DAY;
+      const expected = bumpedPrice.sub(expectedDrop); // 2000 - 200 = 1800
+
+      expect(result.toString()).to.equal(expected.toString());
+    });
+  });
+
+  describe('calculateFixedPricePremiumPerYear', () => {
+    it('should calculate premium correctly', () => {
+      const coverAmount = parseEther('1'); // 1 ether
+      const price = BigNumber.from('1000');
+
+      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
+      const expected = coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
+
+      expect(result.toString()).to.equal(expected.toString());
+    });
+
+    it('should handle zero cover amount', () => {
+      const coverAmount = Zero;
+      const price = BigNumber.from('1000');
+
+      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
+      expect(result.toString()).to.equal('0');
+    });
+
+    it('should handle zero price', () => {
+      const coverAmount = WeiPerEther;
+      const price = Zero;
+
+      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
+      expect(result.toString()).to.equal('0');
+    });
+  });
+
+  describe('calculatePremiumPerYear', () => {
+    const basePrice = BigNumber.from('1000');
+    const totalCapacity = WeiPerEther.mul(1000); // 1000 ether
+
+    it('should return base premium when below surge threshold', () => {
+      const coverAmount = WeiPerEther; // 1 ether
+      const initialCapacityUsed = Zero;
+
+      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
+      const expected = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
+
+      expect(result.toString()).to.equal(expected.toString());
+    });
+
+    it('should calculate surge premium correctly when crossing threshold', () => {
+      const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
+      const coverAmount = WeiPerEther.mul(100); // 100 ether
+      const initialCapacityUsed = surgeStartPoint; // Start exactly at surge point
+
+      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
+
+      // Should be greater than base premium due to surge
+      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
+      expect(result.gt(basePremium)).to.equal(true);
+    });
+
+    it('should handle zero cover amount', () => {
+      const coverAmount = Zero;
+      const initialCapacityUsed = WeiPerEther.mul(500); // 500 ether
+
+      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
+      expect(result.toString()).to.equal('0');
+    });
+
+    it('should calculate correct premium when already in surge', () => {
+      const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
+      const initialCapacityUsed = surgeStartPoint.add(WeiPerEther.mul(100)); // 100 ether past surge
+      const coverAmount = WeiPerEther.mul(50); // 50 ether additional
+
+      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
+
+      // Should be greater than both base premium and premium at surge start
+      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
+      const premiumAtSurgeStart = calculatePremiumPerYear(coverAmount, basePrice, surgeStartPoint, totalCapacity);
+
+      expect(result.gt(basePremium)).to.equal(true);
+      expect(result.gt(premiumAtSurgeStart)).to.equal(true);
+    });
+
+    it('should handle capacity near total capacity', () => {
+      const initialCapacityUsed = totalCapacity.sub(WeiPerEther); // 1 ether less than total
+      const coverAmount = WeiPerEther; // Try to use remaining capacity
+
+      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
+
+      // Should return a very high premium due to surge pricing
+      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
+      expect(result.gt(basePremium.mul(2))).to.equal(true); // At least 2x base premium
     });
   });
 });
