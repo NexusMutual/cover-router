@@ -40,14 +40,14 @@ const formatPricingResult = pricing => ({
  *               pricePerPool: [
  *                 {
  *                   poolId: 1,
- *                   targetPrice: "0.025"
+ *                   targetPrice: 250
  *                 },
  *                 {
  *                   poolId: 2,
- *                   targetPrice: "0.035"
+ *                   targetPrice: 350
  *                 }
  *               ]
- *               weightedAveragePrice: "0.030"
+ *               weightedAveragePrice: 300
  *       400:
  *         description: Invalid productId
  *       404:
