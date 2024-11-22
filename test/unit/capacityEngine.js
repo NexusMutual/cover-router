@@ -558,9 +558,9 @@ describe('Capacity Engine tests', function () {
   describe('calculateFirstUsableTrancheForMaxPeriodIndex', function () {
     const SECONDS_PER_DAY = 24 * 60 * 60;
     const MAX_COVER_PERIOD = BigNumber.from(365 * SECONDS_PER_DAY);
+    const now = BigNumber.from(Math.floor(Date.now() / 1000));
 
     it('should calculate index correctly for minimum grace period', function () {
-      const now = BigNumber.from(1000);
       const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
 
       const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
@@ -571,7 +571,6 @@ describe('Capacity Engine tests', function () {
     });
 
     it('should calculate index correctly for maximum grace period', function () {
-      const now = BigNumber.from(1000);
       const gracePeriod = BigNumber.from(365 * SECONDS_PER_DAY);
 
       const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
