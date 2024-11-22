@@ -6,13 +6,16 @@ const { capacities, poolProductCapacities } = require('./responses');
 const {
   capacityEngine,
   getUtilizationRate,
-  calculateAvailableCapacity,
-  calculateProductDataForTranche,
+  calculateFirstUsableTrancheForMaxPeriodIndex,
   getProductsInPool,
-  calculateTrancheInfo,
 } = require('../../src/lib/capacityEngine');
 const { NXM_PER_ALLOCATION_UNIT } = require('../../src/lib/constants');
-const { calculateTrancheId, bnMax } = require('../../src/lib/helpers');
+const {
+  calculateTrancheId,
+  calculateAvailableCapacity,
+  calculateProductDataForTranche,
+  bnMax,
+} = require('../../src/lib/helpers');
 const { selectAsset } = require('../../src/store/selectors');
 const mockStore = require('../mocks/store');
 
@@ -552,50 +555,44 @@ describe('Capacity Engine tests', function () {
     });
   });
 
-  describe('calculateTrancheInfo', function () {
-    const SECONDS_PER_DAY = BigNumber.from(24 * 3600);
-    const MAX_COVER_PERIOD = BigNumber.from(365 * 24 * 3600);
+  describe('calculateFirstUsableTrancheForMaxPeriodIndex', function () {
+    const SECONDS_PER_DAY = 24 * 60 * 60;
+    const MAX_COVER_PERIOD = BigNumber.from(365 * SECONDS_PER_DAY);
 
-    it('should calculate tranche indices correctly', function () {
-      const time = BigNumber.from(1000);
-      const product = { gracePeriod: BigNumber.from(86400) }; // 1 day grace period
-      const period = 30; // 30 days coverage period
-
-      const result = calculateTrancheInfo(time, product, period);
-
-      const expectedFirstUsableTrancheIndex =
-        calculateTrancheId(time.add(SECONDS_PER_DAY.mul(period)).add(product.gracePeriod)) - calculateTrancheId(time);
-      const expectedFirstUsableTrancheForMaxPeriodIndex =
-        calculateTrancheId(time.add(MAX_COVER_PERIOD).add(product.gracePeriod)) - calculateTrancheId(time);
-
-      expect(result.firstUsableTrancheIndex).to.equal(expectedFirstUsableTrancheIndex);
-      expect(result.firstUsableTrancheForMaxPeriodIndex).to.equal(expectedFirstUsableTrancheForMaxPeriodIndex);
-    });
-
-    it('should handle maximum period', function () {
-      const time = BigNumber.from(1000);
-      const product = { gracePeriod: BigNumber.from(86400) };
-      const period = 365; // Maximum period
-
-      const result = calculateTrancheInfo(time, product, period);
-
-      expect(result.firstUsableTrancheIndex).to.equal(result.firstUsableTrancheForMaxPeriodIndex);
-    });
-
-    it('should handle very large grace period', function () {
-      const time = BigNumber.from(1000);
-      const product = { gracePeriod: BigNumber.from(365 * 24 * 3600) }; // 1 year grace period
+    it('should calculate index correctly for minimum grace period', function () {
+      const now = BigNumber.from(1000);
+      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
       const period = 30;
 
-      const result = calculateTrancheInfo(time, product, period);
+      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod, period);
 
-      const expectedFirstUsableTrancheIndex =
-        calculateTrancheId(time.add(SECONDS_PER_DAY.mul(period)).add(product.gracePeriod)) - calculateTrancheId(time);
-      const expectedFirstUsableTrancheForMaxPeriodIndex =
-        calculateTrancheId(time.add(MAX_COVER_PERIOD).add(product.gracePeriod)) - calculateTrancheId(time);
+      const firstActiveTrancheId = calculateTrancheId(now);
+      const expectedTrancheId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      expect(result).to.equal(expectedTrancheId - firstActiveTrancheId);
+    });
 
-      expect(result.firstUsableTrancheIndex).to.equal(expectedFirstUsableTrancheIndex);
-      expect(result.firstUsableTrancheForMaxPeriodIndex).to.equal(expectedFirstUsableTrancheForMaxPeriodIndex);
+    it('should calculate index correctly for maximum grace period', function () {
+      const now = BigNumber.from(1000);
+      const gracePeriod = BigNumber.from(365 * SECONDS_PER_DAY);
+      const period = 30;
+
+      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod, period);
+
+      const firstActiveTrancheId = calculateTrancheId(now);
+      const expectedTrancheId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      expect(result).to.equal(expectedTrancheId - firstActiveTrancheId);
+    });
+
+    it('should handle period parameter correctly', function () {
+      const now = BigNumber.from(1000);
+      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
+      const period = 365; // Max period
+
+      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod, period);
+
+      const firstActiveTrancheId = calculateTrancheId(now);
+      const expectedTrancheId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      expect(result).to.equal(expectedTrancheId - firstActiveTrancheId);
     });
   });
 });
