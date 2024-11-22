@@ -1,13 +1,16 @@
 const { ethers, BigNumber } = require('ethers');
 
-const { NXM_PER_ALLOCATION_UNIT, MAX_COVER_PERIOD } = require('./constants');
-const { bnMax, bnMin, calculateTrancheId } = require('./helpers');
-const { calculateBasePrice, calculatePremiumPerYear, calculateFixedPricePremiumPerYear } = require('./quoteEngine');
+const { MAX_COVER_PERIOD } = require('./constants');
+const {
+  bnMax,
+  calculateTrancheId,
+  calculateFirstUsableTrancheIndex,
+  calculateProductDataForTranche,
+} = require('./helpers');
 const { selectProduct, selectProductPools } = require('../store/selectors');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
-const SECONDS_PER_DAY = BigNumber.from(24 * 3600);
 const BASIS_POINTS = 10000;
 
 /**
@@ -32,118 +35,6 @@ function getUtilizationRate(capacityAvailableNXM, capacityUsedNXM) {
 }
 
 /**
- * Calculates available capacity for a pool.
- *
- * @param {Array<BigNumber>} trancheCapacities - Array of capacity BigNumbers.
- * @param {Array<BigNumber>} allocations - Array of allocation BigNumbers.
- * @param {number} firstUsableTrancheIndex - Index of the first usable tranche.
- * @returns {BigNumber} The available capacity as a BigNumber.
- */
-function calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex) {
-  const unused = trancheCapacities.reduce((available, capacity, index) => {
-    const allocationDifference = capacity.sub(allocations[index]);
-    const allocationToAdd =
-      index < firstUsableTrancheIndex
-        ? bnMin(allocationDifference, Zero) // only carry over the negative
-        : allocationDifference;
-    return available.add(allocationToAdd);
-  }, Zero);
-  return bnMax(unused, Zero);
-}
-
-/**
- * Calculates capacity and pricing data for a specific tranche of product pools.
- *
- * @param {Array<Object>} productPools - Array of product pool objects.
- * @param {number} firstUsableTrancheIndex - Index of the first usable tranche.
- * @param {boolean} useFixedPrice - Flag indicating whether to use fixed pricing.
- * @param {BigNumber} now - Current timestamp in seconds.
- * @param {Object} assets - Object containing asset information.
- * @param {Object} assetRates - Object containing asset rates.
- * @returns {Object} An object containing aggregated data and capacity per pool.
- */
-function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, useFixedPrice, now, assets, assetRates) {
-  const aggregatedData = {
-    capacityUsedNXM: Zero,
-    capacityAvailableNXM: Zero,
-    minPrice: Zero,
-    totalPremium: Zero,
-  };
-
-  const capacityPerPool = productPools.map(pool => {
-    const { allocations, trancheCapacities, targetPrice, bumpedPrice, bumpedPriceUpdateTime, poolId } = pool;
-
-    // calculating the capacity in allocation points
-    const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
-    const total = trancheCapacities.reduce((total, capacity) => total.add(capacity), Zero);
-
-    const availableCapacity = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
-
-    // convert to nxm
-    const totalInNXM = total.mul(NXM_PER_ALLOCATION_UNIT);
-    const usedInNXM = used.mul(NXM_PER_ALLOCATION_UNIT);
-    const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
-
-    aggregatedData.capacityUsedNXM = aggregatedData.capacityUsedNXM.add(usedInNXM);
-    aggregatedData.capacityAvailableNXM = aggregatedData.capacityAvailableNXM.add(availableInNXM);
-
-    if (availableCapacity.isZero()) {
-      return {
-        poolId,
-        availableCapacity: [],
-        allocatedNxm: usedInNXM.toString(),
-        minAnnualPrice: Zero,
-        maxAnnualPrice: Zero,
-      };
-    }
-
-    const basePrice = useFixedPrice
-      ? targetPrice
-      : calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
-
-    // the minimum price depends on the surge
-    // so we buy the smallest possible unit of capacity
-    // and calculate the premium per year
-    const unitPremium = useFixedPrice
-      ? calculateFixedPricePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice)
-      : calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice, usedInNXM, totalInNXM);
-
-    const poolMinPrice = WeiPerEther.mul(unitPremium).div(NXM_PER_ALLOCATION_UNIT);
-
-    // the maximum price a user would get can only be determined if the entire available
-    // capacity is bought because the routing will always pick the cheapest
-    // so we're summing up the premium for all pools and then calculate the average at the end
-    const poolPremium = useFixedPrice
-      ? calculateFixedPricePremiumPerYear(availableInNXM, basePrice)
-      : calculatePremiumPerYear(availableInNXM, basePrice, usedInNXM, totalInNXM);
-
-    const poolMaxPrice = availableInNXM.isZero() ? Zero : WeiPerEther.mul(poolPremium).div(availableInNXM);
-
-    if (aggregatedData.minPrice.isZero() || poolMinPrice.lt(aggregatedData.minPrice)) {
-      aggregatedData.minPrice = poolMinPrice;
-    }
-    aggregatedData.totalPremium = aggregatedData.totalPremium.add(poolPremium);
-
-    // The available capacity of a product for a particular pool
-    const availableCapacityInAssets = Object.keys(assets).map(assetId => ({
-      assetId: Number(assetId),
-      amount: availableInNXM.mul(assetRates[assetId]).div(WeiPerEther),
-      asset: assets[assetId],
-    }));
-
-    return {
-      poolId,
-      availableCapacity: availableCapacityInAssets,
-      allocatedNxm: usedInNXM,
-      minAnnualPrice: poolMinPrice,
-      maxAnnualPrice: poolMaxPrice,
-    };
-  });
-
-  return { aggregatedData, capacityPerPool };
-}
-
-/**
  * Retrieves all product IDs that are associated with a specific pool.
  *
  * @param {Object} store - The Redux store containing application state.
@@ -159,25 +50,18 @@ function getProductsInPool(store, poolId) {
 }
 
 /**
- * Calculates tranche indices for capacity calculations based on time and product data.
+ * Calculates the index of the first usable tranche for the maximum cover period.
+ * This is used to determine the maximum price a user would get when buying cover.
  *
- * @param {BigNumber} time - The current timestamp in seconds.
- * @param {Object} product - The product object containing product details.
+ * @param {BigNumber} now - The current timestamp in seconds.
+ * @param {BigNumber} gracePeriod - The product's grace period in seconds.
  * @param {number} period - The coverage period in days.
- * @returns {Object} Contains indices for the first usable tranche / first usable tranche for the maximum period.
+ * @returns {number} The index difference between the first usable tranche for max period and the first active tranche.
  */
-function calculateTrancheInfo(time, product, period) {
-  const firstActiveTrancheId = calculateTrancheId(time);
-  const gracePeriodExpiration = time.add(SECONDS_PER_DAY.mul(period)).add(product.gracePeriod);
-  const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
-  const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
-  const firstUsableTrancheForMaxPeriodId = calculateTrancheId(time.add(MAX_COVER_PERIOD).add(product.gracePeriod));
-  const firstUsableTrancheForMaxPeriodIndex = firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
-
-  return {
-    firstUsableTrancheIndex,
-    firstUsableTrancheForMaxPeriodIndex,
-  };
+function calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod, period) {
+  const firstActiveTrancheId = calculateTrancheId(now);
+  const firstUsableTrancheForMaxPeriodId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+  return firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
 }
 
 /**
@@ -214,7 +98,12 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30, wi
       continue;
     }
 
-    const { firstUsableTrancheIndex, firstUsableTrancheForMaxPeriodIndex } = calculateTrancheInfo(now, product, period);
+    const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, period);
+    const firstUsableTrancheForMaxPeriodIndex = calculateFirstUsableTrancheForMaxPeriodIndex(
+      now,
+      product.gracePeriod,
+      period,
+    );
 
     // Use productPools from poolId if available; otherwise, select all pools for productId
     const productPools = selectProductPools(store, productId, poolId);
@@ -293,9 +182,7 @@ function capacityEngine(store, { poolId = null, productIds = [], period = 30, wi
 
 module.exports = {
   getUtilizationRate,
-  calculateAvailableCapacity,
-  calculateProductDataForTranche,
+  calculateFirstUsableTrancheForMaxPeriodIndex,
   getProductsInPool,
-  calculateTrancheInfo,
   capacityEngine,
 };
