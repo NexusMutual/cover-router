@@ -11,9 +11,7 @@ const contractFactory = require('./lib/contracts');
 const createEventsApi = require('./lib/eventsApi');
 const swaggerSpec = require('./lib/swagger');
 const createSynchronizer = require('./lib/synchronizer');
-const capacityRouter = require('./routes/capacity');
-const quoteRouter = require('./routes/quote');
-const reindexRouter = require('./routes/reindex');
+const { capacityRouter, pricingRouter, quoteRouter, reindexRouter } = require('./routes');
 const { createStore, initialState, load, save } = require('./store');
 
 const main = async () => {
@@ -46,6 +44,7 @@ const main = async () => {
   app.use('/v2', capacityRouter);
   app.use('/v2', quoteRouter);
   app.use('/v2', reindexRouter);
+  app.use('/v2', pricingRouter);
 
   // state
   const state = load(initialState);
