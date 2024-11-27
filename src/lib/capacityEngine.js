@@ -250,6 +250,28 @@ function getPoolCapacity(store, poolId, { periodSeconds = SECONDS_PER_DAY.mul(30
   };
 }
 
+/**
+ * Gets capacity data for a specific product in a specific pool.
+ * GET /capacity/pools/:poolId/products/:productId
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {string|number} poolId - The pool ID.
+ * @param {string|number} productId - The product ID.
+ * @param {Object} [options={}] - Optional parameters.
+ * @param {number} [options.periodSeconds=30*SECONDS_PER_DAY] - The coverage period in seconds.
+ * @returns {Object|null} Product capacity data for the specific pool or null if not found.
+ */
+function getProductCapacityInPool(store, poolId, productId, { periodSeconds = SECONDS_PER_DAY.mul(30) } = {}) {
+  const { assets, assetRates } = store.getState();
+  const now = BigNumber.from(Date.now()).div(1000);
+
+  return calculateProductCapacity(store, productId, {
+    poolId,
+    periodSeconds,
+    now,
+    assets,
+    assetRates,
+  });
 }
 
 module.exports = {
@@ -263,5 +285,4 @@ module.exports = {
   getUtilizationRate,
   calculateFirstUsableTrancheForMaxPeriodIndex,
   getProductsInPool,
-  capacityEngine,
 };
