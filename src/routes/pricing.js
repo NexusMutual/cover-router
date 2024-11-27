@@ -94,7 +94,7 @@ router.get(
  *           type: integer
  *           description: The pool id
  *         targetPrice:
- *           type: string
+ *           type: integer
  *           description: The target price as a percentage expressed as basis points (0-10,000)
  *     PricingResult:
  *       type: object
@@ -108,9 +108,8 @@ router.get(
  *           items:
  *             $ref: '#/components/schemas/PoolPricing'
  *         weightedAveragePrice:
- *           type: string
- *           description: The weighted average price across all pools as a percentage expressed as basis points 0-10,000
- *                        The weight is based on the available capacity of the pool.
+ *           type: integer
+ *           description: The weighted average price across all pools as a percentage expressed as basis (0-10,000)
  */
 
 module.exports = router;

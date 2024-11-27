@@ -254,7 +254,7 @@ router.get(
  *             example:
  *               poolId: 1
  *               utilizationRate: 5000
- *               productCapacity: [
+ *               productsCapacity: [
  *                 {
  *                   productId: 1,
  *                   availableCapacity: [
