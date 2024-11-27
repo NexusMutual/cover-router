@@ -69,7 +69,7 @@ router.get(
     try {
       const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const capacities = capacityEngine(store, { periodSeconds });
+      const capacities = getAllProductCapacities(store, { periodSeconds });
 
       const response = capacities.map(capacity => formatCapacityResult(capacity));
       console.log(JSON.stringify(capacities, null, 2));
@@ -193,7 +193,7 @@ router.get(
     try {
       const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const [capacity] = capacityEngine(store, { productIds: [productId], periodSeconds, withPools });
+      const capacity = ccc(store, productId, { periodSeconds, withPools });
 
       if (!capacity) {
         return res.status(400).send({ error: 'Invalid Product Id', response: null });
@@ -380,7 +380,7 @@ router.get(
     try {
       const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const [capacity] = capacityEngine(store, { poolId, productIds: [productId], periodSeconds });
+      const capacity = getProductCapacityInPool(store, poolId, productId, { periodSeconds });
 
       if (!capacity) {
         return res.status(404).send({ error: 'Product not found in the specified pool', response: null });
@@ -453,20 +453,41 @@ router.get(
  *             productId:
  *               type: integer
  *               description: The product id
- *             utilizationRate:
- *               type: number
- *               format: integer
- *               description: The percentage of used capacity to total capacity, expressed as basis points (0-10,000).
+ *     PoolCapacity:
+ *       type: object
+ *       properties:
+ *         poolId:
+ *           type: integer
+ *           description: The pool id
+ *         utilizationRate:
+ *           type: integer
+ *           description: The pool-level utilization rate in basis points (0-10,000)
+ *         productsCapacity:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/ProductCapacity'
+ *       required:
+ *         - poolId
+ *         - utilizationRate
+ *         - productsCapacity
  *     CapacityResultWithPools:
  *       allOf:
- *         - $ref: '#/components/schemas/CapacityResult'
+ *         - $ref: '#/components/schemas/ProductCapacity'
  *         - type: object
  *           properties:
  *             capacityPerPool:
  *               type: array
- *               description: The capacity per pool.
+ *               description: The capacity per pool. Only present when withPools=true.
  *               items:
  *                 $ref: '#/components/schemas/PoolCapacity'
+ *     CapacityResult:
+ *       allOf:
+ *         - $ref: '#/components/schemas/BaseCapacityFields'
+ *         - type: object
+ *           properties:
+ *             productId:
+ *               type: integer
+ *               description: The product id
  */
 
 module.exports = router;
