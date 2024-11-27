@@ -8,6 +8,76 @@ const { BigNumber } = ethers;
 const { parseEther } = ethers.utils;
 
 describe('pricingEngine', () => {
+  // Default store setup
+  const createDefaultStore = () => ({
+    getState: () => ({
+      assets: mockStore.assets,
+      assetRates: mockStore.assetRates,
+      products: {
+        1: {
+          productType: 0,
+          capacityReductionRatio: 0,
+          useFixedPrice: false,
+          gracePeriod: 30,
+          id: 1,
+        },
+      },
+      poolProducts: {
+        '1_1': {
+          productId: 1,
+          poolId: 1,
+          allocations: Array(8).fill(BigNumber.from(0)),
+          trancheCapacities: [
+            ...Array(7).fill(BigNumber.from(0)),
+            BigNumber.from('1000000000000000000'), // 1 NXM
+          ],
+          lastEffectiveWeight: BigNumber.from(0),
+          targetWeight: BigNumber.from(50),
+          targetPrice: BigNumber.from(200),
+          bumpedPrice: BigNumber.from(200),
+          bumpedPriceUpdateTime: BigNumber.from(1678700054),
+        },
+        '1_2': {
+          productId: 1,
+          poolId: 2,
+          allocations: Array(8).fill(BigNumber.from(0)),
+          trancheCapacities: [
+            ...Array(7).fill(BigNumber.from(0)),
+            BigNumber.from('2000000000000000000'), // 2 NXM
+          ],
+          lastEffectiveWeight: BigNumber.from(0),
+          targetWeight: BigNumber.from(50),
+          targetPrice: BigNumber.from(300),
+          bumpedPrice: BigNumber.from(300),
+          bumpedPriceUpdateTime: BigNumber.from(1678700054),
+        },
+      },
+      productPoolIds: {
+        1: [1, 2],
+      },
+    }),
+  });
+
+  // Helper function to modify the default store
+  const modifyStore = modifications => {
+    const defaultStore = createDefaultStore();
+    const state = defaultStore.getState();
+    const newState = {
+      ...state,
+      ...modifications,
+      poolProducts: {
+        ...state.poolProducts,
+        ...(modifications.poolProducts || {}),
+      },
+      productPoolIds: {
+        ...state.productPoolIds,
+        ...(modifications.productPoolIds || {}),
+      },
+    };
+    return { getState: () => newState };
+  };
+
+  // Keep the existing createMockStore for backward compatibility
   const createMockStore = (poolProducts, product = null) => ({
     getState: () => ({
       assets: mockStore.assets,
@@ -39,8 +109,12 @@ describe('pricingEngine', () => {
 
   describe('pricing calculations', () => {
     it('should calculate correct pricing for a single pool', () => {
-      const store = createMockStore({
-        '1_1': mockStore.poolProducts['1_1'],
+      const { poolProducts } = createDefaultStore().getState();
+      const store = modifyStore({
+        poolProducts: {
+          '1_1': poolProducts['1_1'],
+        },
+        productPoolIds: { 1: [1] },
       });
 
       const result = pricingEngine(store, 1);
@@ -49,7 +123,7 @@ describe('pricingEngine', () => {
         pricePerPool: [
           {
             poolId: 1,
-            targetPrice: mockStore.poolProducts['1_1'].targetPrice,
+            targetPrice: BigNumber.from(200),
           },
         ],
         weightedAveragePrice: BigNumber.from(200),
@@ -80,97 +154,123 @@ describe('pricingEngine', () => {
 
       const result = pricingEngine(store, 1);
       // Weighted average: ((100 * 60) + (200 * 20)) / (60 + 20) = 125
-      expect(result.weightedAveragePrice).to.deep.equal(BigNumber.from(125));
+      expect(result.weightedAveragePrice.toString()).to.equal('125');
       expect(result.pricePerPool).to.have.length(2);
     });
 
     it('should handle pools with zero capacity', () => {
-      const store = createMockStore({
-        '1_1': {
-          ...mockStore.poolProducts['1_1'],
-          targetPrice: BigNumber.from(100),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: Array(8).fill(BigNumber.from(0)),
-        },
-        '1_2': {
-          ...mockStore.poolProducts['1_2'],
-          targetPrice: BigNumber.from(200),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: [...Array(7).fill(BigNumber.from(0)), BigNumber.from(100)],
+      const { poolProducts } = createDefaultStore().getState();
+      const store = modifyStore({
+        poolProducts: {
+          '1_1': {
+            ...poolProducts['1_1'],
+            trancheCapacities: Array(8).fill(BigNumber.from(0)),
+          },
+          '1_2': poolProducts['1_2'],
         },
       });
 
       const result = pricingEngine(store, 1);
-      // Only pool 2 should contribute to weighted average
-      expect(result.weightedAveragePrice).to.deep.equal(BigNumber.from(200));
+      expect(result.weightedAveragePrice.toString()).to.equal('300');
     });
 
     it('should handle all pools having zero capacity', () => {
-      const store = createMockStore({
-        '1_1': {
-          ...mockStore.poolProducts['1_1'],
-          targetPrice: BigNumber.from(100),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: Array(8).fill(BigNumber.from(0)),
-        },
-        '1_2': {
-          ...mockStore.poolProducts['1_2'],
-          targetPrice: BigNumber.from(200),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: Array(8).fill(BigNumber.from(0)),
+      const { poolProducts } = createDefaultStore().getState();
+      const store = modifyStore({
+        poolProducts: {
+          '1_1': {
+            ...poolProducts['1_1'],
+            trancheCapacities: Array(8).fill(BigNumber.from(0)),
+          },
+          '1_2': {
+            ...poolProducts['1_2'],
+            trancheCapacities: Array(8).fill(BigNumber.from(0)),
+          },
         },
       });
 
       const result = pricingEngine(store, 1);
-      // Weighted average: (0 * 100 + 0 * 200) / (0 + 0) = 0
-      expect(result.weightedAveragePrice).to.deep.equal(BigNumber.from(0));
+      expect(result.weightedAveragePrice.toString()).to.equal('0');
+    });
+
+    it('should skip pools with zero target weight and zero available capacity', () => {
+      const { poolProducts } = createDefaultStore().getState();
+      const store = modifyStore({
+        poolProducts: {
+          '1_1': {
+            ...poolProducts['1_1'],
+            targetWeight: BigNumber.from(0),
+            trancheCapacities: Array(8).fill(BigNumber.from(0)),
+          },
+          '1_2': poolProducts['1_2'],
+          '1_3': {
+            ...poolProducts['1_2'],
+            poolId: 3,
+            targetPrice: BigNumber.from(400),
+            trancheCapacities: [
+              ...Array(7).fill(BigNumber.from(0)),
+              BigNumber.from('3000000000000000000'), // 3 NXM
+            ],
+          },
+        },
+        productPoolIds: { 1: [1, 2, 3] },
+      });
+
+      const result = pricingEngine(store, 1);
+
+      expect(result.pricePerPool).to.have.length(2);
+      expect(result.pricePerPool[0].poolId).to.equal(2);
+      expect(result.pricePerPool[1].poolId).to.equal(3);
+      expect(result.weightedAveragePrice.toString()).to.equal('360');
     });
   });
 
   describe('edge cases', () => {
     it('should handle very large capacity numbers', () => {
-      const store = createMockStore({
-        '1_1': {
-          ...mockStore.poolProducts['1_1'],
-          targetPrice: parseEther('1'),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: [
-            ...Array(7).fill(BigNumber.from(0)),
-            parseEther('1500'), // 1500 NXM total
-          ],
+      const { poolProducts } = createDefaultStore().getState();
+      const store = modifyStore({
+        poolProducts: {
+          '1_1': {
+            ...poolProducts['1_1'],
+            targetPrice: parseEther('1'),
+            trancheCapacities: [
+              ...Array(7).fill(BigNumber.from(0)),
+              parseEther('1500'), // 1500 NXM total
+            ],
+          },
         },
+        productPoolIds: { 1: [1] },
       });
 
       const result = pricingEngine(store, 1);
-      // Weighted average: (1000000000000000000 * 1500) / 1500 = 1000000000000000000
-      expect(result.weightedAveragePrice).to.deep.equal(parseEther('1'));
+      expect(result.weightedAveragePrice.toString()).to.equal(parseEther('1').toString());
     });
 
     it('should handle decimal division correctly with BigNumber', () => {
-      const store = createMockStore({
-        '1_1': {
-          ...mockStore.poolProducts['1_1'],
-          targetPrice: BigNumber.from(100),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: [
-            ...Array(7).fill(BigNumber.from(0)),
-            parseEther('4'), // 4 NXM available
-          ],
-        },
-        '1_2': {
-          ...mockStore.poolProducts['1_2'],
-          targetPrice: BigNumber.from(200),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: [
-            ...Array(7).fill(BigNumber.from(0)),
-            parseEther('3'), // 3 NXM available
-          ],
+      const { poolProducts } = createDefaultStore().getState();
+      const store = modifyStore({
+        poolProducts: {
+          '1_1': {
+            ...poolProducts['1_1'],
+            targetPrice: BigNumber.from(100),
+            trancheCapacities: [
+              ...Array(7).fill(BigNumber.from(0)),
+              parseEther('4'), // 4 NXM available
+            ],
+          },
+          '1_2': {
+            ...poolProducts['1_2'],
+            targetPrice: BigNumber.from(200),
+            trancheCapacities: [
+              ...Array(7).fill(BigNumber.from(0)),
+              parseEther('3'), // 3 NXM available
+            ],
+          },
         },
       });
 
       const result = pricingEngine(store, 1);
-      // Weighted average: (100 * 4 + 200 * 3) / (4 + 3) = (400 + 600) / 7 = 1000 / 7 ≈ 142.857... = 140
-      expect(result.weightedAveragePrice).to.deep.equal(BigNumber.from(142));
+      expect(result.weightedAveragePrice.toString()).to.equal('142');
     });
   });
 });
