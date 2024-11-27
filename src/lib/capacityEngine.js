@@ -212,9 +212,54 @@ function getProductCapacity(store, productId, { periodSeconds = SECONDS_PER_DAY.
   });
 }
 
+/**
+ * Gets capacity data for a pool, including all its products.
+ * GET /capacity/pools/:poolId
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {string|number} poolId - The pool ID.
+ * @param {Object} [options={}] - Optional parameters.
+ * @param {number} [options.periodSeconds=30*SECONDS_PER_DAY] - The coverage period in seconds.
+ * @returns {Object|null} Pool capacity data or null if pool not found.
+ */
+function getPoolCapacity(store, poolId, { periodSeconds = SECONDS_PER_DAY.mul(30) } = {}) {
+  const { assets, assetRates } = store.getState();
+  const now = BigNumber.from(Date.now()).div(1000);
+  const productIds = getProductsInPool(store, poolId);
+
+  if (productIds.length === 0) {
+    return null;
+  }
+
+  const productsCapacity = productIds
+    .map(productId =>
+      calculateProductCapacity(store, productId, {
+        poolId,
+        periodSeconds,
+        now,
+        assets,
+        assetRates,
+      }),
+    )
+    .filter(Boolean); // remove any nulls (i.e. productId did not match any products)
+
+  return {
+    poolId: Number(poolId),
+    utilizationRate: calculatePoolUtilizationRate(productsCapacity),
+    productsCapacity,
+  };
+}
+
 }
 
 module.exports = {
+  getAllProductCapacities,
+  getProductCapacity,
+  getPoolCapacity,
+  getProductCapacityInPool,
+  // Keep these exports for testing purposes
+  calculateProductCapacity,
+  calculatePoolUtilizationRate,
   getUtilizationRate,
   calculateFirstUsableTrancheForMaxPeriodIndex,
   getProductsInPool,
