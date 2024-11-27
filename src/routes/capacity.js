@@ -1,7 +1,12 @@
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
-const { capacityEngine } = require('../lib/capacityEngine');
+const {
+  getAllProductCapacities,
+  getProductCapacity,
+  getPoolCapacity,
+  getProductCapacityInPool,
+} = require('../lib/capacityEngine');
 const { SECONDS_PER_DAY } = require('../lib/constants');
 const { asyncRoute } = require('../lib/helpers');
 
@@ -16,7 +21,6 @@ const formatCapacityResult = capacity => ({
     asset,
   })),
   allocatedNxm: capacity.usedCapacity.toString(),
-  utilizationRate: capacity.utilizationRate.toNumber(),
   minAnnualPrice: formatUnits(capacity.minAnnualPrice),
   maxAnnualPrice: formatUnits(capacity.maxAnnualPrice),
   capacityPerPool: capacity.capacityPerPool?.map(c => ({
@@ -212,7 +216,7 @@ router.get(
  *   get:
  *     tags:
  *       - Capacity
- *     description: Get capacity data for all products in a specific pool
+ *     description: Gets capacity data for a pool, including all its products
  *     parameters:
  *     - in: path
  *       name: poolId
@@ -235,9 +239,40 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/CapacityResult'
+ *               type: object
+ *               properties:
+ *                 poolId:
+ *                   type: integer
+ *                   description: The pool id
+ *                 utilizationRate:
+ *                   type: integer
+ *                   description: The pool-level utilization rate in basis points (0-10,000)
+ *                 productsCapacity:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/ProductCapacity'
+ *             example:
+ *               poolId: 1
+ *               utilizationRate: 5000
+ *               productCapacity: [
+ *                 {
+ *                   productId: 1,
+ *                   availableCapacity: [
+ *                     {
+ *                       assetId: 1,
+ *                       amount: "1000000000000000000",
+ *                       asset: {
+ *                         id: 1,
+ *                         symbol: "ETH",
+ *                         decimals: 18
+ *                       }
+ *                     }
+ *                   ],
+ *                   allocatedNxm: "500000000000000000",
+ *                   minAnnualPrice: "0.025",
+ *                   maxAnnualPrice: "0.1"
+ *                 }
+ *               ]
  *       400:
  *         description: Invalid pool id or period
  *       404:
@@ -261,13 +296,18 @@ router.get(
     try {
       const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const capacities = capacityEngine(store, { poolId, periodSeconds });
+      const poolCapacity = getPoolCapacity(store, poolId, { periodSeconds });
 
-      if (capacities.length === 0) {
+      if (poolCapacity === null) {
         return res.status(404).send({ error: 'Pool not found', response: null });
       }
 
-      const response = capacities.map(capacity => formatCapacityResult(capacity));
+
+      const response = {
+        poolId: poolCapacity.poolId,
+        utilizationRate: poolCapacity.utilizationRate.toNumber(),
+        productsCapacity: poolCapacity.productsCapacity.map(productCapacity => formatCapacityResult(productCapacity)),
+      };
       console.log(JSON.stringify(response, null, 2));
 
       res.json(response);
@@ -405,15 +445,7 @@ router.get(
  *         maxAnnualPrice:
  *           type: string
  *           description: The maximal annual price is a percentage value between 0-1.
- *     PoolCapacity:
- *       allOf:
- *         - $ref: '#/components/schemas/BaseCapacityFields'
- *         - type: object
- *           properties:
- *             poolId:
- *               type: integer
- *               description: The pool id
- *     CapacityResult:
+ *     ProductCapacity:
  *       allOf:
  *         - $ref: '#/components/schemas/BaseCapacityFields'
  *         - type: object
