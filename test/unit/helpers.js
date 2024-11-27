@@ -18,6 +18,11 @@ const {
   calculateBasePrice,
   calculatePremiumPerYear,
   calculateFixedPricePremiumPerYear,
+  calculateBucketId,
+  calculateTrancheId,
+  divCeil,
+  bnMax,
+  bnMin,
 } = require('../../src/lib/helpers');
 const mockStore = require('../mocks/store');
 
@@ -537,6 +542,80 @@ describe('helpers', () => {
       // Should return a very high premium due to surge pricing
       const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
       expect(result.gt(basePremium.mul(2))).to.equal(true); // At least 2x base premium
+    });
+  });
+
+  describe('divCeil', () => {
+    it('should round up division result when there is a remainder', () => {
+      const a = BigNumber.from('10');
+      const b = BigNumber.from('3');
+      expect(divCeil(a, b).toString()).to.equal('4');
+    });
+
+    it('should return exact result when division is clean', () => {
+      const a = BigNumber.from('10');
+      const b = BigNumber.from('2');
+      expect(divCeil(a, b).toString()).to.equal('5');
+    });
+
+    it('should handle zero dividend', () => {
+      const a = Zero;
+      const b = BigNumber.from('3');
+      expect(divCeil(a, b).toString()).to.equal('0');
+    });
+  });
+
+  describe('calculateBucketId', () => {
+    it('should calculate correct bucket ID', () => {
+      const time = BigNumber.from(BUCKET_DURATION * 2 + 100);
+      expect(calculateBucketId(time)).to.equal(2);
+    });
+
+    it('should handle BigNumber and number inputs consistently', () => {
+      const timeNum = BUCKET_DURATION * 2 + 100;
+      const timeBN = BigNumber.from(timeNum);
+      expect(calculateBucketId(timeNum)).to.equal(calculateBucketId(timeBN));
+    });
+  });
+
+  describe('calculateTrancheId', () => {
+    it('should calculate correct tranche ID', () => {
+      const time = BigNumber.from(TRANCHE_DURATION * 3 + 100);
+      expect(calculateTrancheId(time)).to.equal(3);
+    });
+
+    it('should handle BigNumber and number inputs consistently', () => {
+      const timeNum = TRANCHE_DURATION * 2 + 100;
+      const timeBN = BigNumber.from(timeNum);
+      expect(calculateTrancheId(timeNum)).to.equal(calculateTrancheId(timeBN));
+    });
+  });
+
+  describe('bnMax', () => {
+    const a = BigNumber.from('100');
+    const b = BigNumber.from('200');
+
+    it('should return larger number', () => {
+      expect(bnMax(a, b).toString()).to.equal(b.toString());
+      expect(bnMax(b, a).toString()).to.equal(b.toString());
+    });
+
+    it('should handle equal numbers', () => {
+      expect(bnMax(a, a).toString()).to.equal(a.toString());
+    });
+  });
+
+  describe('bnMin', () => {
+    const a = BigNumber.from('100');
+    const b = BigNumber.from('200');
+
+    it('should return smaller number', () => {
+      expect(bnMin(a, b).toString()).to.equal(a.toString());
+      expect(bnMin(b, a).toString()).to.equal(a.toString());
+    });
+
+    it('should handle equal numbers', () => {
+      expect(bnMin(a, a).toString()).to.equal(a.toString());
     });
   });
 });
