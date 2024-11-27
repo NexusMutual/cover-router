@@ -64,15 +64,25 @@ function calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod) {
 }
 
 /**
- * Calculates the capacity and pricing information for products and pools.
+ * Calculates the pool-level utilization rate across all products in the pool.
  *
- * @param {Object} store - The Redux store containing application state.
- * @param {Object} [options={}] - Optional parameters for capacity calculation.
- * @param {number|null} [options.poolId=null] - The ID of the pool to filter products by.
- * @param {Array<number>} [options.productIds=[]] - Array of product IDs to process.
- * @param {number} [options.periodSeconds=30*SECONDS_PER_DAY] - The coverage period in seconds
- * @param {boolean} [options.withPools=false] - Flag indicating whether to include capacityPerPool data field.
- * @returns {Array<Object>} An array of capacity information objects for each product.
+ * @param {Array<Object>} products - Array of product capacity data for the pool
+ * @returns {BigNumber} The pool-level utilization rate as a BigNumber, expressed in basis points (0-10,000)
+ */
+function calculatePoolUtilizationRate(products) {
+  let totalCapacityAvailableNXM = Zero;
+  let totalCapacityUsedNXM = Zero;
+
+  products.forEach(product => {
+    totalCapacityAvailableNXM = totalCapacityAvailableNXM.add(
+      product.availableCapacity.find(c => c.assetId === 255)?.amount || Zero,
+    );
+    totalCapacityUsedNXM = totalCapacityUsedNXM.add(product.usedCapacity);
+  });
+
+  return getUtilizationRate(totalCapacityAvailableNXM, totalCapacityUsedNXM);
+}
+
  */
 function capacityEngine(
   store,
