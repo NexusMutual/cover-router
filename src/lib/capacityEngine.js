@@ -188,6 +188,23 @@ function getAllProductCapacities(store, { periodSeconds = SECONDS_PER_DAY.mul(30
     .filter(Boolean); // remove any nulls (i.e. productId did not match any products)
 }
 
+/**
+ * Gets capacity data for a single product across all pools.
+ * GET /capacity/:productId
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {string|number} productId - The product ID.
+ * @param {Object} [options={}] - Optional parameters.
+ * @param {number} [options.periodSeconds=30*SECONDS_PER_DAY] - The coverage period in seconds.
+ * @param {boolean} [options.withPools=false] - Include per-pool capacity breakdown.
+ * @returns {Object|null} Product capacity data or null if product not found.
+ */
+function getProductCapacity(store, productId, { periodSeconds = SECONDS_PER_DAY.mul(30), withPools = false } = {}) {
+  const { assets, assetRates } = store.getState();
+  const now = BigNumber.from(Date.now()).div(1000);
+
+  return calculateProductCapacity(store, productId, {
+    periodSeconds,
     withPools,
     now,
     assets,
