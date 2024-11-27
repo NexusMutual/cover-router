@@ -1,101 +1,90 @@
+const { expect } = require('chai');
 const { BigNumber, ethers } = require('ethers');
-const { MaxUint256, WeiPerEther } = ethers.constants;
 
-const { calculateFixedPricePremiumPerYear, calculatePremiumPerYear } = require('../../src/lib/quoteEngine');
+const { Zero } = ethers.constants;
+const { NXM_PER_ALLOCATION_UNIT } = require('../../src/lib/constants');
+const { calculateFirstUsableTrancheIndex, calculateAvailableCapacity } = require('../../src/lib/helpers');
 
-const MIN_UNIT_SIZE = WeiPerEther;
-const UNIT_DIVISOR = 100;
-const getCombinations = (size, a) => {
-  if (size === 1) {
-    return a.map(i => [i]);
-  }
-  const combinations = [];
+const getCurrentTimestamp = () => BigNumber.from(Math.floor(Date.now() / 1000));
 
-  for (let i = 0; i < a.length; i++) {
-    const smallerCombinations = getCombinations(size - 1, a.slice(i + 1));
+const verifyCapacityCalculation = (response, poolProduct, storeProduct, now, periodSeconds) => {
+  const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, storeProduct.gracePeriod, periodSeconds);
 
-    for (const smallCombination of smallerCombinations) {
-      combinations.push([a[i], ...smallCombination]);
-    }
-  }
-  return combinations;
-};
-const getAmountSplits = (splitCount, amountInUnits) => {
-  if (splitCount === 1) {
-    return [[amountInUnits]];
-  }
+  const availableCapacity = calculateAvailableCapacity(
+    poolProduct.trancheCapacities,
+    poolProduct.allocations,
+    firstUsableTrancheIndex,
+  );
 
-  const splits = [];
-  for (let i = 0; i <= amountInUnits; i++) {
-    const remainderAmount = amountInUnits - i;
-    const restOfSplits = getAmountSplits(splitCount - 1, remainderAmount);
-    for (const split of restOfSplits) {
-      splits.push([i, ...split]);
-    }
-  }
-  return splits;
+  const nxmCapacity = response.availableCapacity.find(c => c.assetId === 255);
+
+  return { availableCapacity, nxmCapacity };
 };
 
-const calculateCost = (combination, amountSplit, UNIT_SIZE, useFixedPrice) => {
-  let totalPremium = BigNumber.from(0);
-  for (let i = 0; i < combination.length; i++) {
-    const pool = combination[i];
-
-    const amount = amountSplit[i];
-
-    const amountInWei = BigNumber.from(amount).mul(UNIT_SIZE);
-
-    const premium = useFixedPrice
-      ? calculateFixedPricePremiumPerYear(amountInWei, pool.basePrice)
-      : calculatePremiumPerYear(amountInWei, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
-
-    totalPremium = totalPremium.add(premium);
-  }
-
-  return totalPremium;
+const verifyUsedCapacity = (response, poolProduct) => {
+  let totalUsedCapacity = Zero;
+  poolProduct.allocations.forEach(allocation => {
+    totalUsedCapacity = totalUsedCapacity.add(allocation);
+  });
+  expect(response.usedCapacity.toString()).to.equal(totalUsedCapacity.mul(NXM_PER_ALLOCATION_UNIT).toString());
+  return totalUsedCapacity;
 };
 
-/**
- *  Computes the optimal price by trying all combinations of pools and amount splits
- *  for each particular combination of pools.
- *
- * @param coverAmount
- * @param pools
- * @param useFixedPrice
- * @returns {{lowestCostAllocation: {}, lowestCost: *}}
- */
-const calculateOptimalPoolAllocationBruteForce = (coverAmount, pools, useFixedPrice) => {
-  // set UNIT_SIZE to be a minimum of 1.
-  const UNIT_SIZE = coverAmount.div(UNIT_DIVISOR).gt(MIN_UNIT_SIZE) ? coverAmount.div(UNIT_DIVISOR) : MIN_UNIT_SIZE;
+const verifyPriceCalculations = (response, storeProduct) => {
+  expect(response.minAnnualPrice).to.be.instanceOf(BigNumber);
+  expect(response.maxAnnualPrice).to.be.instanceOf(BigNumber);
+  expect(response.minAnnualPrice.gt(Zero)).to.equal(true);
+  expect(response.maxAnnualPrice.gt(Zero)).to.equal(true);
 
-  const amountInUnits = coverAmount.div(UNIT_SIZE);
-
-  let lowestCost = MaxUint256;
-  let lowestCostAllocation;
-  for (const splitCount of [1, 2, 3, 4, 5]) {
-    const combinations = getCombinations(splitCount, pools);
-    const amountSplits = getAmountSplits(splitCount, amountInUnits);
-
-    for (const combination of combinations) {
-      for (const amountSplit of amountSplits) {
-        const cost = calculateCost(combination, amountSplit, UNIT_SIZE);
-
-        if (cost.lt(lowestCost)) {
-          lowestCost = cost;
-
-          lowestCostAllocation = {};
-          for (let i = 0; i < combination.length; i++) {
-            const pool = combination[i];
-            lowestCostAllocation[pool.poolId] = BigNumber.from(amountSplit[i]).mul(UNIT_SIZE);
-          }
-        }
-      }
-    }
+  if (storeProduct.useFixedPrice) {
+    expect(response.minAnnualPrice.toString()).to.equal(response.maxAnnualPrice.toString());
+  } else {
+    expect(response.minAnnualPrice.toString()).to.not.equal(response.maxAnnualPrice.toString());
+    expect(response.maxAnnualPrice.gte(response.minAnnualPrice)).to.equal(true);
   }
+};
 
-  return lowestCostAllocation;
+const calculateExpectedAvailableNXM = (poolIds, productId, poolProducts, firstUsableTrancheIndex) => {
+  return poolIds.reduce((total, poolId) => {
+    const poolProduct = poolProducts[`${productId}_${poolId}`];
+    const availableCapacity = calculateAvailableCapacity(
+      poolProduct.trancheCapacities,
+      poolProduct.allocations,
+      firstUsableTrancheIndex,
+    );
+    return total.add(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT));
+  }, Zero);
+};
+
+const calculateExpectedUsedCapacity = poolProduct => {
+  return poolProduct.allocations.reduce((sum, alloc) => sum.add(alloc), Zero).mul(NXM_PER_ALLOCATION_UNIT);
+};
+
+const calculateExpectedUsedCapacityAcrossPools = (poolIds, productId, poolProducts) => {
+  return poolIds.reduce((total, poolId) => {
+    const poolProduct = poolProducts[`${productId}_${poolId}`];
+    return total.add(calculateExpectedUsedCapacity(poolProduct));
+  }, Zero);
+};
+
+const verifyCapacityResponse = (
+  response,
+  expectedKeys = ['productId', 'availableCapacity', 'usedCapacity', 'minAnnualPrice', 'maxAnnualPrice'],
+) => {
+  expect(response).to.have.all.keys(expectedKeys);
+  expect(response.availableCapacity).to.be.an('array');
+  expect(response.usedCapacity).to.be.instanceOf(BigNumber);
+  expect(response.minAnnualPrice).to.be.instanceOf(BigNumber);
+  expect(response.maxAnnualPrice).to.be.instanceOf(BigNumber);
 };
 
 module.exports = {
-  calculateOptimalPoolAllocationBruteForce,
+  getCurrentTimestamp,
+  verifyCapacityCalculation,
+  verifyUsedCapacity,
+  verifyPriceCalculations,
+  calculateExpectedAvailableNXM,
+  calculateExpectedUsedCapacity,
+  calculateExpectedUsedCapacityAcrossPools,
+  verifyCapacityResponse,
 };
