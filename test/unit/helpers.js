@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const ethers = require('ethers');
 
 const {
+  BUCKET_DURATION,
   NXM_PER_ALLOCATION_UNIT,
   PRICE_CHANGE_PER_DAY,
   SECONDS_PER_DAY,
@@ -244,6 +245,96 @@ describe('helpers', () => {
         const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
         assertAvailableCapacity(poolCapacity, availableInNXM);
       });
+    });
+
+    it('should handle empty pools array', function () {
+      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+        [],
+        0,
+        true,
+        BigNumber.from(1000),
+        mockStore.assets,
+        mockStore.assetRates,
+      );
+
+      expect(aggregatedData.capacityAvailableNXM).to.deep.equal(Zero);
+      expect(aggregatedData.capacityUsedNXM).to.deep.equal(Zero);
+      expect(aggregatedData.totalPremium).to.deep.equal(Zero);
+      expect(capacityPerPool).to.have.lengthOf(0);
+    });
+
+    it('should handle tranche index out of bounds', function () {
+      const product0Pool1 = [mockStore.poolProducts['0_1']];
+      const outOfBoundsIndex = product0Pool1[0].trancheCapacities.length + 1;
+
+      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+        product0Pool1,
+        outOfBoundsIndex,
+        false,
+        BigNumber.from(1000),
+        mockStore.assets,
+        mockStore.assetRates,
+      );
+
+      expect(aggregatedData.capacityAvailableNXM).to.deep.equal(Zero);
+      expect(aggregatedData.capacityUsedNXM).to.deep.equal(Zero);
+      expect(capacityPerPool).to.have.lengthOf(1);
+      expect(capacityPerPool[0].availableCapacity).to.deep.equal([]);
+    });
+
+    it('should handle negative tranche index', function () {
+      const product0Pool1 = [mockStore.poolProducts['0_1']];
+      const poolProduct = mockStore.poolProducts['0_1'];
+      const { assets, assetRates } = mockStore;
+
+      // Get the total capacity and used capacity
+      const total = poolProduct.trancheCapacities.reduce((total, capacity) => total.add(capacity), Zero);
+      const used = poolProduct.allocations.reduce((total, allocation) => total.add(allocation), Zero);
+
+      // Calculate available capacity (total - used)
+      const availableCapacity = total.sub(used);
+
+      // Convert to NXM
+      const expectedCapacityNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
+
+      // Calculate expected available capacity per asset
+      const expectedAvailableCapacity = Object.keys(assets).map(assetId => ({
+        assetId: Number(assetId),
+        amount: expectedCapacityNXM.mul(assetRates[assetId]).div(WeiPerEther),
+        asset: assets[assetId],
+      }));
+
+      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+        product0Pool1,
+        -1,
+        false,
+        BigNumber.from(1000),
+        mockStore.assets,
+        mockStore.assetRates,
+      );
+
+      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(expectedCapacityNXM.toString());
+      expect(aggregatedData.capacityUsedNXM).to.deep.equal(Zero);
+      expect(capacityPerPool).to.have.lengthOf(1);
+      expect(capacityPerPool[0].availableCapacity).to.deep.equal(expectedAvailableCapacity);
+    });
+
+    it('should handle mismatched lengths between allocations and trancheCapacities', () => {
+      const malformedPool = {
+        ...mockStore.poolProducts['0_1'],
+        allocations: [Zero], // Shorter than trancheCapacities
+      };
+
+      expect(() =>
+        calculateProductDataForTranche(
+          [malformedPool],
+          0,
+          false,
+          BigNumber.from(1000),
+          mockStore.assets,
+          mockStore.assetRates,
+        ),
+      ).to.throw('Pool data integrity error: allocations length must match trancheCapacities length');
     });
   });
 
