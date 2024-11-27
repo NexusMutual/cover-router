@@ -37,14 +37,19 @@ function pricingEngine(store, productId) {
   );
 
   productPools.forEach((pool, index) => {
+    // Find NXM capacity and use only available capacity as weight
+    const availableCapacityNXM =
+      capacityPerPool[index].availableCapacity.find(c => c.assetId === 255)?.amount || BigNumber.from(0);
+
+    // Skip pools with targetWeight/availableCapacityNXM = 0
+    if (pool.targetWeight.isZero() && availableCapacityNXM.isZero()) {
+      return;
+    }
+
     pricePerPool.push({
       poolId: pool.poolId,
       targetPrice: pool.targetPrice,
     });
-
-    // Find NXM capacity and use only available capacity as weight
-    const availableCapacityNXM =
-      capacityPerPool[index].availableCapacity.find(c => c.assetId === 255)?.amount || BigNumber.from(0);
 
     // Update running totals using only the available capacity as weight
     totalWeight = totalWeight.add(availableCapacityNXM);
