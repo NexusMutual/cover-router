@@ -21,9 +21,10 @@ const selectProductPools = (store, productId, poolId = null) => {
   const { poolProducts, productPoolIds } = store.getState();
   const poolIds = productPoolIds[productId] || [];
 
-  if (poolId) {
+  if (poolId !== null && poolId !== undefined) {
+  // if (poolId != null) {
     const key = `${productId}_${poolId}`;
-    return poolIds.includes(poolId) ? [poolProducts[key]] : [];
+    return poolIds.includes(Number(poolId)) ? [poolProducts[key]] : [];
   }
 
   // List of product data across all pools
