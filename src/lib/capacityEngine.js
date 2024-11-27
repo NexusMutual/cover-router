@@ -167,6 +167,34 @@ function calculateProductCapacity(
 
   return capacityData;
 }
+
+/* API SERVICES */
+
+/**
+ * Gets capacity data for all products.
+ * GET /capacity
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {Object} [options={}] - Optional parameters.
+ * @param {number} [options.periodSeconds=30*SECONDS_PER_DAY] - The coverage period in seconds.
+ * @returns {Array<Object>} Array of product capacity data.
+ */
+function getAllProductCapacities(store, { periodSeconds = SECONDS_PER_DAY.mul(30) } = {}) {
+  const { assets, assetRates, products } = store.getState();
+  const now = BigNumber.from(Date.now()).div(1000);
+
+  return Object.keys(products)
+    .map(productId => calculateProductCapacity(store, productId, { periodSeconds, now, assets, assetRates }))
+    .filter(Boolean); // remove any nulls (i.e. productId did not match any products)
+}
+
+    withPools,
+    now,
+    assets,
+    assetRates,
+  });
+}
+
 }
 
 module.exports = {
