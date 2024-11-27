@@ -22,7 +22,6 @@ const selectProductPools = (store, productId, poolId = null) => {
   const poolIds = productPoolIds[productId] || [];
 
   if (poolId !== null && poolId !== undefined) {
-  // if (poolId != null) {
     const key = `${productId}_${poolId}`;
     return poolIds.includes(Number(poolId)) ? [poolProducts[key]] : [];
   }

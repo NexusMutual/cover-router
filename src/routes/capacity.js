@@ -193,7 +193,7 @@ router.get(
     try {
       const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const capacity = ccc(store, productId, { periodSeconds, withPools });
+      const capacity = getProductCapacity(store, productId, { periodSeconds, withPools });
 
       if (!capacity) {
         return res.status(400).send({ error: 'Invalid Product Id', response: null });
@@ -301,7 +301,6 @@ router.get(
       if (poolCapacity === null) {
         return res.status(404).send({ error: 'Pool not found', response: null });
       }
-
 
       const response = {
         poolId: poolCapacity.poolId,
