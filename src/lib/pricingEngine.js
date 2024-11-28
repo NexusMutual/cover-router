@@ -41,8 +41,8 @@ function pricingEngine(store, productId) {
     const availableCapacityNXM =
       capacityPerPool[index].availableCapacity.find(c => c.assetId === 255)?.amount || BigNumber.from(0);
 
-    // Skip pools with targetWeight/availableCapacityNXM = 0
-    if (pool.targetWeight.isZero() && availableCapacityNXM.isZero()) {
+    // Skip pools with 0 available capacity
+    if (availableCapacityNXM.isZero()) {
       return;
     }
 
