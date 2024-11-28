@@ -63,7 +63,7 @@ const verifyPoolCapacity = (poolCapacity, productId, products, poolProducts, now
   expect(poolCapacity.allocatedNxm.toString()).to.equal(poolUsedCapacity.mul(NXM_PER_ALLOCATION_UNIT).toString());
 };
 
-describe('Capacity Engine tests', function () {
+describe('capacityEngine', function () {
   const store = { getState: () => null };
 
   beforeEach(function () {
@@ -639,6 +639,21 @@ describe('Capacity Engine tests', function () {
       const stringResult = getProductsInPool(store, '1');
       expect(numericResult).to.deep.equal(stringResult);
     });
+
+    it('should handle undefined productPools', function () {
+      const emptyStore = {
+        getState: () => ({
+          products: { 1: {}, 2: {}, 3: {} },
+          productPoolIds: {},
+          poolProducts: {},
+        }),
+      };
+
+      const poolId = 2;
+      const result = getProductsInPool(emptyStore, poolId);
+
+      expect(result).to.deep.equal([]);
+    });
   });
 
   describe('calculateFirstUsableTrancheForMaxPeriodIndex', function () {
@@ -793,14 +808,20 @@ describe('Capacity Engine tests', function () {
       const now = getCurrentTimestamp();
 
       // Get responses from all endpoints
+      const allProducts = getAllProductCapacities(store);
       const singleProduct = getProductCapacity(store, productId);
       const poolCapacityResponse = getPoolCapacity(store, poolId);
       const poolProduct = getProductCapacityInPool(store, poolId, productId);
 
       // Helper to verify product capacity structure
-      const verifyProductCapacity = (product, expectedPoolProduct, isSinglePool = false) => {
+      const verifyProductCapacity = (
+        product,
+        expectedPoolProduct,
+        isSinglePool = false,
+        expectedProductId = productId,
+      ) => {
         // Verify product ID
-        expect(product.productId).to.equal(Number(productId));
+        expect(product.productId).to.equal(Number(expectedProductId));
 
         // Calculate and verify available capacity for each asset
         product.availableCapacity.forEach(capacity => {
@@ -816,7 +837,7 @@ describe('Capacity Engine tests', function () {
               // For single pool responses, use direct capacity calculation
               const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
                 now,
-                products[productId].gracePeriod,
+                products[expectedProductId].gracePeriod,
                 SECONDS_PER_DAY.mul(30),
               );
               expectedAmount = calculateAvailableCapacity(
@@ -826,11 +847,11 @@ describe('Capacity Engine tests', function () {
               ).mul(NXM_PER_ALLOCATION_UNIT);
             } else {
               // For multi-pool responses, sum capacities across all pools
-              expectedAmount = productPoolIds[productId].reduce((total, pid) => {
-                const poolProduct = storePoolProducts[`${productId}_${pid}`];
+              expectedAmount = productPoolIds[expectedProductId].reduce((total, pid) => {
+                const poolProduct = storePoolProducts[`${expectedProductId}_${pid}`];
                 const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
                   now,
-                  products[productId].gracePeriod,
+                  products[expectedProductId].gracePeriod,
                   SECONDS_PER_DAY.mul(30),
                 );
                 const poolCapacity = calculateAvailableCapacity(
@@ -846,6 +867,7 @@ describe('Capacity Engine tests', function () {
             const nxmCapacity = product.availableCapacity.find(c => c.assetId === 255).amount;
             expectedAmount = nxmCapacity.mul(assetRates[assetId]).div(WeiPerEther);
           }
+
           expect(amount.toString()).to.equal(expectedAmount.toString());
         });
 
@@ -856,8 +878,8 @@ describe('Capacity Engine tests', function () {
             .reduce((sum, alloc) => sum.add(alloc), Zero)
             .mul(NXM_PER_ALLOCATION_UNIT);
         } else {
-          expectedUsedCapacity = productPoolIds[productId].reduce((total, pid) => {
-            const poolProduct = storePoolProducts[`${productId}_${pid}`];
+          expectedUsedCapacity = productPoolIds[expectedProductId].reduce((total, pid) => {
+            const poolProduct = storePoolProducts[`${expectedProductId}_${pid}`];
             const poolUsed = poolProduct.allocations
               .reduce((sum, alloc) => sum.add(alloc), Zero)
               .mul(NXM_PER_ALLOCATION_UNIT);
@@ -867,7 +889,7 @@ describe('Capacity Engine tests', function () {
         expect(product.usedCapacity.toString()).to.equal(expectedUsedCapacity.toString());
 
         // Verify price calculations based on product type
-        if (products[productId].useFixedPrice) {
+        if (products[expectedProductId].useFixedPrice) {
           expect(product.minAnnualPrice.toString()).to.equal(product.maxAnnualPrice.toString());
           if (isSinglePool) {
             expect(product.minAnnualPrice.toString()).to.equal(expectedPoolProduct.targetPrice.toString());
@@ -878,6 +900,25 @@ describe('Capacity Engine tests', function () {
           expect(BigNumber.from(product.maxAnnualPrice).gt(Zero)).to.equal(true);
         }
       };
+
+      // Verify all products response
+      const productFromAll = allProducts.find(p => p.productId === Number(productId));
+      expect(productFromAll).to.not.equal(undefined);
+      verifyProductCapacity(productFromAll, storePoolProducts[`${productId}_${poolId}`], false);
+
+      // Verify that all products are included
+      const expectedProductIds = Object.keys(products).map(Number);
+      const actualProductIds = allProducts.map(p => p.productId);
+      expect(actualProductIds.sort()).to.deep.equal(expectedProductIds.sort());
+
+      // Verify each product in allProducts has consistent structure
+      allProducts.forEach(product => {
+        const currentProductId = product.productId.toString();
+        const productPoolProduct = storePoolProducts[`${currentProductId}_${poolId}`];
+        if (productPoolProduct) {
+          verifyProductCapacity(product, productPoolProduct, false, currentProductId);
+        }
+      });
 
       // Verify single product response (multi-pool)
       verifyProductCapacity(singleProduct, storePoolProducts[`${productId}_${poolId}`], false);
