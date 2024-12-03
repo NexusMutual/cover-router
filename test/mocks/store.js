@@ -453,28 +453,28 @@ const store = {
       productType: 0, // Protocol Cover
       capacityReductionRatio: 0,
       useFixedPrice: false,
-      gracePeriod: 30,
+      gracePeriod: 35 * 24 * 60 * 60,
       id: 0,
     },
     1: {
       productType: 0, // Protocol Cover
       capacityReductionRatio: 0,
       useFixedPrice: false,
-      gracePeriod: 30,
+      gracePeriod: 35 * 24 * 60 * 60,
       id: 1,
     },
     2: {
       productType: 0, // Protocol Cover
       capacityReductionRatio: 0,
       useFixedPrice: true,
-      gracePeriod: 30,
+      gracePeriod: 35 * 24 * 60 * 60,
       id: 2,
     },
     3: {
       productType: 11, //  Bundled Protocol Cover
       capacityReductionRatio: 0,
       useFixedPrice: false,
-      gracePeriod: 3024000,
+      gracePeriod: 35 * 24 * 60 * 60,
       isDeprecated: false,
       id: 3,
     },
@@ -482,7 +482,7 @@ const store = {
       productType: 8, // Native protocol cover
       capacityReductionRatio: 0,
       useFixedPrice: true,
-      gracePeriod: 3024000,
+      gracePeriod: 35 * 24 * 60 * 60,
       isDeprecated: false,
       id: 4,
     },
