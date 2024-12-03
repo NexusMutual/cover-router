@@ -84,11 +84,24 @@ describe('Capacity Routes', () => {
       expect(response.error).to.be.equal('Invalid period: must be an integer between 28 and 365');
     });
 
-    it('should return 404 Pool not found', async function () {
-      const nonExistentPoolId = 999;
-      const url = `/v2/capacity/pools/${nonExistentPoolId}`;
-      const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(404);
-      expect(response.error).to.be.equal('Pool not found');
+    it('should return empty productsCapacity and zero utilizationRate for pool with no products', async function () {
+      const emptyPoolId = 28;
+      const url = `/v2/capacity/pools/${emptyPoolId}`;
+      const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
+
+      expect(response.poolId).to.equal(emptyPoolId);
+      expect(response.utilizationRate).to.equal(0);
+      expect(response.productsCapacity).to.have.lengthOf(0);
+    });
+
+    it('should return empty productsCapacity and zero utilizationRate for for non-existent poolId', async function () {
+      const invalidPoolId = 28;
+      const url = `/v2/capacity/pools/${invalidPoolId}`;
+      const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
+
+      expect(response.poolId).to.equal(invalidPoolId);
+      expect(response.utilizationRate).to.equal(0);
+      expect(response.productsCapacity).to.have.lengthOf(0);
     });
   });
 
