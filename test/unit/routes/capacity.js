@@ -39,13 +39,6 @@ describe('Capacity Routes', () => {
       const productId = 0;
       const url = `/v2/capacity/${productId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
-      expect(response).to.be.deep.equal(capacities[productId]);
-    });
-
-    it('should have capacityPerPool field if queryParam withPools=true', async function () {
-      const productId = 0;
-      const url = `/v2/capacity/${productId}?withPools=true`;
-      const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
 
       const expectedCapacity = capacities[productId];
       expectedCapacity.capacityPerPool = productCapacityPerPools[productId];
@@ -105,7 +98,7 @@ describe('Capacity Routes', () => {
       const productId = 0;
       const url = `/v2/capacity/pools/${poolId}/products/${productId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(200);
-      expect(response).to.be.deep.equal(poolProductCapacities[poolId][productId]);
+      expect(response).to.be.deep.equal(poolProductCapacities[poolId].productsCapacity[productId]);
     });
 
     it('should return 400 Invalid productId', async function () {

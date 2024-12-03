@@ -378,7 +378,7 @@ const store = {
       lastEffectiveWeight: BigNumber.from(0),
       targetWeight: BigNumber.from(40),
       targetPrice: BigNumber.from(200),
-      bumpedPrice: BigNumber.from(100),
+      bumpedPrice: BigNumber.from(200),
       bumpedPriceUpdateTime: BigNumber.from(1678700054),
     },
     '4_18': {
@@ -406,8 +406,8 @@ const store = {
       ],
       lastEffectiveWeight: BigNumber.from(50),
       targetWeight: BigNumber.from(50),
-      targetPrice: BigNumber.from(800),
-      bumpedPrice: BigNumber.from(2596),
+      targetPrice: BigNumber.from(200),
+      bumpedPrice: BigNumber.from(200),
       bumpedPriceUpdateTime: BigNumber.from(1712042675),
     },
     '4_22': {
@@ -436,8 +436,8 @@ const store = {
       ],
       lastEffectiveWeight: BigNumber.from(50),
       targetWeight: BigNumber.from(50),
-      targetPrice: BigNumber.from(775),
-      bumpedPrice: BigNumber.from(1369),
+      targetPrice: BigNumber.from(200),
+      bumpedPrice: BigNumber.from(200),
       bumpedPriceUpdateTime: BigNumber.from(1712177207),
     },
   },
@@ -453,28 +453,28 @@ const store = {
       productType: 0, // Protocol Cover
       capacityReductionRatio: 0,
       useFixedPrice: false,
-      gracePeriod: 30,
+      gracePeriod: 35 * 24 * 60 * 60,
       id: 0,
     },
     1: {
       productType: 0, // Protocol Cover
       capacityReductionRatio: 0,
       useFixedPrice: false,
-      gracePeriod: 30,
+      gracePeriod: 35 * 24 * 60 * 60,
       id: 1,
     },
     2: {
       productType: 0, // Protocol Cover
       capacityReductionRatio: 0,
       useFixedPrice: true,
-      gracePeriod: 30,
+      gracePeriod: 35 * 24 * 60 * 60,
       id: 2,
     },
     3: {
       productType: 11, //  Bundled Protocol Cover
       capacityReductionRatio: 0,
       useFixedPrice: false,
-      gracePeriod: 3024000,
+      gracePeriod: 35 * 24 * 60 * 60,
       isDeprecated: false,
       id: 3,
     },
@@ -482,7 +482,7 @@ const store = {
       productType: 8, // Native protocol cover
       capacityReductionRatio: 0,
       useFixedPrice: true,
-      gracePeriod: 3024000,
+      gracePeriod: 35 * 24 * 60 * 60,
       isDeprecated: false,
       id: 4,
     },

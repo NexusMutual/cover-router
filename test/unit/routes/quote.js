@@ -50,7 +50,6 @@ describe('GET /quote', () => {
   });
 
   it('should successfully get a quote for coverAsset 6 - USDC', async function () {
-    console.log('amount: ', parseUnits('1', 6).toString());
     const { body: response } = await server
       .get('/v2/quote')
       .query({

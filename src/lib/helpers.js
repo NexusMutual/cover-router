@@ -93,6 +93,15 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
   const capacityPerPool = productPools.map(pool => {
     const { allocations, trancheCapacities, targetPrice, bumpedPrice, bumpedPriceUpdateTime, poolId } = pool;
 
+    // Validate data integrity
+    if (!allocations || !trancheCapacities) {
+      throw new Error('Pool data integrity error: missing allocations or trancheCapacities');
+    }
+
+    if (allocations.length !== trancheCapacities.length) {
+      throw new Error('Pool data integrity error: allocations length must match trancheCapacities length');
+    }
+
     // calculating the capacity in allocation points
     const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
     const total = trancheCapacities.reduce((total, capacity) => total.add(capacity), Zero);
@@ -166,6 +175,14 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
 /* Price Calculations */
 
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
+  if (!targetPrice) {
+    throw new Error('Target price is required');
+  }
+  // If bumped price data is incomplete, return target price
+  if (!bumpedPrice || !bumpedPriceUpdateTime) {
+    return targetPrice;
+  }
+
   const elapsed = now.sub(bumpedPriceUpdateTime);
   const priceDrop = elapsed.mul(PRICE_CHANGE_PER_DAY).div(3600 * 24);
   return bnMax(targetPrice, bumpedPrice.sub(priceDrop));

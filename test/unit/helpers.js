@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const ethers = require('ethers');
 
 const {
+  BUCKET_DURATION,
   NXM_PER_ALLOCATION_UNIT,
   PRICE_CHANGE_PER_DAY,
   SECONDS_PER_DAY,
@@ -17,6 +18,11 @@ const {
   calculateBasePrice,
   calculatePremiumPerYear,
   calculateFixedPricePremiumPerYear,
+  calculateBucketId,
+  calculateTrancheId,
+  divCeil,
+  bnMax,
+  bnMin,
 } = require('../../src/lib/helpers');
 const mockStore = require('../mocks/store');
 
@@ -245,6 +251,96 @@ describe('helpers', () => {
         assertAvailableCapacity(poolCapacity, availableInNXM);
       });
     });
+
+    it('should handle empty pools array', function () {
+      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+        [],
+        0,
+        true,
+        BigNumber.from(1000),
+        mockStore.assets,
+        mockStore.assetRates,
+      );
+
+      expect(aggregatedData.capacityAvailableNXM).to.deep.equal(Zero);
+      expect(aggregatedData.capacityUsedNXM).to.deep.equal(Zero);
+      expect(aggregatedData.totalPremium).to.deep.equal(Zero);
+      expect(capacityPerPool).to.have.lengthOf(0);
+    });
+
+    it('should handle tranche index out of bounds', function () {
+      const product0Pool1 = [mockStore.poolProducts['0_1']];
+      const outOfBoundsIndex = product0Pool1[0].trancheCapacities.length + 1;
+
+      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+        product0Pool1,
+        outOfBoundsIndex,
+        false,
+        BigNumber.from(1000),
+        mockStore.assets,
+        mockStore.assetRates,
+      );
+
+      expect(aggregatedData.capacityAvailableNXM).to.deep.equal(Zero);
+      expect(aggregatedData.capacityUsedNXM).to.deep.equal(Zero);
+      expect(capacityPerPool).to.have.lengthOf(1);
+      expect(capacityPerPool[0].availableCapacity).to.deep.equal([]);
+    });
+
+    it('should handle negative tranche index', function () {
+      const product0Pool1 = [mockStore.poolProducts['0_1']];
+      const poolProduct = mockStore.poolProducts['0_1'];
+      const { assets, assetRates } = mockStore;
+
+      // Get the total capacity and used capacity
+      const total = poolProduct.trancheCapacities.reduce((total, capacity) => total.add(capacity), Zero);
+      const used = poolProduct.allocations.reduce((total, allocation) => total.add(allocation), Zero);
+
+      // Calculate available capacity (total - used)
+      const availableCapacity = total.sub(used);
+
+      // Convert to NXM
+      const expectedCapacityNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
+
+      // Calculate expected available capacity per asset
+      const expectedAvailableCapacity = Object.keys(assets).map(assetId => ({
+        assetId: Number(assetId),
+        amount: expectedCapacityNXM.mul(assetRates[assetId]).div(WeiPerEther),
+        asset: assets[assetId],
+      }));
+
+      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+        product0Pool1,
+        -1,
+        false,
+        BigNumber.from(1000),
+        mockStore.assets,
+        mockStore.assetRates,
+      );
+
+      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(expectedCapacityNXM.toString());
+      expect(aggregatedData.capacityUsedNXM).to.deep.equal(Zero);
+      expect(capacityPerPool).to.have.lengthOf(1);
+      expect(capacityPerPool[0].availableCapacity).to.deep.equal(expectedAvailableCapacity);
+    });
+
+    it('should handle mismatched lengths between allocations and trancheCapacities', () => {
+      const malformedPool = {
+        ...mockStore.poolProducts['0_1'],
+        allocations: [Zero], // Shorter than trancheCapacities
+      };
+
+      expect(() =>
+        calculateProductDataForTranche(
+          [malformedPool],
+          0,
+          false,
+          BigNumber.from(1000),
+          mockStore.assets,
+          mockStore.assetRates,
+        ),
+      ).to.throw('Pool data integrity error: allocations length must match trancheCapacities length');
+    });
   });
 
   describe('calculateAvailableCapacity', () => {
@@ -446,6 +542,80 @@ describe('helpers', () => {
       // Should return a very high premium due to surge pricing
       const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
       expect(result.gt(basePremium.mul(2))).to.equal(true); // At least 2x base premium
+    });
+  });
+
+  describe('divCeil', () => {
+    it('should round up division result when there is a remainder', () => {
+      const a = BigNumber.from('10');
+      const b = BigNumber.from('3');
+      expect(divCeil(a, b).toString()).to.equal('4');
+    });
+
+    it('should return exact result when division is clean', () => {
+      const a = BigNumber.from('10');
+      const b = BigNumber.from('2');
+      expect(divCeil(a, b).toString()).to.equal('5');
+    });
+
+    it('should handle zero dividend', () => {
+      const a = Zero;
+      const b = BigNumber.from('3');
+      expect(divCeil(a, b).toString()).to.equal('0');
+    });
+  });
+
+  describe('calculateBucketId', () => {
+    it('should calculate correct bucket ID', () => {
+      const time = BigNumber.from(BUCKET_DURATION * 2 + 100);
+      expect(calculateBucketId(time)).to.equal(2);
+    });
+
+    it('should handle BigNumber and number inputs consistently', () => {
+      const timeNum = BUCKET_DURATION * 2 + 100;
+      const timeBN = BigNumber.from(timeNum);
+      expect(calculateBucketId(timeNum)).to.equal(calculateBucketId(timeBN));
+    });
+  });
+
+  describe('calculateTrancheId', () => {
+    it('should calculate correct tranche ID', () => {
+      const time = BigNumber.from(TRANCHE_DURATION * 3 + 100);
+      expect(calculateTrancheId(time)).to.equal(3);
+    });
+
+    it('should handle BigNumber and number inputs consistently', () => {
+      const timeNum = TRANCHE_DURATION * 2 + 100;
+      const timeBN = BigNumber.from(timeNum);
+      expect(calculateTrancheId(timeNum)).to.equal(calculateTrancheId(timeBN));
+    });
+  });
+
+  describe('bnMax', () => {
+    const a = BigNumber.from('100');
+    const b = BigNumber.from('200');
+
+    it('should return larger number', () => {
+      expect(bnMax(a, b).toString()).to.equal(b.toString());
+      expect(bnMax(b, a).toString()).to.equal(b.toString());
+    });
+
+    it('should handle equal numbers', () => {
+      expect(bnMax(a, a).toString()).to.equal(a.toString());
+    });
+  });
+
+  describe('bnMin', () => {
+    const a = BigNumber.from('100');
+    const b = BigNumber.from('200');
+
+    it('should return smaller number', () => {
+      expect(bnMin(a, b).toString()).to.equal(a.toString());
+      expect(bnMin(b, a).toString()).to.equal(a.toString());
+    });
+
+    it('should handle equal numbers', () => {
+      expect(bnMin(a, a).toString()).to.equal(a.toString());
     });
   });
 });

@@ -1,53 +1,17 @@
 const { ethers, BigNumber } = require('ethers');
 
-const { MAX_COVER_PERIOD, SECONDS_PER_DAY } = require('./constants');
+const { MAX_COVER_PERIOD } = require('./constants');
 const {
   bnMax,
   calculateTrancheId,
   calculateFirstUsableTrancheIndex,
   calculateProductDataForTranche,
 } = require('./helpers');
-const { selectProduct, selectProductPools } = require('../store/selectors');
+const { selectProduct, selectProductPools, selectProductsInPool } = require('../store/selectors');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
 const BASIS_POINTS = 10000;
-
-/**
- * Calculates the utilization rate of the capacity.
- *
- * @param {BigNumber} capacityAvailableNXM - The amount of capacity available in NXM.
- * @param {BigNumber} capacityUsedNXM - The amount of capacity used in NXM.
- * @returns {BigNumber} The utilization rate as a BigNumber, expressed in basis points (0-10,000).
- *                      Returns undefined if capacity in NXM is missing.
- */
-function getUtilizationRate(capacityAvailableNXM, capacityUsedNXM) {
-  if (!capacityAvailableNXM || !capacityUsedNXM) {
-    return undefined;
-  }
-
-  const totalCapacity = capacityAvailableNXM.add(capacityUsedNXM);
-  if (totalCapacity.isZero()) {
-    return BigNumber.from(0);
-  }
-
-  return capacityUsedNXM.mul(BASIS_POINTS).div(totalCapacity);
-}
-
-/**
- * Retrieves all product IDs that are associated with a specific pool.
- *
- * @param {Object} store - The Redux store containing application state.
- * @param {number|string} poolId - The ID of the pool to filter products by.
- * @returns {Array<string>} An array of product IDs associated with the specified pool.
- */
-function getProductsInPool(store, poolId) {
-  const { products } = store.getState();
-  return Object.keys(products).filter(productId => {
-    const productPools = selectProductPools(store, productId, poolId);
-    return productPools?.length > 0;
-  });
-}
 
 /**
  * Calculates the index of the first usable tranche for the maximum cover period.
@@ -57,130 +21,233 @@ function getProductsInPool(store, poolId) {
  * @param {BigNumber} gracePeriod - The product's grace period in seconds.
  * @returns {number} The index difference between the first usable tranche for max period and the first active tranche.
  */
-function calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod) {
+function calculateFirstUsableTrancheIndexForMaxPeriod(now, gracePeriod) {
   const firstActiveTrancheId = calculateTrancheId(now);
-  const firstUsableTrancheForMaxPeriodId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
-  return firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
+  const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+  return firstUsableTrancheIdForMaxPeriod - firstActiveTrancheId;
 }
 
 /**
- * Calculates the capacity and pricing information for products and pools.
+ * Calculates the pool-level utilization rate across all products in the pool.
  *
- * @param {Object} store - The Redux store containing application state.
- * @param {Object} [options={}] - Optional parameters for capacity calculation.
- * @param {number|null} [options.poolId=null] - The ID of the pool to filter products by.
- * @param {Array<number>} [options.productIds=[]] - Array of product IDs to process.
- * @param {number} [options.periodSeconds=30*SECONDS_PER_DAY] - The coverage period in seconds
- * @param {boolean} [options.withPools=false] - Flag indicating whether to include capacityPerPool data field.
- * @returns {Array<Object>} An array of capacity information objects for each product.
+ * @param {Array<Object>} products - Array of product capacity data for the pool
+ * @returns {BigNumber} The pool-level utilization rate as a BigNumber, expressed in basis points (0-10,000)
  */
-function capacityEngine(
-  store,
-  { poolId = null, productIds = [], periodSeconds = SECONDS_PER_DAY.mul(30), withPools = false } = {},
-) {
-  const { assets, assetRates, products } = store.getState();
-  const now = BigNumber.from(Date.now()).div(1000);
-  const capacities = [];
+function calculatePoolUtilizationRate(products) {
+  let totalCapacityAvailableNXM = Zero;
+  let totalCapacityUsedNXM = Zero;
 
-  let productIdsToProcess;
-  if (productIds.length > 0) {
-    productIdsToProcess = [...productIds];
-  } else if (poolId !== null) {
-    // If only poolId is provided, get all products in that pool
-    productIdsToProcess = getProductsInPool(store, poolId);
-  } else {
-    // If neither productIds nor poolId is provided, process all products
-    productIdsToProcess = Object.keys(products);
+  products.forEach(product => {
+    totalCapacityAvailableNXM = totalCapacityAvailableNXM.add(
+      product.availableCapacity.find(c => c.assetId === 255)?.amount || Zero,
+    );
+    totalCapacityUsedNXM = totalCapacityUsedNXM.add(product.usedCapacity);
+  });
+
+  const totalCapacity = totalCapacityAvailableNXM.add(totalCapacityUsedNXM);
+  if (totalCapacity.isZero()) {
+    return BigNumber.from(0);
   }
 
-  for (const productId of productIdsToProcess) {
-    const product = selectProduct(store, productId);
+  return totalCapacityUsedNXM.mul(BASIS_POINTS).div(totalCapacity);
+}
 
-    if (!product) {
-      continue;
-    }
+/**
+ * Helper function to calculate capacity for a single product.
+ */
+function calculateProductCapacity(
+  store,
+  productId,
+  { poolId = null, period, now, assets, assetRates, withPools = true },
+) {
+  const product = selectProduct(store, productId);
+  if (!product) {
+    return null;
+  }
 
-    const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, periodSeconds);
-    const firstUsableTrancheForMaxPeriodIndex = calculateFirstUsableTrancheForMaxPeriodIndex(now, product.gracePeriod);
+  const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, period);
+  const firstUsableTrancheForMaxPeriodIndex = calculateFirstUsableTrancheIndexForMaxPeriod(now, product.gracePeriod);
 
-    // Use productPools from poolId if available; otherwise, select all pools for productId
-    const productPools = selectProductPools(store, productId, poolId);
+  // Use productPools from poolId if available; otherwise, select all pools for productId
+  const productPools = selectProductPools(store, productId, poolId);
 
-    let aggregatedData = {};
-    let capacityPerPool = [];
-    let maxAnnualPrice = Zero;
+  let aggregatedData = {};
+  let capacityPerPool = [];
+  let maxAnnualPrice = Zero;
 
-    if (product.useFixedPrice) {
-      // Fixed Price
-      ({ aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+  if (product.useFixedPrice) {
+    // Fixed Price
+    ({ aggregatedData, capacityPerPool } = calculateProductDataForTranche(
+      productPools,
+      firstUsableTrancheIndex,
+      true,
+      now,
+      assets,
+      assetRates,
+    ));
+
+    const { capacityAvailableNXM, totalPremium } = aggregatedData;
+    maxAnnualPrice = capacityAvailableNXM.isZero() ? Zero : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
+  } else {
+    // Non-fixed Price
+    // use the first 6 tranches (over 1 year) for calculating the max annual price
+    for (let i = 0; i <= firstUsableTrancheForMaxPeriodIndex; i++) {
+      const { aggregatedData: trancheData, capacityPerPool: trancheCapacityPerPool } = calculateProductDataForTranche(
         productPools,
-        firstUsableTrancheIndex,
-        true,
+        i,
+        false,
         now,
         assets,
         assetRates,
-      ));
+      );
 
-      const { capacityAvailableNXM, totalPremium } = aggregatedData;
-      maxAnnualPrice = capacityAvailableNXM.isZero() ? Zero : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
-    } else {
-      // Non-fixed Price
-      // use the first 6 tranches (over 1 year) for calculating the max annual price
-      for (let i = 0; i <= firstUsableTrancheForMaxPeriodIndex; i++) {
-        const { aggregatedData: trancheData, capacityPerPool: trancheCapacityPerPool } = calculateProductDataForTranche(
-          productPools,
-          i,
-          false,
-          now,
-          assets,
-          assetRates,
-        );
-
-        if (i === firstUsableTrancheIndex) {
-          aggregatedData = trancheData;
-          capacityPerPool = trancheCapacityPerPool;
-        }
-
-        const { capacityAvailableNXM, totalPremium } = trancheData;
-
-        const maxTrancheAnnualPrice = capacityAvailableNXM.isZero()
-          ? Zero
-          : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
-
-        maxAnnualPrice = bnMax(maxAnnualPrice, maxTrancheAnnualPrice);
+      if (i === firstUsableTrancheIndex) {
+        aggregatedData = trancheData;
+        capacityPerPool = trancheCapacityPerPool;
       }
+
+      const { capacityAvailableNXM, totalPremium } = trancheData;
+      const maxTrancheAnnualPrice = capacityAvailableNXM.isZero()
+        ? Zero
+        : WeiPerEther.mul(totalPremium).div(capacityAvailableNXM);
+      maxAnnualPrice = bnMax(maxAnnualPrice, maxTrancheAnnualPrice);
     }
-
-    const { capacityAvailableNXM, capacityUsedNXM, minPrice } = aggregatedData;
-    // The available capacity of a product across all pools
-    const capacityInAssets = Object.keys(assets).map(assetId => ({
-      assetId: Number(assetId),
-      amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
-      asset: assets[assetId],
-    }));
-
-    const capacityData = {
-      productId: Number(productId),
-      availableCapacity: capacityInAssets,
-      usedCapacity: capacityUsedNXM,
-      utilizationRate: getUtilizationRate(capacityAvailableNXM, capacityUsedNXM),
-      minAnnualPrice: minPrice,
-      maxAnnualPrice,
-    };
-
-    if (withPools) {
-      capacityData.capacityPerPool = capacityPerPool;
-    }
-
-    capacities.push(capacityData);
   }
 
-  return capacities;
+  const { capacityAvailableNXM, capacityUsedNXM, minPrice } = aggregatedData;
+  // The available capacity of a product across all pools
+  const capacityInAssets = Object.keys(assets).map(assetId => ({
+    assetId: Number(assetId),
+    amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
+    asset: assets[assetId],
+  }));
+
+  const capacityData = {
+    productId: Number(productId),
+    availableCapacity: capacityInAssets,
+    usedCapacity: capacityUsedNXM,
+    minAnnualPrice: minPrice,
+    maxAnnualPrice,
+  };
+
+  if (withPools) {
+    capacityData.capacityPerPool = capacityPerPool;
+  }
+
+  return capacityData;
+}
+
+/* API SERVICES */
+
+/**
+ * Gets capacity data for all products.
+ * GET /capacity
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {number} period - The coverage period in seconds.
+ * @returns {Array<Object>} Array of product capacity data.
+ */
+function getAllProductCapacities(store, period) {
+  const { assets, assetRates, products } = store.getState();
+  const now = BigNumber.from(Date.now()).div(1000);
+
+  return Object.keys(products)
+    .map(productId => calculateProductCapacity(store, productId, { period, now, assets, assetRates, withPools: false }))
+    .filter(Boolean); // remove any nulls (i.e. productId did not match any products)
+}
+
+/**
+ * Gets capacity data for a single product across all pools.
+ * GET /capacity/:productId
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {string|number} productId - The product ID.
+ * @param {number} period - The coverage period in seconds.
+ * @returns {Object|null} Product capacity data or null if product not found.
+ */
+function getProductCapacity(store, productId, period) {
+  const { assets, assetRates } = store.getState();
+  const now = BigNumber.from(Date.now()).div(1000);
+
+  return calculateProductCapacity(store, productId, {
+    period,
+    now,
+    assets,
+    assetRates,
+  });
+}
+
+/**
+ * Gets capacity data for a pool, including all its products.
+ * GET /capacity/pools/:poolId
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {string|number} poolId - The pool ID.
+ * @param {number} period - The coverage period in seconds.
+ * @returns {Object|null} Pool capacity data or null if pool not found.
+ */
+function getPoolCapacity(store, poolId, period) {
+  const { assets, assetRates } = store.getState();
+  const now = BigNumber.from(Date.now()).div(1000);
+  const productIds = selectProductsInPool(store, poolId);
+
+  if (productIds.length === 0) {
+    return null;
+  }
+
+  const productsCapacity = productIds
+    .map(productId =>
+      calculateProductCapacity(store, productId, {
+        poolId,
+        period,
+        now,
+        assets,
+        assetRates,
+        withPools: false,
+      }),
+    )
+    .filter(Boolean); // remove any nulls (i.e. productId did not match any products)
+
+  return {
+    poolId: Number(poolId),
+    utilizationRate: calculatePoolUtilizationRate(productsCapacity),
+    productsCapacity,
+  };
+}
+
+/**
+ * Gets capacity data for a specific product in a specific pool.
+ * GET /capacity/pools/:poolId/products/:productId
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {string|number} poolId - The pool ID.
+ * @param {string|number} productId - The product ID.
+ * @param {number} period - The coverage period in seconds.
+ * @returns {Object|null} Product capacity data for the specific pool or null if not found.
+ */
+function getProductCapacityInPool(store, poolId, productId, period) {
+  const { assets, assetRates } = store.getState();
+  const now = BigNumber.from(Math.floor(Date.now() / 1000));
+
+  const poolProductCapacity = calculateProductCapacity(store, productId, {
+    poolId,
+    period,
+    now,
+    assets,
+    assetRates,
+    withPools: false,
+  });
+
+  return poolProductCapacity;
 }
 
 module.exports = {
-  getUtilizationRate,
-  calculateFirstUsableTrancheForMaxPeriodIndex,
-  getProductsInPool,
-  capacityEngine,
+  getAllProductCapacities,
+  getProductCapacity,
+  getPoolCapacity,
+  getProductCapacityInPool,
+  // Keep these exports for testing purposes
+  calculateProductCapacity,
+  calculatePoolUtilizationRate,
+  calculateFirstUsableTrancheIndexForMaxPeriod,
 };

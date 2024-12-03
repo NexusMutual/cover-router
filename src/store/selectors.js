@@ -21,9 +21,9 @@ const selectProductPools = (store, productId, poolId = null) => {
   const { poolProducts, productPoolIds } = store.getState();
   const poolIds = productPoolIds[productId] || [];
 
-  if (poolId) {
+  if (poolId !== null && poolId !== undefined) {
     const key = `${productId}_${poolId}`;
-    return poolIds.includes(poolId) ? [poolProducts[key]] : [];
+    return poolIds.includes(Number(poolId)) ? [poolProducts[key]] : [];
   }
 
   // List of product data across all pools
@@ -40,10 +40,26 @@ const selectProductPriorityPoolsFixedPrice = (store, productId) => {
   return productPriorityPoolsFixedPrice[productId];
 };
 
+/**
+ * Retrieves all product IDs that are associated with a specific pool.
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {number|string} poolId - The ID of the pool to filter products by.
+ * @returns {Array<string>} An array of product IDs associated with the specified pool.
+ */
+function selectProductsInPool(store, poolId) {
+  const { products } = store.getState();
+  return Object.keys(products).filter(productId => {
+    const productPools = selectProductPools(store, productId, poolId);
+    return productPools?.length > 0;
+  });
+}
+
 module.exports = {
   selectAssetRate,
   selectAsset,
   selectProduct,
   selectProductPools,
   selectProductPriorityPoolsFixedPrice,
+  selectProductsInPool,
 };
