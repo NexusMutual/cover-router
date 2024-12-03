@@ -67,9 +67,9 @@ router.get(
     }
 
     try {
-      const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+      const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const capacities = getAllProductCapacities(store, { periodSeconds });
+      const capacities = getAllProductCapacities(store, period);
 
       const response = capacities.map(capacity => formatCapacityResult(capacity));
       console.log(JSON.stringify(capacities, null, 2));
@@ -181,7 +181,6 @@ router.get(
   asyncRoute(async (req, res) => {
     const productId = Number(req.params.productId);
     const periodQuery = Number(req.query.period) || 30;
-    const withPools = req.query.withPools === 'true';
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
@@ -191,9 +190,9 @@ router.get(
     }
 
     try {
-      const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+      const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const capacity = getProductCapacity(store, productId, { periodSeconds, withPools });
+      const capacity = getProductCapacity(store, productId, period);
 
       if (!capacity) {
         return res.status(400).send({ error: 'Invalid Product Id', response: null });
@@ -294,9 +293,9 @@ router.get(
     }
 
     try {
-      const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+      const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const poolCapacity = getPoolCapacity(store, poolId, { periodSeconds });
+      const poolCapacity = getPoolCapacity(store, poolId, period);
 
       if (poolCapacity === null) {
         return res.status(404).send({ error: 'Pool not found', response: null });
@@ -377,9 +376,9 @@ router.get(
       return res.status(400).send({ error: 'Invalid productId: must be an integer', response: null });
     }
     try {
-      const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+      const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const capacity = getProductCapacityInPool(store, poolId, productId, { periodSeconds });
+      const capacity = getProductCapacityInPool(store, poolId, productId, period);
 
       if (!capacity) {
         return res.status(404).send({ error: 'Product not found in the specified pool', response: null });
