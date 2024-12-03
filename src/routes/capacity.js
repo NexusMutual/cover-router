@@ -281,10 +281,6 @@ router.get(
       const store = req.app.get('store');
       const poolCapacity = getPoolCapacity(store, poolId, period);
 
-      if (poolCapacity === null) {
-        return res.status(404).send({ error: 'Pool not found', response: null });
-      }
-
       const response = {
         poolId: poolCapacity.poolId,
         utilizationRate: poolCapacity.utilizationRate.toNumber(),

@@ -102,10 +102,12 @@ function calculateProductCapacity(
       );
 
       if (i === firstUsableTrancheIndex) {
+        // use the capacity data on the firstUsableTrancheIndex
         aggregatedData = trancheData;
         capacityPerPool = trancheCapacityPerPool;
       }
 
+      // continue iterating through the tranches to calculate the max annual price
       const { capacityAvailableNXM, totalPremium } = trancheData;
       const maxTrancheAnnualPrice = capacityAvailableNXM.isZero()
         ? Zero
@@ -115,7 +117,8 @@ function calculateProductCapacity(
   }
 
   const { capacityAvailableNXM, capacityUsedNXM, minPrice } = aggregatedData;
-  // The available capacity of a product across all pools
+
+  // The available (i.e. remaining) capacity of a product
   const capacityInAssets = Object.keys(assets).map(assetId => ({
     assetId: Number(assetId),
     amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
@@ -190,10 +193,6 @@ function getPoolCapacity(store, poolId, period) {
   const { assets, assetRates } = store.getState();
   const now = BigNumber.from(Date.now()).div(1000);
   const productIds = selectProductsInPool(store, poolId);
-
-  if (productIds.length === 0) {
-    return null;
-  }
 
   const productsCapacity = productIds
     .map(productId =>
