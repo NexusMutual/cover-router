@@ -43,6 +43,15 @@ const formatCapacityResult = capacity => ({
  *     tags:
  *       - Capacity
  *     description: Get capacity data for all products
+ *     parameters:
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: integer
+ *           minimum: 28
+ *           maximum: 365
+ *           default: 30
+ *         description: Coverage period in days
  *     responses:
  *       200:
  *         description: Returns capacity for all products
@@ -90,19 +99,27 @@ router.get(
  *       - Capacity
  *     description: Get capacity data for a product
  *     parameters:
- *     - in: path
- *       name: productId
- *       required: true
- *       schema:
- *         type: integer
- *         description: The product id
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           description: The product id
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: integer
+ *           minimum: 28
+ *           maximum: 365
+ *           default: 30
+ *         description: Coverage period in days
  *     responses:
  *       200:
  *         description: Returns capacity data for a product, including capacityPerPool data.
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/CapacityResult'
+ *               $ref: '#/components/schemas/CapacityResultWithPools'
  *             example:
  *               productId: 1
  *               availableCapacity: [
@@ -185,21 +202,20 @@ router.get(
  *       - Capacity
  *     description: Gets capacity data for a pool, including all its products
  *     parameters:
- *     - in: path
- *       name: poolId
- *       required: true
- *       schema:
- *         type: integer
- *         description: The pool id
- *     - in: query
- *       name: period
- *       required: false
- *       schema:
- *         type: integer
- *         minimum: 28
- *         maximum: 365
- *         default: 30
- *         description: The period in days
+ *       - in: path
+ *         name: poolId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           description: The pool id
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: integer
+ *           minimum: 28
+ *           maximum: 365
+ *           default: 30
+ *         description: Coverage period in days
  *     responses:
  *       200:
  *         description: Returns capacity for all products in the specified pool
@@ -217,7 +233,7 @@ router.get(
  *                 productsCapacity:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/ProductCapacity'
+ *                     $ref: '#/components/schemas/CapacityResult'
  *             example:
  *               poolId: 1
  *               utilizationRate: 5000
@@ -292,27 +308,26 @@ router.get(
  *       - Capacity
  *     description: Get capacity data for a specific product in a specific pool
  *     parameters:
- *     - in: path
- *       name: poolId
- *       required: true
- *       schema:
- *         type: integer
- *         description: The pool id
- *     - in: path
- *       name: productId
- *       required: true
- *       schema:
- *         type: integer
- *         description: The product id
- *     - in: query
- *       name: period
- *       required: false
- *       schema:
- *         type: integer
- *         minimum: 28
- *         maximum: 365
- *         default: 30
- *         description: The period in days
+ *       - in: path
+ *         name: poolId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           description: The pool id
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           description: The product id
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: integer
+ *           minimum: 28
+ *           maximum: 365
+ *           default: 30
+ *         description: Coverage period in days
  *     responses:
  *       200:
  *         description: Returns capacity for the specified product in the specified pool
@@ -411,7 +426,7 @@ router.get(
  *         maxAnnualPrice:
  *           type: string
  *           description: The maximal annual price is a percentage value between 0-1.
- *     ProductCapacity:
+ *     CapacityResult:
  *       allOf:
  *         - $ref: '#/components/schemas/BaseCapacityFields'
  *         - type: object
@@ -419,32 +434,22 @@ router.get(
  *             productId:
  *               type: integer
  *               description: The product id
+ *     CapacityResultWithPools:
+ *       allOf:
+ *         - $ref: '#/components/schemas/CapacityResult'
+ *         - type: object
+ *           properties:
  *             capacityPerPool:
  *               type: array
  *               description: The capacity per pool breakdown
  *               items:
- *                 type: object
- *                 properties:
- *                   poolId:
- *                     type: integer
- *                     description: The pool id
- *                   availableCapacity:
- *                     type: array
- *                     items:
- *                       $ref: '#/components/schemas/AvailableCapacity'
- *                   allocatedNxm:
- *                     type: string
- *                     format: integer
- *                     description: The used capacity amount for active covers in this pool
- *                   minAnnualPrice:
- *                     type: string
- *                     description: The minimal annual price for this pool
- *                   maxAnnualPrice:
- *                     type: string
- *                     description: The maximal annual price for this pool
- *     CapacityResult:
- *       allOf:
- *         - $ref: '#/components/schemas/ProductCapacity'
+ *                 allOf:
+ *                   - $ref: '#/components/schemas/BaseCapacityFields'
+ *                   - type: object
+ *                     properties:
+ *                       poolId:
+ *                         type: integer
+ *                         description: The pool id
  */
 
 module.exports = router;
