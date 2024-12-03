@@ -7,7 +7,7 @@ const {
   calculateFirstUsableTrancheIndex,
   calculateProductDataForTranche,
 } = require('./helpers');
-const { selectProduct, selectProductPools } = require('../store/selectors');
+const { selectProduct, selectProductPools, selectProductsInPool } = require('../store/selectors');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
@@ -32,21 +32,6 @@ function getUtilizationRate(capacityAvailableNXM, capacityUsedNXM) {
   }
 
   return capacityUsedNXM.mul(BASIS_POINTS).div(totalCapacity);
-}
-
-/**
- * Retrieves all product IDs that are associated with a specific pool.
- *
- * @param {Object} store - The Redux store containing application state.
- * @param {number|string} poolId - The ID of the pool to filter products by.
- * @returns {Array<string>} An array of product IDs associated with the specified pool.
- */
-function getProductsInPool(store, poolId) {
-  const { products } = store.getState();
-  return Object.keys(products).filter(productId => {
-    const productPools = selectProductPools(store, productId, poolId);
-    return productPools?.length > 0;
-  });
 }
 
 /**
