@@ -11,13 +11,17 @@ const options = {
         description: 'Local server',
       },
       {
+        url: 'https://api.staging.nexusmutual.io/',
+        description: 'Staging server',
+      },
+      {
         url: 'https://api.nexusmutual.io/',
         description: 'Production server',
       },
     ],
     info: {
       title: 'Cover Router',
-      version: '1.0.0',
+      version: '2.4.1',
     },
   },
   apis: [path.resolve(__dirname, '../routes/*.js')], // files containing annotations as above
