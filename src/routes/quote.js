@@ -40,7 +40,7 @@ const { Zero } = ethers.constants;
  *       required: true
  *       schema:
  *         type: integer
- *         description: The cover asset (e.g. 0 for ETH, 1 for DAI)
+ *         description: The cover asset assetId (e.g. 0 for ETH, 1 for DAI)
  *     responses:
  *       200:
  *         description: Returns a quote object

@@ -6,12 +6,9 @@ const { capacities, poolProductCapacities } = require('./responses');
 const {
   capacityEngine,
   getUtilizationRate,
-  calculateAvailableCapacity,
-  calculateProductDataForTranche,
+  calculateFirstUsableTrancheForMaxPeriodIndex,
   getProductsInPool,
-  calculateTrancheInfo,
 } = require('../../src/lib/capacityEngine');
-const { NXM_PER_ALLOCATION_UNIT } = require('../../src/lib/constants');
 const { calculateTrancheId, bnMax } = require('../../src/lib/helpers');
 const { selectAsset } = require('../../src/store/selectors');
 const mockStore = require('../mocks/store');
@@ -19,7 +16,6 @@ const mockStore = require('../mocks/store');
 const { BigNumber } = ethers;
 const { parseEther } = ethers.utils;
 const { Zero } = ethers.constants;
-const { assets, assetRates } = mockStore;
 
 describe('Capacity Engine tests', function () {
   describe('capacityEngine', function () {
@@ -286,219 +282,6 @@ describe('Capacity Engine tests', function () {
     });
   });
 
-  describe('calculateAvailableCapacity', function () {
-    it('should calculate available capacity correctly when all tranches are usable', function () {
-      const trancheCapacities = [BigNumber.from(100), BigNumber.from(200), BigNumber.from(300)];
-      const allocations = [BigNumber.from(50), BigNumber.from(100), BigNumber.from(150)];
-      const firstUsableTrancheIndex = 0;
-
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
-
-      expect(result.toString()).to.equal('300'); // (100-50) + (200-100) + (300-150) = 300
-    });
-
-    it('should handle unusable tranches correctly', function () {
-      const trancheCapacities = [BigNumber.from(100), BigNumber.from(200), BigNumber.from(300)];
-      const allocations = [BigNumber.from(50), BigNumber.from(100), BigNumber.from(150)];
-      const firstUsableTrancheIndex = 1;
-
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
-
-      expect(result.toString()).to.equal('250'); // 0 + (200-100) + (300-150) = 250
-    });
-
-    it('should carry over negative values on unusable tranches', function () {
-      const trancheCapacities = [BigNumber.from(100), BigNumber.from(200), BigNumber.from(300)];
-      const allocations = [BigNumber.from(150), BigNumber.from(100), BigNumber.from(150)];
-      const firstUsableTrancheIndex = 1;
-
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
-
-      expect(result.toString()).to.equal('200'); // -50 + (200-100) + (300-150) = 200
-    });
-
-    it('should return zero when all capacity is allocated', function () {
-      const trancheCapacities = [BigNumber.from(100), BigNumber.from(200)];
-      const allocations = [BigNumber.from(100), BigNumber.from(200)];
-      const firstUsableTrancheIndex = 0;
-
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
-
-      expect(result.toString()).to.equal('0');
-    });
-
-    it('should handle empty arrays', function () {
-      const trancheCapacities = [];
-      const allocations = [];
-      const firstUsableTrancheIndex = 0;
-
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
-
-      expect(result.toString()).to.equal('0');
-    });
-
-    it('should handle case where allocations exceed capacities', function () {
-      const trancheCapacities = [BigNumber.from(100), BigNumber.from(200)];
-      const allocations = [BigNumber.from(150), BigNumber.from(250)];
-      const firstUsableTrancheIndex = 0;
-
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
-
-      expect(result.toString()).to.equal('0');
-    });
-  });
-
-  describe('calculateProductDataForTranche', function () {
-    const now = BigNumber.from(1000);
-
-    function assertAvailableCapacity(capacityPool, availableInNXM) {
-      expect(capacityPool.availableCapacity).to.be.an('array');
-      expect(capacityPool.availableCapacity).to.have.lengthOf(Object.keys(assets).length);
-
-      Object.keys(assets).forEach((assetId, index) => {
-        const expectedAmount = availableInNXM.mul(assetRates[assetId]).div(BigNumber.from(10).pow(18));
-        expect(capacityPool.availableCapacity[index].assetId).to.equal(Number(assetId));
-        expect(capacityPool.availableCapacity[index].amount.toString()).to.equal(expectedAmount.toString());
-        expect(capacityPool.availableCapacity[index].asset).to.deep.equal(assets[assetId]);
-      });
-    }
-
-    it('should calculate product data correctly for fixed price', function () {
-      const product2Pool1 = [mockStore.poolProducts['2_1']]; // Product 2 uses fixed price
-      const firstUsableTrancheIndex = 0;
-      const [{ allocations, trancheCapacities }] = product2Pool1;
-
-      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
-        product2Pool1,
-        firstUsableTrancheIndex,
-        mockStore.products['2'].useFixedPrice,
-        now,
-        assets,
-        assetRates,
-      );
-
-      const [capacityPool] = capacityPerPool;
-      const lastIndex = allocations.length - 1;
-
-      expect(aggregatedData.capacityUsedNXM.toString()).to.equal(allocations[lastIndex].toString());
-      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(
-        trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT).toString(),
-      );
-
-      expect(capacityPerPool).to.have.lengthOf(1);
-      expect(capacityPool.poolId).to.equal(1);
-      expect(capacityPool.minAnnualPrice.toString()).to.equal(capacityPool.maxAnnualPrice.toString());
-      expect(capacityPool.allocatedNxm.toString()).to.equal(allocations[lastIndex].toString());
-
-      const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
-      assertAvailableCapacity(capacityPool, availableInNXM);
-    });
-
-    it('should calculate product data correctly for non-fixed price', function () {
-      const product0Pool1 = [mockStore.poolProducts['0_1']]; // Product 0 doesn't use fixed price
-      const firstUsableTrancheIndex = 0;
-      const [{ allocations, trancheCapacities }] = product0Pool1;
-
-      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
-        product0Pool1,
-        firstUsableTrancheIndex,
-        mockStore.products['0'].useFixedPrice,
-        now,
-        assets,
-        assetRates,
-      );
-
-      const [pool1Capacity] = capacityPerPool;
-      const lastIndex = allocations.length - 1;
-
-      expect(aggregatedData.capacityUsedNXM.toString()).to.equal(allocations[lastIndex].toString());
-      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(
-        trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT).toString(),
-      );
-      expect(capacityPerPool).to.have.lengthOf(1);
-      expect(pool1Capacity.poolId).to.equal(1);
-      expect(pool1Capacity.minAnnualPrice.toString()).to.not.equal(pool1Capacity.maxAnnualPrice.toString());
-
-      const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
-      assertAvailableCapacity(pool1Capacity, availableInNXM);
-    });
-
-    it('should handle zero available capacity', function () {
-      const productPools = [
-        {
-          ...mockStore.poolProducts['0_1'],
-          allocations: [...Array(7).fill(Zero), BigNumber.from(9840)],
-          trancheCapacities: [...Array(7).fill(Zero), BigNumber.from(9840)],
-        },
-      ];
-      const firstUsableTrancheIndex = 0;
-
-      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
-        productPools,
-        firstUsableTrancheIndex,
-        mockStore.products['0'].useFixedPrice,
-        now,
-        assets,
-        assetRates,
-      );
-
-      const [pool1Capacity] = capacityPerPool;
-
-      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal('0');
-      expect(pool1Capacity.availableCapacity).to.deep.equal([]);
-      expect(pool1Capacity.minAnnualPrice.toString()).to.equal('0');
-      expect(pool1Capacity.maxAnnualPrice.toString()).to.equal('0');
-    });
-
-    it('should calculate product data correctly for multiple pools of the same product', function () {
-      const productPools = [mockStore.poolProducts['0_1'], mockStore.poolProducts['0_2']];
-      const firstUsableTrancheIndex = 0;
-
-      const { aggregatedData, capacityPerPool } = calculateProductDataForTranche(
-        productPools,
-        firstUsableTrancheIndex,
-        mockStore.products['0'].useFixedPrice,
-        now,
-        assets,
-        assetRates,
-      );
-
-      expect(capacityPerPool).to.have.lengthOf(2);
-
-      const [pool1Product0, pool2Product0] = productPools;
-      const [pool1Capacity, pool2Capacity] = capacityPerPool;
-
-      const lastIndex1 = pool1Product0.allocations.length - 1;
-      const lastIndex2 = pool2Product0.allocations.length - 1;
-
-      // Check aggregated data
-      expect(aggregatedData.capacityUsedNXM.toString()).to.equal(
-        pool1Product0.allocations[lastIndex1].add(pool2Product0.allocations[lastIndex2]).toString(),
-      );
-      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(
-        pool1Product0.trancheCapacities[lastIndex1]
-          .sub(pool1Product0.allocations[lastIndex1])
-          .add(pool2Product0.trancheCapacities[lastIndex2].sub(pool2Product0.allocations[lastIndex2]))
-          .mul(NXM_PER_ALLOCATION_UNIT)
-          .toString(),
-      );
-
-      expect(pool1Capacity.poolId).to.equal(1);
-      expect(pool2Capacity.poolId).to.equal(2);
-
-      // Additional checks for each pool
-      capacityPerPool.forEach((poolCapacity, index) => {
-        expect(poolCapacity.minAnnualPrice.toString()).to.not.equal(poolCapacity.maxAnnualPrice.toString());
-        expect(poolCapacity.availableCapacity.length).to.not.equal(0);
-
-        const { allocations, trancheCapacities } = productPools[index];
-        const lastIndex = allocations.length - 1;
-        const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
-        assertAvailableCapacity(poolCapacity, availableInNXM);
-      });
-    });
-  });
-
   describe('getProductsInPool', function () {
     let mockStore;
 
@@ -552,50 +335,29 @@ describe('Capacity Engine tests', function () {
     });
   });
 
-  describe('calculateTrancheInfo', function () {
-    const SECONDS_PER_DAY = BigNumber.from(24 * 3600);
-    const MAX_COVER_PERIOD = BigNumber.from(365 * 24 * 3600);
+  describe('calculateFirstUsableTrancheForMaxPeriodIndex', function () {
+    const SECONDS_PER_DAY = 24 * 60 * 60;
+    const MAX_COVER_PERIOD = BigNumber.from(365 * SECONDS_PER_DAY);
+    const now = BigNumber.from(Math.floor(Date.now() / 1000));
 
-    it('should calculate tranche indices correctly', function () {
-      const time = BigNumber.from(1000);
-      const product = { gracePeriod: BigNumber.from(86400) }; // 1 day grace period
-      const period = 30; // 30 days coverage period
+    it('should calculate index correctly for minimum grace period', function () {
+      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
 
-      const result = calculateTrancheInfo(time, product, period);
+      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
 
-      const expectedFirstUsableTrancheIndex =
-        calculateTrancheId(time.add(SECONDS_PER_DAY.mul(period)).add(product.gracePeriod)) - calculateTrancheId(time);
-      const expectedFirstUsableTrancheForMaxPeriodIndex =
-        calculateTrancheId(time.add(MAX_COVER_PERIOD).add(product.gracePeriod)) - calculateTrancheId(time);
-
-      expect(result.firstUsableTrancheIndex).to.equal(expectedFirstUsableTrancheIndex);
-      expect(result.firstUsableTrancheForMaxPeriodIndex).to.equal(expectedFirstUsableTrancheForMaxPeriodIndex);
+      const firstActiveTrancheId = calculateTrancheId(now);
+      const expectedTrancheId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      expect(result).to.equal(expectedTrancheId - firstActiveTrancheId);
     });
 
-    it('should handle maximum period', function () {
-      const time = BigNumber.from(1000);
-      const product = { gracePeriod: BigNumber.from(86400) };
-      const period = 365; // Maximum period
+    it('should calculate index correctly for maximum grace period', function () {
+      const gracePeriod = BigNumber.from(365 * SECONDS_PER_DAY);
 
-      const result = calculateTrancheInfo(time, product, period);
+      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
 
-      expect(result.firstUsableTrancheIndex).to.equal(result.firstUsableTrancheForMaxPeriodIndex);
-    });
-
-    it('should handle very large grace period', function () {
-      const time = BigNumber.from(1000);
-      const product = { gracePeriod: BigNumber.from(365 * 24 * 3600) }; // 1 year grace period
-      const period = 30;
-
-      const result = calculateTrancheInfo(time, product, period);
-
-      const expectedFirstUsableTrancheIndex =
-        calculateTrancheId(time.add(SECONDS_PER_DAY.mul(period)).add(product.gracePeriod)) - calculateTrancheId(time);
-      const expectedFirstUsableTrancheForMaxPeriodIndex =
-        calculateTrancheId(time.add(MAX_COVER_PERIOD).add(product.gracePeriod)) - calculateTrancheId(time);
-
-      expect(result.firstUsableTrancheIndex).to.equal(expectedFirstUsableTrancheIndex);
-      expect(result.firstUsableTrancheForMaxPeriodIndex).to.equal(expectedFirstUsableTrancheForMaxPeriodIndex);
+      const firstActiveTrancheId = calculateTrancheId(now);
+      const expectedTrancheId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      expect(result).to.equal(expectedTrancheId - firstActiveTrancheId);
     });
   });
 });

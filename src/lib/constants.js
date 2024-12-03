@@ -38,4 +38,6 @@ module.exports = {
 
   UNIT_DIVISOR: 100,
   SURGE_CHUNK_DIVISOR: 10_000, // 0.01% of total capacity
+
+  SECONDS_PER_DAY: BigNumber.from(24 * 60 * 60),
 };

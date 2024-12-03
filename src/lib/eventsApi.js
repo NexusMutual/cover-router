@@ -17,13 +17,15 @@ module.exports = async (provider, contracts) => {
   const stakingProducts = contracts('StakingProducts');
 
   // tranche id checker
-  let currentTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
-  let currentBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
+  const now = Math.floor(Date.now() / 1000);
+  let currentTrancheId = calculateTrancheId(now);
+  let currentBucketId = calculateBucketId(now);
 
   // emit an event on every block
   provider.on('block', async blockNumber => {
-    const activeBucketId = calculateBucketId(Math.floor(Date.now() / 1000));
-    const activeTrancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
+    const now = Math.floor(Date.now() / 1000);
+    const activeBucketId = calculateBucketId(now);
+    const activeTrancheId = calculateTrancheId(now);
 
     if (activeBucketId !== currentBucketId) {
       const { timestamp: blockTimestamp } = await provider.getBlock(blockNumber);

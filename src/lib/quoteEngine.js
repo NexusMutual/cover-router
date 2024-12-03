@@ -5,14 +5,20 @@ const { BigNumber, ethers } = require('ethers');
 const {
   NXM_PER_ALLOCATION_UNIT,
   ONE_YEAR,
-  PRICE_CHANGE_PER_DAY,
   SURGE_PRICE_RATIO,
   SURGE_THRESHOLD_DENOMINATOR,
   SURGE_THRESHOLD_RATIO,
   TARGET_PRICE_DENOMINATOR,
   SURGE_CHUNK_DIVISOR,
 } = require('./constants');
-const { calculateTrancheId, divCeil, bnMax, bnMin } = require('./helpers');
+const {
+  calculateFirstUsableTrancheIndex,
+  calculateBasePrice,
+  calculatePremiumPerYear,
+  calculateFixedPricePremiumPerYear,
+  divCeil,
+  bnMin,
+} = require('./helpers');
 const {
   selectAsset,
   selectAssetRate,
@@ -23,37 +29,6 @@ const {
 
 const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
-
-const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
-  const elapsed = now.sub(bumpedPriceUpdateTime);
-  const priceDrop = elapsed.mul(PRICE_CHANGE_PER_DAY).div(3600 * 24);
-  return bnMax(targetPrice, bumpedPrice.sub(priceDrop));
-};
-
-const calculateFixedPricePremiumPerYear = (coverAmount, price) => {
-  return coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
-};
-
-const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, totalCapacity) => {
-  const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-  const finalCapacityUsed = initialCapacityUsed.add(coverAmount);
-  const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
-
-  if (finalCapacityUsed.lte(surgeStartPoint)) {
-    return basePremium;
-  }
-
-  const amountOnSurgeSkip = initialCapacityUsed.sub(surgeStartPoint).gt(0)
-    ? initialCapacityUsed.sub(surgeStartPoint)
-    : Zero;
-
-  const amountOnSurge = finalCapacityUsed.sub(surgeStartPoint);
-  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const surgePremium = totalSurgePremium.sub(skipSurgePremium);
-
-  return basePremium.add(surgePremium);
-};
 
 const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, useFixedPrice) => {
   const used = usedCapacity;
@@ -229,7 +204,17 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
   return allocations;
 };
 
-const quoteEngine = (store, productId, amount, period, coverAsset) => {
+/**
+ * Calculates the premium and allocations for a given insurance product based on the specified parameters.
+ *
+ * @param {object} store - The application state store.
+ * @param {number} productId - The ID of the product to quote.
+ * @param {BigNumber} amount - The amount of coverage requested.
+ * @param {number} periodSeconds - The cover period in seconds.
+ * @param {string} coverAsset - The assetId of the asset to be covered.
+ * @returns {Array<object>} - An array of objects containing pool allocations and premiums.
+ */
+const quoteEngine = (store, productId, amount, periodSeconds, coverAsset) => {
   const product = selectProduct(store, productId);
 
   if (!product) {
@@ -249,12 +234,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const assetRates = store.getState().assetRates;
 
   const now = BigNumber.from(Date.now()).div(1000);
-  const gracePeriodExpiration = now.add(period).add(product.gracePeriod);
-
-  const firstActiveTrancheId = calculateTrancheId(now);
-  const firstUsableTrancheId = calculateTrancheId(gracePeriodExpiration);
-  const firstUsableTrancheIndex = firstUsableTrancheId - firstActiveTrancheId;
-
+  const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, periodSeconds);
   const coverAmountInNxm = amount.mul(WeiPerEther).div(assetRate);
 
   // rounding up to nearest allocation unit
@@ -321,7 +301,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
       : calculatePremiumPerYear(amountToAllocate, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
 
-    const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
+    const premiumInNxm = premiumPerYear.mul(periodSeconds).div(ONE_YEAR);
     const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);
 
     const capacityInNxm = pool.totalCapacity.sub(pool.initialCapacityUsed);

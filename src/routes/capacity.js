@@ -1,9 +1,8 @@
-const { inspect } = require('node:util');
-
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
 const { capacityEngine } = require('../lib/capacityEngine');
+const { SECONDS_PER_DAY } = require('../lib/constants');
 const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();
@@ -64,12 +63,12 @@ router.get(
     }
 
     try {
-      const period = BigNumber.from(periodQuery);
+      const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const capacities = capacityEngine(store, { period });
+      const capacities = capacityEngine(store, { periodSeconds });
 
       const response = capacities.map(capacity => formatCapacityResult(capacity));
-      console.log(inspect(capacities, { depth: null }));
+      console.log(JSON.stringify(capacities, null, 2));
 
       res.json(response);
     } catch (error) {
@@ -188,16 +187,16 @@ router.get(
     }
 
     try {
-      const period = BigNumber.from(periodQuery);
+      const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const [capacity] = capacityEngine(store, { productIds: [productId], period, withPools });
+      const [capacity] = capacityEngine(store, { productIds: [productId], periodSeconds, withPools });
 
       if (!capacity) {
         return res.status(400).send({ error: 'Invalid Product Id', response: null });
       }
 
       const response = formatCapacityResult(capacity);
-      console.log(inspect(response, { depth: null }));
+      console.log(JSON.stringify(response, null, 2));
 
       res.json(response);
     } catch (error) {
@@ -260,16 +259,16 @@ router.get(
     }
 
     try {
-      const period = BigNumber.from(periodQuery);
+      const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const capacities = capacityEngine(store, { poolId, period });
+      const capacities = capacityEngine(store, { poolId, periodSeconds });
 
       if (capacities.length === 0) {
         return res.status(404).send({ error: 'Pool not found', response: null });
       }
 
       const response = capacities.map(capacity => formatCapacityResult(capacity));
-      console.log(inspect(response, { depth: null }));
+      console.log(JSON.stringify(response, null, 2));
 
       res.json(response);
     } catch (error) {
@@ -339,16 +338,16 @@ router.get(
       return res.status(400).send({ error: 'Invalid productId: must be an integer', response: null });
     }
     try {
-      const period = BigNumber.from(periodQuery);
+      const periodSeconds = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
-      const [capacity] = capacityEngine(store, { poolId, productIds: [productId], period });
+      const [capacity] = capacityEngine(store, { poolId, productIds: [productId], periodSeconds });
 
       if (!capacity) {
         return res.status(404).send({ error: 'Product not found in the specified pool', response: null });
       }
 
       const response = formatCapacityResult(capacity);
-      console.log(inspect(response, { depth: null }));
+      console.log(JSON.stringify(response, null, 2));
 
       res.json(response);
     } catch (error) {
