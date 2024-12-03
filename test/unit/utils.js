@@ -7,8 +7,8 @@ const { calculateFirstUsableTrancheIndex, calculateAvailableCapacity } = require
 
 const getCurrentTimestamp = () => BigNumber.from(Math.floor(Date.now() / 1000));
 
-const verifyCapacityCalculation = (response, poolProduct, storeProduct, now, periodSeconds) => {
-  const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, storeProduct.gracePeriod, periodSeconds);
+const verifyCapacityCalculation = (response, poolProduct, storeProduct, now, period) => {
+  const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, storeProduct.gracePeriod, period);
 
   const availableCapacity = calculateAvailableCapacity(
     poolProduct.trancheCapacities,

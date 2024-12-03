@@ -250,5 +250,4 @@ module.exports = {
   calculateProductCapacity,
   calculatePoolUtilizationRate,
   calculateFirstUsableTrancheIndexForMaxPeriod,
-  getProductsInPool: selectProductsInPool,
 };

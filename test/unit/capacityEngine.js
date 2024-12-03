@@ -14,9 +14,7 @@ const {
   getProductCapacity,
   getPoolCapacity,
   getProductCapacityInPool,
-  getUtilizationRate,
-  calculateFirstUsableTrancheForMaxPeriodIndex,
-  getProductsInPool,
+  calculateFirstUsableTrancheIndexForMaxPeriod,
   calculatePoolUtilizationRate,
   calculateProductCapacity,
 } = require('../../src/lib/capacityEngine');
@@ -36,7 +34,7 @@ const { BigNumber } = ethers;
 const { parseEther } = ethers.utils;
 const { Zero, WeiPerEther } = ethers.constants;
 
-const verifyPoolCapacity = (poolCapacity, productId, products, poolProducts, now) => {
+const verifyPoolCapacity = (poolCapacity, productId, products, poolProducts, now, assets, assetRates) => {
   const poolProduct = poolProducts[`${productId}_${poolCapacity.poolId}`];
   expect(poolProduct).to.not.equal(undefined);
 
@@ -54,13 +52,24 @@ const verifyPoolCapacity = (poolCapacity, productId, products, poolProducts, now
     firstUsableTrancheIndex,
   );
 
-  // Check pool-specific capacity
+  // Check pool-specific NXM capacity
   const nxmCapacityAmount = poolCapacity.availableCapacity.find(c => c.assetId === 255)?.amount || Zero;
   expect(nxmCapacityAmount.toString()).to.equal(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT).toString());
 
   // Check pool-specific used capacity
-  const poolUsedCapacity = poolProduct.allocations.reduce((sum, alloc) => sum.add(alloc), Zero);
-  expect(poolCapacity.allocatedNxm.toString()).to.equal(poolUsedCapacity.mul(NXM_PER_ALLOCATION_UNIT).toString());
+  const expectedAllocatedNxm = poolProduct.allocations
+    .reduce((sum, alloc) => sum.add(alloc), Zero)
+    .mul(NXM_PER_ALLOCATION_UNIT);
+  expect(poolCapacity.allocatedNxm.toString()).to.equal(expectedAllocatedNxm.toString());
+
+  // Verify other asset conversions
+  poolCapacity.availableCapacity
+    .filter(capacity => capacity.assetId !== 255)
+    .forEach(capacity => {
+      expect(capacity.asset).to.deep.equal(assets[capacity.assetId]);
+      const expectedAmount = nxmCapacityAmount.mul(assetRates[capacity.assetId]).div(WeiPerEther);
+      expect(capacity.amount.toString()).to.equal(expectedAmount.toString());
+    });
 };
 
 describe('capacityEngine', function () {
@@ -77,30 +86,6 @@ describe('capacityEngine', function () {
   describe('calculateProductCapacity', function () {
     const { assets, assetRates } = mockStore;
     const now = getCurrentTimestamp();
-
-    // Add these new verification functions
-    const verifyCapacityAsset = (capacity, nxmCapacity, assets, assetRates) => {
-      expect(capacity.asset).to.deep.equal(assets[capacity.assetId]);
-
-      if (capacity.assetId !== 255) {
-        const expectedAmount = nxmCapacity.mul(assetRates[capacity.assetId]).div(WeiPerEther);
-        expect(capacity.amount.toString()).to.equal(expectedAmount.toString());
-      }
-    };
-
-    const verifyPoolCapacityWithAssets = (poolCapacity, productId, poolProducts) => {
-      const poolProduct = poolProducts[`${productId}_${poolCapacity.poolId}`];
-      const nxmCapacity = poolCapacity.availableCapacity.find(c => c.assetId === 255)?.amount || Zero;
-
-      poolCapacity.availableCapacity.forEach(capacity =>
-        verifyCapacityAsset(capacity, nxmCapacity, assets, assetRates),
-      );
-
-      const expectedAllocatedNxm = poolProduct.allocations
-        .reduce((sum, alloc) => sum.add(alloc), Zero)
-        .mul(NXM_PER_ALLOCATION_UNIT);
-      expect(poolCapacity.allocatedNxm.toString()).to.equal(expectedAllocatedNxm.toString());
-    };
 
     // Common verification functions
     const verifyNXMCapacity = (nxmCapacity, expectedAmount) => {
@@ -124,7 +109,7 @@ describe('capacityEngine', function () {
       const { poolProducts } = store.getState();
 
       const response = calculateProductCapacity(store, productId, {
-        periodSeconds: SECONDS_PER_DAY.mul(30),
+        period: SECONDS_PER_DAY.mul(30),
         now,
         assets,
         assetRates,
@@ -181,17 +166,17 @@ describe('capacityEngine', function () {
     });
 
     it('should handle non-fixed price products correctly', function () {
-      const { poolProducts } = store.getState();
+      const { poolProducts, products } = store.getState();
+      const productId = '0';
       const productPool = [mockStore.poolProducts['0_1']];
       const [{ allocations, trancheCapacities, targetPrice, bumpedPrice, bumpedPriceUpdateTime }] = productPool;
       const lastIndex = allocations.length - 1;
 
-      const response = calculateProductCapacity(store, '0', {
-        periodSeconds: SECONDS_PER_DAY.mul(30),
+      const response = calculateProductCapacity(store, productId, {
+        period: SECONDS_PER_DAY.mul(30),
         now,
         assets,
         assetRates,
-        withPools: true,
       });
 
       // Calculate expected values
@@ -216,24 +201,23 @@ describe('capacityEngine', function () {
       expect(response.minAnnualPrice.toString()).to.not.equal(response.maxAnnualPrice.toString());
       expect(response.minAnnualPrice.lt(response.maxAnnualPrice)).to.equal(true);
 
-      response.capacityPerPool.forEach(poolCapacity => verifyPoolCapacityWithAssets(poolCapacity, '0', poolProducts));
+      response.capacityPerPool.forEach(poolCapacity =>
+        verifyPoolCapacity(poolCapacity, productId, products, poolProducts, now, assets, assetRates),
+      );
     });
 
-    it('should include capacityPerPool when withPools is true', function () {
+    it('should not include capacityPerPool when withPools is false', function () {
       const now = getCurrentTimestamp();
       const productId = '0';
-      const { products, poolProducts } = store.getState();
       const response = calculateProductCapacity(store, productId, {
-        periodSeconds: SECONDS_PER_DAY.mul(30),
-        withPools: true,
+        period: SECONDS_PER_DAY.mul(30),
         now,
         assets,
         assetRates,
+        withPools: false,
       });
 
-      response.capacityPerPool.forEach(poolCapacity =>
-        verifyPoolCapacity(poolCapacity, productId, products, poolProducts, now),
-      );
+      expect(response.capacityPerPool).to.be.equal(undefined);
     });
 
     it('should filter by poolId when provided', function () {
@@ -242,7 +226,7 @@ describe('capacityEngine', function () {
       const now = getCurrentTimestamp();
       const response = calculateProductCapacity(store, productId, {
         poolId,
-        periodSeconds: SECONDS_PER_DAY.mul(30),
+        period: SECONDS_PER_DAY.mul(30),
         now,
         assets: mockStore.assets,
         assetRates: mockStore.assetRates,
@@ -263,7 +247,7 @@ describe('capacityEngine', function () {
       const nonExistingProductId = '999';
       const now = getCurrentTimestamp();
       const response = calculateProductCapacity(store, nonExistingProductId, {
-        periodSeconds: SECONDS_PER_DAY.mul(30),
+        period: SECONDS_PER_DAY.mul(30),
         now,
         assets: mockStore.assets,
         assetRates: mockStore.assetRates,
@@ -292,7 +276,7 @@ describe('capacityEngine', function () {
       };
 
       const response = calculateProductCapacity(zeroCapacityStore, productId, {
-        periodSeconds: SECONDS_PER_DAY.mul(30),
+        period: SECONDS_PER_DAY.mul(30),
         now,
         assets,
         assetRates,
@@ -307,7 +291,7 @@ describe('capacityEngine', function () {
       const productId = '1'; // Non-fixed price product
       const now = getCurrentTimestamp();
       const response = calculateProductCapacity(store, productId, {
-        periodSeconds: SECONDS_PER_DAY.mul(7), // 1 week
+        period: SECONDS_PER_DAY.mul(7), // 1 week
         now,
         assets: mockStore.assets,
         assetRates: mockStore.assetRates,
@@ -399,8 +383,10 @@ describe('capacityEngine', function () {
 
       expect(product.usedCapacity.toString()).to.equal(expectedUsedCapacity.toString());
     };
+
     it('should return capacity for all products across all pools', function () {
-      const response = getAllProductCapacities(store);
+      const period = SECONDS_PER_DAY.mul(30);
+      const response = getAllProductCapacities(store, period);
       const { products, productPoolIds, poolProducts, assets } = store.getState();
 
       // Should return all products from store
@@ -432,11 +418,19 @@ describe('capacityEngine', function () {
   });
 
   describe('getProductCapacity', function () {
+    it('should handle invalid period seconds gracefully getProductCapacity', function () {
+      const invalidPeriod = Zero;
+      const response = getProductCapacity(store, '0', invalidPeriod);
+      expect(response).to.not.equal(null);
+    });
+
     it('should return detailed capacity for a single product', function () {
       const productId = 3;
-      const response = getProductCapacity(store, productId);
+      const now = getCurrentTimestamp();
+      const period = SECONDS_PER_DAY.mul(30);
+      const response = getProductCapacity(store, productId, period);
 
-      const { productPoolIds, poolProducts } = store.getState();
+      const { assets, assetRates, productPoolIds, poolProducts, products } = store.getState();
       const poolIds = productPoolIds[productId];
 
       // Check basic product info
@@ -460,18 +454,11 @@ describe('capacityEngine', function () {
       });
 
       expect(response.usedCapacity.toString()).to.equal(totalUsedCapacity.toString());
-    });
-
-    it('should include detailed pool breakdown when withPools is true', function () {
-      const now = getCurrentTimestamp();
-      const productId = '3';
-      const response = getProductCapacity(store, productId, { withPools: true });
-      const { productPoolIds, poolProducts, products } = store.getState();
 
       expect(response.capacityPerPool).to.have.lengthOf(productPoolIds[productId].length);
 
       response.capacityPerPool.forEach(poolCapacity =>
-        verifyPoolCapacity(poolCapacity, productId, products, poolProducts, now),
+        verifyPoolCapacity(poolCapacity, productId, products, poolProducts, now, assets, assetRates),
       );
     });
   });
@@ -479,7 +466,8 @@ describe('capacityEngine', function () {
   describe('getPoolCapacity', function () {
     it('should return detailed pool capacity with correct utilization rate', function () {
       const poolId = 4;
-      const response = getPoolCapacity(store, poolId);
+      const period = SECONDS_PER_DAY.mul(30);
+      const response = getPoolCapacity(store, poolId, period);
 
       const { poolProducts, products } = store.getState();
       const now = getCurrentTimestamp();
@@ -536,7 +524,8 @@ describe('capacityEngine', function () {
     it('should return detailed capacity for a specific product in a specific pool', function () {
       const poolId = 4;
       const productId = '3';
-      const response = getProductCapacityInPool(store, poolId, productId);
+      const period = SECONDS_PER_DAY.mul(30);
+      const response = getProductCapacityInPool(store, poolId, productId, period);
 
       verifyCapacityResponse(response);
 
@@ -552,121 +541,17 @@ describe('capacityEngine', function () {
     });
   });
 
-  describe('getUtilizationRate', function () {
-    it('should calculate utilization rate correctly', function () {
-      const availableNXM = parseEther('100');
-      const usedNXM = parseEther('50');
-      // Expected: (50 / (100 + 50)) * 10000 = 3333 basis points
-      const rate = getUtilizationRate(availableNXM, usedNXM);
-      expect(rate.toNumber()).to.equal(3333);
-    });
-
-    it('should return 0 when no capacity is used', function () {
-      const availableNXM = parseEther('100');
-      const usedNXM = Zero;
-      const rate = getUtilizationRate(availableNXM, usedNXM);
-      expect(rate.toNumber()).to.equal(0);
-    });
-
-    it('should return 0 when total capacity is zero', function () {
-      const availableNXM = Zero;
-      const usedNXM = Zero;
-      const rate = getUtilizationRate(availableNXM, usedNXM);
-      expect(rate.toNumber()).to.equal(0);
-    });
-
-    it('should return undefined when inputs are missing', function () {
-      expect(getUtilizationRate(null, parseEther('50'))).to.equal(undefined);
-      expect(getUtilizationRate(parseEther('100'), null)).to.equal(undefined);
-      expect(getUtilizationRate(null, null)).to.equal(undefined);
-    });
-
-    it('should handle very large numbers correctly', function () {
-      const largeNumber = parseEther('1000000'); // 1M ETH
-      const rate = getUtilizationRate(largeNumber, largeNumber);
-      expect(rate.toNumber()).to.equal(5000); // Should be 50%
-    });
-
-    it('should handle very small numbers correctly', function () {
-      const smallNumber = BigNumber.from(1);
-      const rate = getUtilizationRate(smallNumber, smallNumber);
-      expect(rate.toNumber()).to.equal(5000); // Should be 50%
-    });
-  });
-
-  describe('getProductsInPool', function () {
-    it('should return all products in a specific pool', function () {
-      const poolId = 1;
-      const { productPoolIds } = store.getState();
-      const products = getProductsInPool(store, poolId);
-
-      // Check against mock store data
-      const expectedProducts = Object.keys(productPoolIds).filter(productId =>
-        productPoolIds[productId].includes(poolId),
-      );
-
-      expect(products).to.have.members(expectedProducts);
-      expect(products).to.have.lengthOf(expectedProducts.length);
-    });
-
-    it('should return empty array for pool with no products', function () {
-      const nonExistentPoolId = 999;
-      const products = getProductsInPool(store, nonExistentPoolId);
-      expect(products).to.be.an('array');
-      expect(products).to.have.lengthOf(0);
-    });
-
-    it('should handle string pool ids', function () {
-      const poolId = '1';
-      const { productPoolIds } = store.getState();
-      const products = getProductsInPool(store, poolId);
-
-      const expectedProducts = Object.keys(productPoolIds).filter(productId =>
-        productPoolIds[productId].includes(Number(poolId)),
-      );
-
-      expect(products).to.have.members(expectedProducts);
-    });
-
-    it('should handle invalid pool id', function () {
-      const products = getProductsInPool(store, -1);
-      expect(products).to.be.an('array');
-      expect(products).to.have.lengthOf(0);
-    });
-
-    it('should handle string vs number pool ids consistently', function () {
-      const numericResult = getProductsInPool(store, 1);
-      const stringResult = getProductsInPool(store, '1');
-      expect(numericResult).to.deep.equal(stringResult);
-    });
-
-    it('should handle undefined productPools', function () {
-      const emptyStore = {
-        getState: () => ({
-          products: { 1: {}, 2: {}, 3: {} },
-          productPoolIds: {},
-          poolProducts: {},
-        }),
-      };
-
-      const poolId = 2;
-      const result = getProductsInPool(emptyStore, poolId);
-
-      expect(result).to.deep.equal([]);
-    });
-  });
-
-  describe('calculateFirstUsableTrancheForMaxPeriodIndex', function () {
+  describe('calculateFirstUsableTrancheIndexForMaxPeriod', function () {
     it('should calculate correct tranche index for max period', function () {
-      const now = BigNumber.from(1678700054); // From mock store
-      const gracePeriod = BigNumber.from(30); // 30 seconds grace period
+      const now = getCurrentTimestamp();
+      const gracePeriod = SECONDS_PER_DAY.mul(35);
 
-      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
+      const result = calculateFirstUsableTrancheIndexForMaxPeriod(now, gracePeriod);
 
       // Calculate expected result
       const firstActiveTrancheId = calculateTrancheId(now);
-      const firstUsableTrancheForMaxPeriodId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
-      const expected = firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
+      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      const expected = firstUsableTrancheIdForMaxPeriod - firstActiveTrancheId;
 
       expect(result).to.equal(expected);
     });
@@ -675,24 +560,24 @@ describe('capacityEngine', function () {
       const now = BigNumber.from(1678700054);
       const gracePeriod = Zero;
 
-      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
+      const result = calculateFirstUsableTrancheIndexForMaxPeriod(now, gracePeriod);
 
       const firstActiveTrancheId = calculateTrancheId(now);
-      const firstUsableTrancheForMaxPeriodId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
-      const expected = firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
+      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      const expected = firstUsableTrancheIdForMaxPeriod - firstActiveTrancheId;
 
       expect(result).to.equal(expected);
     });
 
     it('should handle large grace period', function () {
-      const now = BigNumber.from(1678700054);
-      const gracePeriod = BigNumber.from(3024000); // Large grace period from mock store
+      const now = getCurrentTimestamp();
+      const gracePeriod = SECONDS_PER_DAY.mul(365);
 
-      const result = calculateFirstUsableTrancheForMaxPeriodIndex(now, gracePeriod);
+      const result = calculateFirstUsableTrancheIndexForMaxPeriod(now, gracePeriod);
 
       const firstActiveTrancheId = calculateTrancheId(now);
-      const firstUsableTrancheForMaxPeriodId = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
-      const expected = firstUsableTrancheForMaxPeriodId - firstActiveTrancheId;
+      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      const expected = firstUsableTrancheIdForMaxPeriod - firstActiveTrancheId;
 
       expect(result).to.equal(expected);
     });
@@ -786,32 +671,18 @@ describe('capacityEngine', function () {
   });
 
   describe('API Services', function () {
-    it('should handle custom period seconds in getAllProductCapacities', function () {
-      const response = getAllProductCapacities(store, {
-        periodSeconds: SECONDS_PER_DAY.mul(7), // 1 week
-      });
-      expect(response).to.be.an('array');
-      expect(response.length).to.be.greaterThan(0);
-    });
-
-    it('should handle invalid period seconds gracefully', function () {
-      const response = getProductCapacity(store, '0', {
-        periodSeconds: Zero,
-      });
-      expect(response).to.not.equal(null);
-    });
-
     it('should return consistent data structure across all capacity endpoints', function () {
       const poolId = '1';
       const productId = '0';
       const { assets, assetRates, poolProducts: storePoolProducts, products, productPoolIds } = store.getState();
       const now = getCurrentTimestamp();
+      const period = SECONDS_PER_DAY.mul(30);
 
       // Get responses from all endpoints
-      const allProducts = getAllProductCapacities(store);
-      const singleProduct = getProductCapacity(store, productId);
-      const poolCapacityResponse = getPoolCapacity(store, poolId);
-      const poolProduct = getProductCapacityInPool(store, poolId, productId);
+      const allProducts = getAllProductCapacities(store, period);
+      const singleProduct = getProductCapacity(store, productId, period);
+      const poolCapacityResponse = getPoolCapacity(store, poolId, period);
+      const poolProduct = getProductCapacityInPool(store, poolId, productId, period);
 
       // Helper to verify product capacity structure
       const verifyProductCapacity = (
