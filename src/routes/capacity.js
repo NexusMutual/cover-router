@@ -258,8 +258,6 @@ router.get(
  *               ]
  *       400:
  *         description: Invalid pool id or period
- *       404:
- *         description: Pool not found
  *       500:
  *         description: Internal Server Error
  */
@@ -280,10 +278,6 @@ router.get(
       const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
       const store = req.app.get('store');
       const poolCapacity = getPoolCapacity(store, poolId, period);
-
-      if (poolCapacity === null) {
-        return res.status(404).send({ error: 'Pool not found', response: null });
-      }
 
       const response = {
         poolId: poolCapacity.poolId,
