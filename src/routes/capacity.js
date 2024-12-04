@@ -258,8 +258,6 @@ router.get(
  *               ]
  *       400:
  *         description: Invalid pool id or period
- *       404:
- *         description: Pool not found
  *       500:
  *         description: Internal Server Error
  */
