@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const { addresses } = require('@nexusmutual/deployments');
+const { setLogLevel } = require('@nexusmutual/utils');
 const { ethers } = require('ethers');
 const express = require('express');
 const swaggerUI = require('swagger-ui-express');
@@ -15,6 +16,8 @@ const { capacityRouter, pricingRouter, quoteRouter, reindexRouter } = require('.
 const { createStore, initialState, load, save } = require('./store');
 
 const main = async () => {
+  setLogLevel(config.get('logLevel'));
+
   // provider
   const providerURL = config.get('provider');
   const provider = new ethers.providers.JsonRpcProvider(providerURL);
@@ -61,7 +64,7 @@ const main = async () => {
   app.set('synchronizer', synchronizer);
 
   if (!isFromCache) {
-    console.log('Missing initial state, delaying startup until the state is fully loaded');
+    console.warn('Missing initial state, delaying startup until the state is fully loaded');
     await synchronizer.updateAssetRates();
     await synchronizer.updateAll();
   }
