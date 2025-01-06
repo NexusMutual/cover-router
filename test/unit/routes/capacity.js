@@ -80,7 +80,7 @@ describe('Capacity Routes', () => {
       const invalidPeriod = 10;
       const poolId = 2;
       const url = `/v2/capacity/pools/${poolId}?period=${invalidPeriod}`;
-    const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
+      const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
       expect(response.error).to.be.equal('Invalid period: must be an integer between 28 and 365');
     });
 
