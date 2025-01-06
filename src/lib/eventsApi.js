@@ -32,7 +32,7 @@ module.exports = async (provider, contracts) => {
       const blockBucketId = calculateBucketId(blockTimestamp);
 
       if (blockBucketId === activeBucketId) {
-        console.log(`Event: Bucket ${currentBucketId} expired`);
+        console.info(`Event: Bucket ${currentBucketId} expired`);
 
         currentBucketId = activeBucketId;
         emitter.emit('bucket:change');
@@ -44,7 +44,7 @@ module.exports = async (provider, contracts) => {
       const blockTrancheId = calculateTrancheId(blockTimestamp);
 
       if (blockTrancheId === activeTrancheId) {
-        console.log(`Event: Tranche ${currentTrancheId} expired`);
+        console.info(`Event: Tranche ${currentTrancheId} expired`);
 
         currentTrancheId = activeTrancheId;
         emitter.emit('tranche:change');
@@ -62,7 +62,7 @@ module.exports = async (provider, contracts) => {
     const stakingPool = contracts('StakingPool', poolId);
     for (const eventName of events) {
       stakingPool.on(eventName, () => {
-        console.log(`Event: ${eventName} triggered for Pool ${poolId}`);
+        console.info(`Event: ${eventName} triggered for Pool ${poolId}`);
         emitter.emit('pool:change', poolId);
       });
     }
@@ -71,27 +71,27 @@ module.exports = async (provider, contracts) => {
   // subscribe to events on new staking pool
   stakingPoolFactory.on('StakingPoolCreated', async poolId => {
     const poolIdParsed = BigNumber.isBigNumber(poolId) ? poolId.toNumber() : poolId;
-    console.log(`Event: Pool ${poolIdParsed} created`);
+    console.info(`Event: Pool ${poolIdParsed} created`);
     emitter.emit('pool:change', poolIdParsed);
     const stakingPool = contracts('StakingPool', poolIdParsed);
     for (const eventName of events) {
       stakingPool.on(eventName, () => {
-        console.log(`Event: ${eventName} triggered for Pool ${poolIdParsed}`);
+        console.info(`Event: ${eventName} triggered for Pool ${poolIdParsed}`);
         emitter.emit('pool:change', poolIdParsed);
       });
     }
   });
 
   stakingProducts.on('ProductUpdated', productId => {
-    console.log(`Event: Product ${productId} update`);
+    console.info(`Event: Product ${productId} update`);
     emitter.emit('product:change', productId);
   });
   coverProducts.on('ProductSet', productId => {
-    console.log(`Event: Product ${productId} set`);
+    console.info(`Event: Product ${productId} set`);
     emitter.emit('product:change', productId);
   });
   cover.on('CoverEdited', (coverId, productId) => {
-    console.log(`Event: Cover ${coverId} for product ${productId} edited`);
+    console.info(`Event: Cover ${coverId} for product ${productId} edited`);
     emitter.emit('product:change', productId);
   });
 

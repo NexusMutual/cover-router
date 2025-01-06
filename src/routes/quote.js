@@ -1,3 +1,5 @@
+const { inspect } = require('node:util');
+
 const { BigNumber, ethers } = require('ethers');
 const express = require('express');
 
@@ -148,6 +150,8 @@ router.get(
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
 
+    console.info('Request: ', inspect(req.query, { depth: null }));
+
     const store = req.app.get('store');
     const route = await quoteEngine(store, productId, amount, period, coverAsset);
 
@@ -208,7 +212,7 @@ router.get(
       })),
     };
 
-    console.log(JSON.stringify(response, null, 2));
+    console.info('Response: ', inspect(response, { depth: null }));
 
     res.json(response);
   }),

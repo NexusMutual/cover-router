@@ -69,8 +69,6 @@ describe('Quote Engine tests', () => {
     {
       const quote = quotes[1];
 
-      console.log(quote.premiumInNxm.toString());
-
       expect(quote.poolId).to.be.equal(2);
       expect(quote.premiumInNxm.toString()).to.be.equal('468378082191780821');
       expect(quote.premiumInAsset.toString()).to.be.equal('13453897657327743831');

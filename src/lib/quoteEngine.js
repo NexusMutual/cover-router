@@ -185,7 +185,9 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
     const poolId = customPoolIdPriorityCopy.shift();
     const pool = poolsData.find(poolData => poolData.poolId === poolId);
     if (!pool) {
-      console.info(`Unable to find pool ${poolId} in poolsData array. Skipping\n`, inspect(poolsData, { depth: null }));
+      console.info(`Unable to find pool ${poolId} in poolsData array. Skipping\n`);
+      console.info(`Available poolIds in poolsData: ${poolsData.map(p => p.poolId).join(', ')}`);
+      console.debug('poolsData: ', inspect(poolsData, { depth: null }));
       continue;
     }
 
@@ -239,7 +241,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 
   // rounding up to nearest allocation unit
   const amountToAllocate = divCeil(coverAmountInNxm, NXM_PER_ALLOCATION_UNIT).mul(NXM_PER_ALLOCATION_UNIT);
-  console.log('Amount to allocate:', formatEther(amountToAllocate), 'nxm');
+  console.info(`Amount to allocate: ${formatEther(amountToAllocate)} nxm`);
 
   const poolsData = productPools.map(pool => {
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;
@@ -293,7 +295,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 
     const pool = poolsData.find(data => poolId.toString() === data.poolId.toString());
     if (!pool) {
-      console.error('poolsData: ', inspect(poolsData, { depth: null }));
+      console.debug('poolsData: ', inspect(poolsData, { depth: null }));
       throw new Error(`Unable to find pool ${poolId} in poolsData`);
     }
 
@@ -311,10 +313,10 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       asset: selectAsset(store, assetId),
     }));
 
-    console.log('Pool:', poolId);
-    console.log('Initially used capacity:', formatEther(pool.initialCapacityUsed), 'nxm');
-    console.log('Total pool capacity    :', formatEther(pool.totalCapacity), 'nxm');
-    console.log('Pool capacity          :', formatEther(capacityInNxm), 'nxm');
+    console.info('Pool:', poolId);
+    console.info('Initially used capacity:', formatEther(pool.initialCapacityUsed), 'nxm');
+    console.info('Total pool capacity    :', formatEther(pool.totalCapacity), 'nxm');
+    console.info('Pool capacity          :', formatEther(capacityInNxm), 'nxm');
 
     const coverAmountInAsset = amountToAllocate.mul(assetRate).div(WeiPerEther);
 
