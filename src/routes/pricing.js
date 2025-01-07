@@ -1,3 +1,5 @@
+const { inspect } = require('node:util');
+
 const express = require('express');
 
 const { asyncRoute } = require('../lib/helpers');
@@ -60,6 +62,8 @@ router.get(
   asyncRoute(async (req, res) => {
     const productId = Number(req.params.productId);
 
+    console.info(`Request: productId=${productId}`);
+
     if (!Number.isInteger(productId) || productId < 0) {
       return res.status(400).send({ error: 'Invalid productId: must be an integer', response: null });
     }
@@ -73,7 +77,7 @@ router.get(
       }
 
       const response = formatPricingResult(pricingResult);
-      console.log(JSON.stringify(response, null, 2));
+      console.info('Response: ', inspect(response, { depth: null }));
 
       res.json(response);
     } catch (error) {

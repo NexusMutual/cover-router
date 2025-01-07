@@ -1,3 +1,5 @@
+const { inspect } = require('node:util');
+
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
@@ -71,6 +73,8 @@ router.get(
   asyncRoute(async (req, res) => {
     const periodQuery = Number(req.query.period) || 30;
 
+    console.info(`Request: periodQuery=${periodQuery}`);
+
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
     }
@@ -81,7 +85,7 @@ router.get(
       const capacities = getAllProductCapacities(store, period);
 
       const response = capacities.map(capacity => formatCapacityResult(capacity));
-      console.log(JSON.stringify(capacities, null, 2));
+      console.debug('Response: ', inspect(response, { depth: null }));
 
       res.json(response);
     } catch (error) {
@@ -167,6 +171,8 @@ router.get(
     const productId = Number(req.params.productId);
     const periodQuery = Number(req.query.period) || 30;
 
+    console.info(`Request: productId=${productId}, periodQuery=${periodQuery}`);
+
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
     }
@@ -184,7 +190,7 @@ router.get(
       }
 
       const response = formatCapacityResult(capacity);
-      console.log(JSON.stringify(response, null, 2));
+      console.info('Response: ', inspect(response, { depth: null }));
 
       res.json(response);
     } catch (error) {
@@ -267,6 +273,8 @@ router.get(
     const poolId = Number(req.params.poolId);
     const periodQuery = Number(req.query.period) || 30;
 
+    console.info(`Request: poolId=${poolId}, periodQuery=${periodQuery}`);
+
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
     }
@@ -284,7 +292,7 @@ router.get(
         utilizationRate: poolCapacity.utilizationRate.toNumber(),
         productsCapacity: poolCapacity.productsCapacity.map(productCapacity => formatCapacityResult(productCapacity)),
       };
-      console.log(JSON.stringify(response, null, 2));
+      console.info('Response: ', inspect(response, { depth: null }));
 
       res.json(response);
     } catch (error) {
@@ -343,6 +351,8 @@ router.get(
     const productId = Number(req.params.productId);
     const periodQuery = Number(req.query.period) || 30;
 
+    console.info(`Request: poolId=${poolId}, productId=${productId}, periodQuery=${periodQuery}`);
+
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
     }
@@ -362,7 +372,7 @@ router.get(
       }
 
       const response = formatCapacityResult(capacity);
-      console.log(JSON.stringify(response, null, 2));
+      console.info('Response: ', inspect(response, { depth: null }));
 
       res.json(response);
     } catch (error) {

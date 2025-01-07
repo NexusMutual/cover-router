@@ -16,7 +16,7 @@ function contractFactoryMock(addresses, provider) {
 
   const mockedFactory = (name, id = 0, forceNew = false) => {
     if (name !== 'StakingPoolFactory') {
-      console.log(name, id, forceNew);
+      console.log({ name, id, forceNew });
       return factory(name, id, forceNew);
     }
 

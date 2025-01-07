@@ -51,7 +51,7 @@ const createChainApi = async contracts => {
 
   const fetchPoolProduct = async (productId, poolId, globalCapacityRatio, capacityReductionRatio) => {
     const stakingPool = contracts('StakingPool', poolId);
-    console.log('Fetching allocations for product', productId, 'in pool', poolId, 'at address', stakingPool.address);
+    console.info(`Fetching allocations for product ${productId} in pool ${poolId} at address ${stakingPool.address}`);
 
     // pool allocations and capacities
     const allocations = await stakingPool.getActiveAllocations(productId);

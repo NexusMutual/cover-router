@@ -1,6 +1,11 @@
 const convict = require('convict');
 
 const config = convict({
+  logLevel: {
+    doc: 'The logging level to set',
+    default: 'WARN',
+    env: 'LOG_LEVEL',
+  },
   port: {
     doc: 'The port to bind.',
     format: 'port',
