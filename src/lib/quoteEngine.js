@@ -185,8 +185,8 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
     const poolId = customPoolIdPriorityCopy.shift();
     const pool = poolsData.find(poolData => poolData.poolId === poolId);
     if (!pool) {
-      console.info(`Unable to find pool ${poolId} in poolsData array. Skipping\n`);
-      console.info(`Available poolIds in poolsData: ${poolsData.map(p => p.poolId).join(', ')}`);
+      console.warn(`Unable to find pool ${poolId} in poolsData array. Skipping\n`);
+      console.warn(`Available poolIds in poolsData: ${poolsData.map(p => p.poolId).join(', ')}`);
       console.debug('poolsData: ', inspect(poolsData, { depth: null }));
       continue;
     }
@@ -295,6 +295,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 
     const pool = poolsData.find(data => poolId.toString() === data.poolId.toString());
     if (!pool) {
+      console.info(`Available poolIds in poolsData: ${poolsData.map(p => p.poolId).join(', ')}`);
       console.debug('poolsData: ', inspect(poolsData, { depth: null }));
       throw new Error(`Unable to find pool ${poolId} in poolsData`);
     }
