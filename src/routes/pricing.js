@@ -2,10 +2,12 @@ const { inspect } = require('node:util');
 
 const express = require('express');
 
+const { requestLogger } = require('./middleware');
 const { asyncRoute } = require('../lib/helpers');
 const { pricingEngine } = require('../lib/pricingEngine');
 
 const router = express.Router();
+router.use(requestLogger);
 
 const formatPricingResult = pricing => ({
   productId: pricing.productId,
@@ -61,8 +63,6 @@ router.get(
   '/pricing/products/:productId',
   asyncRoute(async (req, res) => {
     const productId = Number(req.params.productId);
-
-    console.info(`Request: productId=${productId}`);
 
     if (!Number.isInteger(productId) || productId < 0) {
       return res.status(400).send({ error: 'Invalid productId: must be an integer', response: null });

@@ -3,13 +3,16 @@ const { inspect } = require('node:util');
 const { BigNumber, ethers } = require('ethers');
 const express = require('express');
 
+const { requestLogger } = require('./middleware');
 const { TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
 const { asyncRoute } = require('../lib/helpers');
 const { quoteEngine } = require('../lib/quoteEngine');
 const { selectAsset } = require('../store/selectors');
 
-const router = express.Router();
 const { Zero } = ethers.constants;
+
+const router = express.Router();
+router.use(requestLogger);
 
 /**
  * @openapi
@@ -149,9 +152,6 @@ router.get(
     const amount = BigNumber.from(req.query.amount);
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
-
-    const normalizedRequestQuery = { ...req.query, amount: BigNumber.from(req.query.amount).toString() };
-    console.info('Request: ', inspect(normalizedRequestQuery, { depth: null }));
 
     const store = req.app.get('store');
     const route = await quoteEngine(store, productId, amount, period, coverAsset);

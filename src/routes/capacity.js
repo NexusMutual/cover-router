@@ -3,6 +3,7 @@ const { inspect } = require('node:util');
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
+const { requestLogger } = require('./middleware');
 const {
   getAllProductCapacities,
   getProductCapacity,
@@ -12,8 +13,10 @@ const {
 const { SECONDS_PER_DAY } = require('../lib/constants');
 const { asyncRoute } = require('../lib/helpers');
 
-const router = express.Router();
 const { formatUnits } = ethers.utils;
+
+const router = express.Router();
+router.use(requestLogger);
 
 const formatCapacityResult = capacity => ({
   productId: capacity.productId,
@@ -72,8 +75,6 @@ router.get(
   '/capacity',
   asyncRoute(async (req, res) => {
     const periodQuery = Number(req.query.period) || 30;
-
-    console.info(`Request: periodQuery=${periodQuery}`);
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
@@ -170,8 +171,6 @@ router.get(
   asyncRoute(async (req, res) => {
     const productId = Number(req.params.productId);
     const periodQuery = Number(req.query.period) || 30;
-
-    console.info(`Request: productId=${productId}, periodQuery=${periodQuery}`);
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
@@ -273,8 +272,6 @@ router.get(
     const poolId = Number(req.params.poolId);
     const periodQuery = Number(req.query.period) || 30;
 
-    console.info(`Request: poolId=${poolId}, periodQuery=${periodQuery}`);
-
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
     }
@@ -350,8 +347,6 @@ router.get(
     const poolId = Number(req.params.poolId);
     const productId = Number(req.params.productId);
     const periodQuery = Number(req.query.period) || 30;
-
-    console.info(`Request: poolId=${poolId}, productId=${productId}, periodQuery=${periodQuery}`);
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
