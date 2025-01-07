@@ -3,7 +3,6 @@ const { inspect } = require('node:util');
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
-const { requestLogger } = require('./middleware');
 const {
   getAllProductCapacities,
   getProductCapacity,
@@ -13,10 +12,8 @@ const {
 const { SECONDS_PER_DAY } = require('../lib/constants');
 const { asyncRoute } = require('../lib/helpers');
 
-const { formatUnits } = ethers.utils;
-
 const router = express.Router();
-router.use(requestLogger);
+const { formatUnits } = ethers.utils;
 
 const formatCapacityResult = capacity => ({
   productId: capacity.productId,

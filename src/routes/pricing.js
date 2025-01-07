@@ -2,12 +2,10 @@ const { inspect } = require('node:util');
 
 const express = require('express');
 
-const { requestLogger } = require('./middleware');
 const { asyncRoute } = require('../lib/helpers');
 const { pricingEngine } = require('../lib/pricingEngine');
 
 const router = express.Router();
-router.use(requestLogger);
 
 const formatPricingResult = pricing => ({
   productId: pricing.productId,

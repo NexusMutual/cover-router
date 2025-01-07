@@ -3,16 +3,13 @@ const { inspect } = require('node:util');
 const { BigNumber, ethers } = require('ethers');
 const express = require('express');
 
-const { requestLogger } = require('./middleware');
 const { TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
 const { asyncRoute } = require('../lib/helpers');
 const { quoteEngine } = require('../lib/quoteEngine');
 const { selectAsset } = require('../store/selectors');
 
-const { Zero } = ethers.constants;
-
 const router = express.Router();
-router.use(requestLogger);
+const { Zero } = ethers.constants;
 
 /**
  * @openapi
