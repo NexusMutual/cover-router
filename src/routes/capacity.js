@@ -292,7 +292,7 @@ router.get(
         utilizationRate: poolCapacity.utilizationRate.toNumber(),
         productsCapacity: poolCapacity.productsCapacity.map(productCapacity => formatCapacityResult(productCapacity)),
       };
-      console.info('Response: ', inspect(response, { depth: null }));
+      console.debug('Response: ', inspect(response, { depth: null }));
 
       res.json(response);
     } catch (error) {
