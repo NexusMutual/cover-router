@@ -62,8 +62,6 @@ router.get(
   asyncRoute(async (req, res) => {
     const productId = Number(req.params.productId);
 
-    console.info(`Request: productId=${productId}`);
-
     if (!Number.isInteger(productId) || productId < 0) {
       return res.status(400).send({ error: 'Invalid productId: must be an integer', response: null });
     }

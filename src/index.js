@@ -43,6 +43,12 @@ const main = async () => {
     next();
   });
 
+  // log incoming requests
+  app.use((req, res, next) => {
+    console.info(`${req.method} ${req.originalUrl}`);
+    next();
+  });
+
   // initiate routes
   app.use('/v2', capacityRouter);
   app.use('/v2', quoteRouter);
