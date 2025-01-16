@@ -6,9 +6,6 @@ const {
   TRANCHE_DURATION,
   TARGET_PRICE_DENOMINATOR,
   PRICE_CHANGE_PER_DAY,
-  SURGE_THRESHOLD_RATIO,
-  SURGE_THRESHOLD_DENOMINATOR,
-  SURGE_PRICE_RATIO,
 } = require('./constants');
 
 const { BigNumber } = ethers;
@@ -194,23 +191,7 @@ const calculateFixedPricePremiumPerYear = (coverAmount, price) => {
 
 const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, totalCapacity) => {
   const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-  const finalCapacityUsed = initialCapacityUsed.add(coverAmount);
-  const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
-
-  if (finalCapacityUsed.lte(surgeStartPoint)) {
-    return basePremium;
-  }
-
-  const amountOnSurgeSkip = initialCapacityUsed.sub(surgeStartPoint).gt(0)
-    ? initialCapacityUsed.sub(surgeStartPoint)
-    : Zero;
-
-  const amountOnSurge = finalCapacityUsed.sub(surgeStartPoint);
-  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const surgePremium = totalSurgePremium.sub(skipSurgePremium);
-
-  return basePremium.add(surgePremium);
+  return basePremium;
 };
 
 module.exports = {

@@ -7,11 +7,6 @@ module.exports = {
   BUCKET_DURATION: 28 * 24 * 3600, // 28 days in seconds
   ONE_YEAR: 365 * 24 * 3600,
 
-  SURGE_PRICE_RATIO: 2,
-  SURGE_PRICE_DENOMINATOR: 100,
-  SURGE_THRESHOLD_RATIO: 90, // 90.00%
-  SURGE_THRESHOLD_DENOMINATOR: 100, // 100.00%
-
   // base price bump
   // +0.05% for each 1% of capacity used, ie +5% for 100%
   PRICE_BUMP_RATIO: 5_00, // 20%

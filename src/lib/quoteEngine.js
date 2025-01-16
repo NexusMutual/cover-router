@@ -2,15 +2,7 @@ const { inspect } = require('util');
 
 const { BigNumber, ethers } = require('ethers');
 
-const {
-  NXM_PER_ALLOCATION_UNIT,
-  ONE_YEAR,
-  SURGE_PRICE_RATIO,
-  SURGE_THRESHOLD_DENOMINATOR,
-  SURGE_THRESHOLD_RATIO,
-  TARGET_PRICE_DENOMINATOR,
-  SURGE_CHUNK_DIVISOR,
-} = require('./constants');
+const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR, SURGE_CHUNK_DIVISOR } = require('./constants');
 const {
   calculateFirstUsableTrancheIndex,
   calculateBasePrice,
@@ -31,8 +23,6 @@ const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
 const { formatEther } = ethers.utils;
 
 const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, useFixedPrice) => {
-  const used = usedCapacity;
-  const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
   // use 0.01% of total capacity or the remaining capacity, whichever is smaller
   const chunk = bnMin(totalCapacity.div(SURGE_CHUNK_DIVISOR), totalCapacity.sub(usedCapacity));
 
@@ -46,34 +36,9 @@ const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, u
     };
   }
 
-  if (used.lt(surgeStartPoint) || useFixedPrice) {
-    return {
-      chunk: useFixedPrice ? totalCapacity.sub(usedCapacity) : surgeStartPoint.sub(used),
-      chunkBasePrice: basePrice,
-      poolBasePrice: basePrice,
-      usedCapacity,
-      totalCapacity,
-    };
-  }
-
-  const amountOnSurgeSkip = used.sub(surgeStartPoint);
-
-  // calculate base premium
-  const basePremium = chunk.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-
-  // calculate surge premium
-  const amountOnSurge = used.add(chunk).sub(surgeStartPoint);
-  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const surgePremium = totalSurgePremium.sub(skipSurgePremium);
-
-  // calculate total premium
-  const premium = basePremium.add(surgePremium);
-  const chunkBasePrice = premium.mul(TARGET_PRICE_DENOMINATOR).div(chunk);
-
   return {
-    chunk,
-    chunkBasePrice,
+    chunk: totalCapacity.sub(usedCapacity),
+    chunkBasePrice: basePrice,
     poolBasePrice: basePrice,
     usedCapacity,
     totalCapacity,
