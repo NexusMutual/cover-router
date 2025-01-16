@@ -13,8 +13,8 @@ module.exports = {
   SURGE_THRESHOLD_DENOMINATOR: 100, // 100.00%
 
   // base price bump
-  // +0.2% for each 1% of capacity used, ie +20% for 100%
-  PRICE_BUMP_RATIO: 20_00, // 20%
+  // +0.05% for each 1% of capacity used, ie +5% for 100%
+  PRICE_BUMP_RATIO: 5_00, // 20%
 
   // bumped price smoothing
   // 2% per day
