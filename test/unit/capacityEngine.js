@@ -346,10 +346,10 @@ describe('capacityEngine', function () {
       // Verify prices
       expect(response.minAnnualPrice.toString()).to.equal(expectedMinPrice.toString());
       expect(response.maxAnnualPrice.toString()).to.equal(expectedMaxPrice.toString());
-      
+
       // TODO: check this (minminAnnualPrice = maxAnnualPrice after surge price removal);
       // expect(response.minAnnualPrice).to.not.deep.equal(response.maxAnnualPrice);
-      
+
       expect(response.maxAnnualPrice).to.not.deep.equal(Zero);
     });
   });
