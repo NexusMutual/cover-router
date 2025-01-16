@@ -47,6 +47,7 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(amount.toString());
   });
 
+  // TODO: recalculate tests (surge pricing is removed)
   it('returns optimal pool allocation for 2 pools with none reaching surge pricing', () => {
     const pool1 = {
       basePrice: BigNumber.from('201'),
@@ -69,11 +70,15 @@ describe('calculateOptimalPoolAllocation', function () {
     const amount = parseEther('20');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('10').toString());
+    // expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
+    // expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('10').toString());
+
+    expect(optimalAllocations[pool1.poolId]).to.be.equal(undefined);
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('20').toString());
   });
 
-  it('returns optimal pool allocation for 2 pools with both reaching surge pricing', () => {
+  // TODO: check if this test is needed (surge pricing is removed)
+  it.skip('returns optimal pool allocation for 2 pools with both reaching surge pricing', () => {
     const pool1 = {
       basePrice: BigNumber.from('210'),
       initialCapacityUsed: parseEther('8990'),
@@ -99,6 +104,7 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('17').toString());
   });
 
+  // TODO: recalculate tests (surge pricing is removed)
   it('returns optimal pool allocation for 3 pools with no surge pricing', () => {
     const pool1 = {
       basePrice: BigNumber.from('200'),
@@ -127,12 +133,17 @@ describe('calculateOptimalPoolAllocation', function () {
     const amount = parseEther('10');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('4').toString());
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('3').toString());
-    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(parseEther('3').toString());
+    // expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('4').toString());
+    // expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('3').toString());
+    // expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(parseEther('3').toString());
+
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
+    expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
+    expect(optimalAllocations[pool3.poolId]).to.be.equal(undefined);
   });
 
-  it('returns optimal pool allocation for 3 pools with surge pricing', () => {
+  // TODO: check if this test is needed (surge pricing is removed)
+  it.skip('returns optimal pool allocation for 3 pools with surge pricing', () => {
     const pool1 = {
       basePrice: BigNumber.from('210'),
       initialCapacityUsed: parseEther('8990'),
@@ -265,6 +276,7 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
   });
 
+  // TODO: recalculate tests (surge pricing is removed)
   it('returns optimal pool allocation for 1 million ETH across 3 pools', () => {
     const pool1 = {
       basePrice: BigNumber.from('210'),
@@ -292,9 +304,13 @@ describe('calculateOptimalPoolAllocation', function () {
     const amount = parseEther('1000000');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('333000').toString());
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('337000').toString());
-    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(parseEther('330000').toString());
+    // expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('333000').toString());
+    // expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('337000').toString());
+    // expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(parseEther('330000').toString());
+
+    expect(optimalAllocations[pool1.poolId]).to.be.equal(undefined);
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('1000000').toString());
+    expect(optimalAllocations[pool3.poolId]).to.be.equal(undefined);
   });
 
   it('returns optimal pool allocation for 2 same fixed price pools with all allocated to the first', () => {
@@ -433,6 +449,7 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(allocations).to.deep.equal({});
   });
 
+  // TODO: recalculate tests (surge pricing is removed)
   it('computes optimal pool allocation across 4 pools', () => {
     const pool1 = {
       basePrice: BigNumber.from('300'),
@@ -464,13 +481,19 @@ describe('calculateOptimalPoolAllocation', function () {
     const amount = BigNumber.from('88600380000000000000000');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('6613720650000000000000');
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal('347088070000000000000');
-    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('60498761040000000000000');
-    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('21140810240000000000000');
+    // expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('6613720650000000000000');
+    // expect(optimalAllocations[pool2.poolId].toString()).to.be.equal('347088070000000000000');
+    // expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('60498761040000000000000');
+    // expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('21140810240000000000000');
+
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('70620000000000000000');
+    expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
+    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('65641110000000000000000');
+    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('22888650000000000000000');
   });
 
-  it('returns the same results as the brute force optimization for 6 pools with surge pricing', () => {
+  // TODO: check if this test is needed (surge pricing is removed)
+  it.skip('returns the same results as the brute force optimization for 6 pools with surge pricing', () => {
     const pool1 = {
       basePrice: BigNumber.from('210'),
       initialCapacityUsed: parseEther('899'),

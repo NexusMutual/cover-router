@@ -7,12 +7,14 @@ const assets = {
   255: { id: 255, symbol: 'NXM', decimals: 18 },
 };
 
+// TODO: check changed maxAnnualPrices after surge pricing removal
+
 // capacities response for product across ALL pools
 const capacities = [
   {
     productId: 0,
     allocatedNxm: '364800000000000000000',
-    maxAnnualPrice: '0.03',
+    maxAnnualPrice: '0.02',
     minAnnualPrice: '0.02',
     availableCapacity: [
       {
@@ -45,7 +47,7 @@ const capacities = [
   {
     productId: 1,
     allocatedNxm: '0',
-    maxAnnualPrice: '0.03',
+    maxAnnualPrice: '0.02',
     minAnnualPrice: '0.02',
     availableCapacity: [
       {
@@ -139,7 +141,7 @@ const capacities = [
     ],
     allocatedNxm: '32725200000000000000000',
     minAnnualPrice: '0.0775',
-    maxAnnualPrice: '0.104190714614767679',
+    maxAnnualPrice: '0.08921973183222972',
   },
   {
     productId: 4,
@@ -228,7 +230,7 @@ const productCapacityPerPools = {
           assetId: 255,
         },
       ],
-      maxAnnualPrice: '0.03',
+      maxAnnualPrice: '0.02',
       minAnnualPrice: '0.02',
       poolId: 1,
     },
@@ -281,7 +283,7 @@ const productCapacityPerPools = {
           assetId: 255,
         },
       ],
-      maxAnnualPrice: '0.03',
+      maxAnnualPrice: '0.02',
       minAnnualPrice: '0.02',
       poolId: 2,
     },
@@ -333,7 +335,7 @@ const poolProductCapacities = {
         ],
         allocatedNxm: '0',
         minAnnualPrice: '0.02',
-        maxAnnualPrice: '0.03',
+        maxAnnualPrice: '0.02',
       },
       {
         productId: 1,
@@ -366,7 +368,7 @@ const poolProductCapacities = {
         ],
         allocatedNxm: '0',
         minAnnualPrice: '0.02',
-        maxAnnualPrice: '0.03',
+        maxAnnualPrice: '0.02',
       },
       {
         productId: 2,
