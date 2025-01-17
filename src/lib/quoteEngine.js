@@ -7,7 +7,6 @@ const {
   calculateFirstUsableTrancheIndex,
   calculateBasePrice,
   calculatePremiumPerYear,
-  calculateFixedPricePremiumPerYear,
   divCeil,
   bnMin,
 } = require('./helpers');
@@ -265,9 +264,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       throw new Error(`Unable to find pool ${poolId} in poolsData`);
     }
 
-    const premiumPerYear = product.useFixedPrice
-      ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
-      : calculatePremiumPerYear(amountToAllocate, pool.basePrice);
+    const premiumPerYear = calculatePremiumPerYear(amountToAllocate, pool.basePrice);
 
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
     const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);
@@ -302,7 +299,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 module.exports = {
   quoteEngine,
   calculateBasePrice,
-  calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
   calculateOptimalPoolAllocation,
   customAllocationPriorityFixedPrice,

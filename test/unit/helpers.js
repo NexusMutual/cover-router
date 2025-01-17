@@ -15,7 +15,6 @@ const {
   calculateAvailableCapacity,
   calculateBasePrice,
   calculatePremiumPerYear,
-  calculateFixedPricePremiumPerYear,
   calculateBucketId,
   calculateTrancheId,
   divCeil,
@@ -457,12 +456,12 @@ describe('helpers', () => {
     });
   });
 
-  describe('calculateFixedPricePremiumPerYear', () => {
+  describe('calculatePremiumPerYear', () => {
     it('should calculate premium correctly', () => {
       const coverAmount = parseEther('1'); // 1 ether
       const price = BigNumber.from('1000');
 
-      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
+      const result = calculatePremiumPerYear(coverAmount, price);
       const expected = coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
 
       expect(result.toString()).to.equal(expected.toString());
@@ -472,7 +471,7 @@ describe('helpers', () => {
       const coverAmount = Zero;
       const price = BigNumber.from('1000');
 
-      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
+      const result = calculatePremiumPerYear(coverAmount, price);
       expect(result.toString()).to.equal('0');
     });
 
@@ -480,29 +479,7 @@ describe('helpers', () => {
       const coverAmount = WeiPerEther;
       const price = Zero;
 
-      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
-      expect(result.toString()).to.equal('0');
-    });
-  });
-
-  describe('calculatePremiumPerYear', () => {
-    const basePrice = BigNumber.from('1000');
-    const totalCapacity = WeiPerEther.mul(1000); // 1000 ether
-
-    it('should return base premium when below surge threshold', () => {
-      const coverAmount = WeiPerEther; // 1 ether
-      const initialCapacityUsed = Zero;
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice);
-      const expected = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-
-      expect(result.toString()).to.equal(expected.toString());
-    });
-
-    it('should handle zero cover amount', () => {
-      const coverAmount = Zero;
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice);
+      const result = calculatePremiumPerYear(coverAmount, price);
       expect(result.toString()).to.equal('0');
     });
   });

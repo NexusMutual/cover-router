@@ -18,7 +18,6 @@ const {
   calculateAvailableCapacity,
   calculateBasePrice,
   calculateFirstUsableTrancheIndex,
-  calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
   calculateProductDataForTranche,
   calculateTrancheId,
@@ -142,15 +141,15 @@ describe('capacityEngine', function () {
       const used = allocations[lastIndex].mul(NXM_PER_ALLOCATION_UNIT);
       const availableCapacity = trancheCapacities[lastIndex].sub(allocations[lastIndex]);
       const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
-      const expectedFixedPrice = WeiPerEther.mul(
-        calculateFixedPricePremiumPerYear(NXM_PER_ALLOCATION_UNIT, targetPrice),
-      ).div(NXM_PER_ALLOCATION_UNIT);
+      const expectedFixedPrice = WeiPerEther.mul(calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, targetPrice)).div(
+        NXM_PER_ALLOCATION_UNIT,
+      );
 
       expect(aggregatedData.capacityUsedNXM.toString()).to.equal(used.toString());
       expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(availableInNXM.toString());
       expect(aggregatedData.minPrice.toString()).to.equal(expectedFixedPrice.toString());
       expect(aggregatedData.totalPremium.toString()).to.equal(
-        calculateFixedPricePremiumPerYear(availableInNXM, targetPrice).toString(),
+        calculatePremiumPerYear(availableInNXM, targetPrice).toString(),
       );
 
       expect(capacityPerPool).to.have.lengthOf(1);
@@ -175,10 +174,8 @@ describe('capacityEngine', function () {
       });
 
       // Calculate expected values
-      const used = allocations[lastIndex].mul(NXM_PER_ALLOCATION_UNIT);
       const availableCapacity = trancheCapacities[lastIndex].sub(allocations[lastIndex]);
       const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
-      const total = trancheCapacities[lastIndex].mul(NXM_PER_ALLOCATION_UNIT);
 
       // Calculate base price
       const basePrice = calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);

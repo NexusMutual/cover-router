@@ -130,18 +130,14 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     // the minimum price depends on the surge
     // so we buy the smallest possible unit of capacity
     // and calculate the premium per year
-    const unitPremium = useFixedPrice
-      ? calculateFixedPricePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice)
-      : calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice);
+    const unitPremium = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice);
 
     const poolMinPrice = WeiPerEther.mul(unitPremium).div(NXM_PER_ALLOCATION_UNIT);
 
     // the maximum price a user would get can only be determined if the entire available
     // capacity is bought because the routing will always pick the cheapest
     // so we're summing up the premium for all pools and then calculate the average at the end
-    const poolPremium = useFixedPrice
-      ? calculateFixedPricePremiumPerYear(availableInNXM, basePrice)
-      : calculatePremiumPerYear(availableInNXM, basePrice);
+    const poolPremium = calculatePremiumPerYear(availableInNXM, basePrice);
 
     const poolMaxPrice = availableInNXM.isZero() ? Zero : WeiPerEther.mul(poolPremium).div(availableInNXM);
 
@@ -185,10 +181,6 @@ const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now
   return bnMax(targetPrice, bumpedPrice.sub(priceDrop));
 };
 
-const calculateFixedPricePremiumPerYear = (coverAmount, price) => {
-  return coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
-};
-
 const calculatePremiumPerYear = (coverAmount, basePrice) => {
   return coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
 };
@@ -205,6 +197,5 @@ module.exports = {
   calculateAvailableCapacity,
   calculateProductDataForTranche,
   calculateBasePrice,
-  calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
 };
