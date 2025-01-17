@@ -132,7 +132,7 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     // and calculate the premium per year
     const unitPremium = useFixedPrice
       ? calculateFixedPricePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice)
-      : calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice, usedInNXM, totalInNXM);
+      : calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice);
 
     const poolMinPrice = WeiPerEther.mul(unitPremium).div(NXM_PER_ALLOCATION_UNIT);
 
@@ -141,7 +141,7 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     // so we're summing up the premium for all pools and then calculate the average at the end
     const poolPremium = useFixedPrice
       ? calculateFixedPricePremiumPerYear(availableInNXM, basePrice)
-      : calculatePremiumPerYear(availableInNXM, basePrice, usedInNXM, totalInNXM);
+      : calculatePremiumPerYear(availableInNXM, basePrice);
 
     const poolMaxPrice = availableInNXM.isZero() ? Zero : WeiPerEther.mul(poolPremium).div(availableInNXM);
 
@@ -189,9 +189,8 @@ const calculateFixedPricePremiumPerYear = (coverAmount, price) => {
   return coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
 };
 
-const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, totalCapacity) => {
-  const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-  return basePremium;
+const calculatePremiumPerYear = (coverAmount, basePrice) => {
+  return coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
 };
 
 module.exports = {

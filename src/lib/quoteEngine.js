@@ -267,7 +267,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 
     const premiumPerYear = product.useFixedPrice
       ? calculateFixedPricePremiumPerYear(amountToAllocate, pool.basePrice)
-      : calculatePremiumPerYear(amountToAllocate, pool.basePrice, pool.initialCapacityUsed, pool.totalCapacity);
+      : calculatePremiumPerYear(amountToAllocate, pool.basePrice);
 
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
     const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);

@@ -493,7 +493,7 @@ describe('helpers', () => {
       const coverAmount = WeiPerEther; // 1 ether
       const initialCapacityUsed = Zero;
 
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
+      const result = calculatePremiumPerYear(coverAmount, basePrice);
       const expected = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
 
       expect(result.toString()).to.equal(expected.toString());
@@ -501,9 +501,8 @@ describe('helpers', () => {
 
     it('should handle zero cover amount', () => {
       const coverAmount = Zero;
-      const initialCapacityUsed = WeiPerEther.mul(500); // 500 ether
 
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
+      const result = calculatePremiumPerYear(coverAmount, basePrice);
       expect(result.toString()).to.equal('0');
     });
   });

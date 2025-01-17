@@ -184,11 +184,11 @@ describe('capacityEngine', function () {
       const basePrice = calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
 
       // Calculate expected min annual price
-      const minPremiumPerYear = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice, used, total);
+      const minPremiumPerYear = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice);
       const expectedMinPrice = WeiPerEther.mul(minPremiumPerYear).div(NXM_PER_ALLOCATION_UNIT);
 
       // Calculate expected max annual price
-      const maxPremiumPerYear = calculatePremiumPerYear(availableInNXM, basePrice, used, total);
+      const maxPremiumPerYear = calculatePremiumPerYear(availableInNXM, basePrice);
       const expectedMaxPrice = availableInNXM.isZero() ? Zero : WeiPerEther.mul(maxPremiumPerYear).div(availableInNXM);
 
       expect(response.minAnnualPrice.toString()).to.equal(expectedMinPrice.toString());
@@ -319,8 +319,8 @@ describe('capacityEngine', function () {
       const usedCapacity2 = pool2Product.allocations[8].mul(NXM_PER_ALLOCATION_UNIT);
 
       // Calculate min premium (for 1 unit)
-      const minPremium1 = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice1, usedCapacity1, totalCapacity1);
-      const minPremium2 = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice2, usedCapacity2, totalCapacity2);
+      const minPremium1 = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice1);
+      const minPremium2 = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice2);
 
       // Expected min price is the minimum of the two pools
       const expectedMinPrice = WeiPerEther.mul(minPremium1.lt(minPremium2) ? minPremium1 : minPremium2).div(
@@ -330,8 +330,8 @@ describe('capacityEngine', function () {
       // Calculate max premium (for all available capacity)
       const availableCapacity1 = totalCapacity1.sub(usedCapacity1);
       const availableCapacity2 = totalCapacity2.sub(usedCapacity2);
-      const maxPremium1 = calculatePremiumPerYear(availableCapacity1, basePrice1, usedCapacity1, totalCapacity1);
-      const maxPremium2 = calculatePremiumPerYear(availableCapacity2, basePrice2, usedCapacity2, totalCapacity2);
+      const maxPremium1 = calculatePremiumPerYear(availableCapacity1, basePrice1);
+      const maxPremium2 = calculatePremiumPerYear(availableCapacity2, basePrice2);
 
       // Expected max price is the maximum premium per unit
       const maxPrice1 = availableCapacity1.isZero() ? Zero : WeiPerEther.mul(maxPremium1).div(availableCapacity1);
