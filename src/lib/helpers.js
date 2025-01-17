@@ -101,12 +101,10 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
 
     // calculating the capacity in allocation points
     const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
-    const total = trancheCapacities.reduce((total, capacity) => total.add(capacity), Zero);
 
     const availableCapacity = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
 
     // convert to nxm
-    const totalInNXM = total.mul(NXM_PER_ALLOCATION_UNIT);
     const usedInNXM = used.mul(NXM_PER_ALLOCATION_UNIT);
     const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
 
