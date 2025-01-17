@@ -501,53 +501,12 @@ describe('helpers', () => {
       expect(result.toString()).to.equal(expected.toString());
     });
 
-    // TODO: check if this test is needed (surge pricing is removed)
-    it.skip('should calculate surge premium correctly when crossing threshold', () => {
-      const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
-      const coverAmount = WeiPerEther.mul(100); // 100 ether
-      const initialCapacityUsed = surgeStartPoint; // Start exactly at surge point
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
-
-      // Should be greater than base premium due to surge
-      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-      expect(result.gt(basePremium)).to.equal(true);
-    });
-
     it('should handle zero cover amount', () => {
       const coverAmount = Zero;
       const initialCapacityUsed = WeiPerEther.mul(500); // 500 ether
 
       const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
       expect(result.toString()).to.equal('0');
-    });
-
-    // TODO: check if this test is needed (surge pricing is removed)
-    it.skip('should calculate correct premium when already in surge', () => {
-      const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
-      const initialCapacityUsed = surgeStartPoint.add(WeiPerEther.mul(100)); // 100 ether past surge
-      const coverAmount = WeiPerEther.mul(50); // 50 ether additional
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
-
-      // Should be greater than both base premium and premium at surge start
-      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-      const premiumAtSurgeStart = calculatePremiumPerYear(coverAmount, basePrice, surgeStartPoint, totalCapacity);
-
-      expect(result.gt(basePremium)).to.equal(true);
-      expect(result.gt(premiumAtSurgeStart)).to.equal(true);
-    });
-
-    // TODO: check if this test should be changed after removing surge pricing
-    it.skip('should handle capacity near total capacity', () => {
-      const initialCapacityUsed = totalCapacity.sub(WeiPerEther); // 1 ether less than total
-      const coverAmount = WeiPerEther; // Try to use remaining capacity
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
-
-      // Should return a very high premium due to surge pricing
-      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-      expect(result.gt(basePremium.mul(2))).to.equal(true); // At least 2x base premium
     });
   });
 
