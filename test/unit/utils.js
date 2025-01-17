@@ -30,20 +30,6 @@ const verifyUsedCapacity = (response, poolProduct) => {
   return totalUsedCapacity;
 };
 
-const verifyPriceCalculations = (response, storeProduct) => {
-  expect(response.minAnnualPrice).to.be.instanceOf(BigNumber);
-  expect(response.maxAnnualPrice).to.be.instanceOf(BigNumber);
-  expect(response.minAnnualPrice.gt(Zero)).to.equal(true);
-  expect(response.maxAnnualPrice.gt(Zero)).to.equal(true);
-
-  if (storeProduct.useFixedPrice) {
-    expect(response.minAnnualPrice.toString()).to.equal(response.maxAnnualPrice.toString());
-  } else {
-    expect(response.minAnnualPrice.toString()).to.not.equal(response.maxAnnualPrice.toString());
-    expect(response.maxAnnualPrice.gte(response.minAnnualPrice)).to.equal(true);
-  }
-};
-
 const calculateExpectedAvailableNXM = (poolIds, productId, poolProducts, firstUsableTrancheIndex) => {
   return poolIds.reduce((total, poolId) => {
     const poolProduct = poolProducts[`${productId}_${poolId}`];
@@ -82,7 +68,6 @@ module.exports = {
   getCurrentTimestamp,
   verifyCapacityCalculation,
   verifyUsedCapacity,
-  verifyPriceCalculations,
   calculateExpectedAvailableNXM,
   calculateExpectedUsedCapacity,
   calculateExpectedUsedCapacityAcrossPools,

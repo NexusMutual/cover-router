@@ -6,8 +6,6 @@ const {
   NXM_PER_ALLOCATION_UNIT,
   PRICE_CHANGE_PER_DAY,
   SECONDS_PER_DAY,
-  SURGE_THRESHOLD_DENOMINATOR,
-  SURGE_THRESHOLD_RATIO,
   TARGET_PRICE_DENOMINATOR,
   TRANCHE_DURATION,
 } = require('../../src/lib/constants');
@@ -17,7 +15,6 @@ const {
   calculateAvailableCapacity,
   calculateBasePrice,
   calculatePremiumPerYear,
-  calculateFixedPricePremiumPerYear,
   calculateBucketId,
   calculateTrancheId,
   divCeil,
@@ -171,7 +168,9 @@ describe('helpers', () => {
       );
       expect(capacityPerPool).to.have.lengthOf(1);
       expect(pool1Capacity.poolId).to.equal(1);
-      expect(pool1Capacity.minAnnualPrice.toString()).to.not.equal(pool1Capacity.maxAnnualPrice.toString());
+
+      // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
+      expect(pool1Capacity.minAnnualPrice.toString()).to.be.equal(pool1Capacity.maxAnnualPrice.toString());
 
       const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
       assertAvailableCapacity(pool1Capacity, availableInNXM);
@@ -242,7 +241,8 @@ describe('helpers', () => {
 
       // Additional checks for each pool
       capacityPerPool.forEach((poolCapacity, index) => {
-        expect(poolCapacity.minAnnualPrice.toString()).to.not.equal(poolCapacity.maxAnnualPrice.toString());
+        // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
+        expect(poolCapacity.minAnnualPrice.toString()).to.be.equal(poolCapacity.maxAnnualPrice.toString());
         expect(poolCapacity.availableCapacity.length).to.not.equal(0);
 
         const { allocations, trancheCapacities } = productPools[index];
@@ -456,12 +456,12 @@ describe('helpers', () => {
     });
   });
 
-  describe('calculateFixedPricePremiumPerYear', () => {
+  describe('calculatePremiumPerYear', () => {
     it('should calculate premium correctly', () => {
       const coverAmount = parseEther('1'); // 1 ether
       const price = BigNumber.from('1000');
 
-      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
+      const result = calculatePremiumPerYear(coverAmount, price);
       const expected = coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
 
       expect(result.toString()).to.equal(expected.toString());
@@ -471,7 +471,7 @@ describe('helpers', () => {
       const coverAmount = Zero;
       const price = BigNumber.from('1000');
 
-      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
+      const result = calculatePremiumPerYear(coverAmount, price);
       expect(result.toString()).to.equal('0');
     });
 
@@ -479,69 +479,8 @@ describe('helpers', () => {
       const coverAmount = WeiPerEther;
       const price = Zero;
 
-      const result = calculateFixedPricePremiumPerYear(coverAmount, price);
+      const result = calculatePremiumPerYear(coverAmount, price);
       expect(result.toString()).to.equal('0');
-    });
-  });
-
-  describe('calculatePremiumPerYear', () => {
-    const basePrice = BigNumber.from('1000');
-    const totalCapacity = WeiPerEther.mul(1000); // 1000 ether
-
-    it('should return base premium when below surge threshold', () => {
-      const coverAmount = WeiPerEther; // 1 ether
-      const initialCapacityUsed = Zero;
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
-      const expected = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-
-      expect(result.toString()).to.equal(expected.toString());
-    });
-
-    it('should calculate surge premium correctly when crossing threshold', () => {
-      const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
-      const coverAmount = WeiPerEther.mul(100); // 100 ether
-      const initialCapacityUsed = surgeStartPoint; // Start exactly at surge point
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
-
-      // Should be greater than base premium due to surge
-      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-      expect(result.gt(basePremium)).to.equal(true);
-    });
-
-    it('should handle zero cover amount', () => {
-      const coverAmount = Zero;
-      const initialCapacityUsed = WeiPerEther.mul(500); // 500 ether
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
-      expect(result.toString()).to.equal('0');
-    });
-
-    it('should calculate correct premium when already in surge', () => {
-      const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
-      const initialCapacityUsed = surgeStartPoint.add(WeiPerEther.mul(100)); // 100 ether past surge
-      const coverAmount = WeiPerEther.mul(50); // 50 ether additional
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
-
-      // Should be greater than both base premium and premium at surge start
-      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-      const premiumAtSurgeStart = calculatePremiumPerYear(coverAmount, basePrice, surgeStartPoint, totalCapacity);
-
-      expect(result.gt(basePremium)).to.equal(true);
-      expect(result.gt(premiumAtSurgeStart)).to.equal(true);
-    });
-
-    it('should handle capacity near total capacity', () => {
-      const initialCapacityUsed = totalCapacity.sub(WeiPerEther); // 1 ether less than total
-      const coverAmount = WeiPerEther; // Try to use remaining capacity
-
-      const result = calculatePremiumPerYear(coverAmount, basePrice, initialCapacityUsed, totalCapacity);
-
-      // Should return a very high premium due to surge pricing
-      const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-      expect(result.gt(basePremium.mul(2))).to.equal(true); // At least 2x base premium
     });
   });
 

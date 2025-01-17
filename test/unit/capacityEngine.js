@@ -3,12 +3,7 @@ const ethers = require('ethers');
 const sinon = require('sinon');
 
 const { poolProductCapacities } = require('./responses');
-const {
-  calculateExpectedUsedCapacity,
-  getCurrentTimestamp,
-  verifyPriceCalculations,
-  verifyCapacityResponse,
-} = require('./utils');
+const { calculateExpectedUsedCapacity, getCurrentTimestamp, verifyCapacityResponse } = require('./utils');
 const {
   getAllProductCapacities,
   getProductCapacity,
@@ -23,7 +18,6 @@ const {
   calculateAvailableCapacity,
   calculateBasePrice,
   calculateFirstUsableTrancheIndex,
-  calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
   calculateProductDataForTranche,
   calculateTrancheId,
@@ -147,15 +141,15 @@ describe('capacityEngine', function () {
       const used = allocations[lastIndex].mul(NXM_PER_ALLOCATION_UNIT);
       const availableCapacity = trancheCapacities[lastIndex].sub(allocations[lastIndex]);
       const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
-      const expectedFixedPrice = WeiPerEther.mul(
-        calculateFixedPricePremiumPerYear(NXM_PER_ALLOCATION_UNIT, targetPrice),
-      ).div(NXM_PER_ALLOCATION_UNIT);
+      const expectedFixedPrice = WeiPerEther.mul(calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, targetPrice)).div(
+        NXM_PER_ALLOCATION_UNIT,
+      );
 
       expect(aggregatedData.capacityUsedNXM.toString()).to.equal(used.toString());
       expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(availableInNXM.toString());
       expect(aggregatedData.minPrice.toString()).to.equal(expectedFixedPrice.toString());
       expect(aggregatedData.totalPremium.toString()).to.equal(
-        calculateFixedPricePremiumPerYear(availableInNXM, targetPrice).toString(),
+        calculatePremiumPerYear(availableInNXM, targetPrice).toString(),
       );
 
       expect(capacityPerPool).to.have.lengthOf(1);
@@ -180,26 +174,25 @@ describe('capacityEngine', function () {
       });
 
       // Calculate expected values
-      const used = allocations[lastIndex].mul(NXM_PER_ALLOCATION_UNIT);
       const availableCapacity = trancheCapacities[lastIndex].sub(allocations[lastIndex]);
       const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
-      const total = trancheCapacities[lastIndex].mul(NXM_PER_ALLOCATION_UNIT);
 
       // Calculate base price
       const basePrice = calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
 
       // Calculate expected min annual price
-      const minPremiumPerYear = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice, used, total);
+      const minPremiumPerYear = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice);
       const expectedMinPrice = WeiPerEther.mul(minPremiumPerYear).div(NXM_PER_ALLOCATION_UNIT);
 
       // Calculate expected max annual price
-      const maxPremiumPerYear = calculatePremiumPerYear(availableInNXM, basePrice, used, total);
+      const maxPremiumPerYear = calculatePremiumPerYear(availableInNXM, basePrice);
       const expectedMaxPrice = availableInNXM.isZero() ? Zero : WeiPerEther.mul(maxPremiumPerYear).div(availableInNXM);
 
       expect(response.minAnnualPrice.toString()).to.equal(expectedMinPrice.toString());
       expect(response.maxAnnualPrice.toString()).to.equal(expectedMaxPrice.toString());
-      expect(response.minAnnualPrice.toString()).to.not.equal(response.maxAnnualPrice.toString());
-      expect(response.minAnnualPrice.lt(response.maxAnnualPrice)).to.equal(true);
+
+      // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
+      expect(response.minAnnualPrice.toString()).to.be.equal(response.maxAnnualPrice.toString());
 
       response.capacityPerPool.forEach(poolCapacity =>
         verifyPoolCapacity(poolCapacity, productId, products, poolProducts, now, assets, assetRates),
@@ -322,8 +315,8 @@ describe('capacityEngine', function () {
       const usedCapacity2 = pool2Product.allocations[8].mul(NXM_PER_ALLOCATION_UNIT);
 
       // Calculate min premium (for 1 unit)
-      const minPremium1 = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice1, usedCapacity1, totalCapacity1);
-      const minPremium2 = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice2, usedCapacity2, totalCapacity2);
+      const minPremium1 = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice1);
+      const minPremium2 = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice2);
 
       // Expected min price is the minimum of the two pools
       const expectedMinPrice = WeiPerEther.mul(minPremium1.lt(minPremium2) ? minPremium1 : minPremium2).div(
@@ -333,8 +326,8 @@ describe('capacityEngine', function () {
       // Calculate max premium (for all available capacity)
       const availableCapacity1 = totalCapacity1.sub(usedCapacity1);
       const availableCapacity2 = totalCapacity2.sub(usedCapacity2);
-      const maxPremium1 = calculatePremiumPerYear(availableCapacity1, basePrice1, usedCapacity1, totalCapacity1);
-      const maxPremium2 = calculatePremiumPerYear(availableCapacity2, basePrice2, usedCapacity2, totalCapacity2);
+      const maxPremium1 = calculatePremiumPerYear(availableCapacity1, basePrice1);
+      const maxPremium2 = calculatePremiumPerYear(availableCapacity2, basePrice2);
 
       // Expected max price is the maximum premium per unit
       const maxPrice1 = availableCapacity1.isZero() ? Zero : WeiPerEther.mul(maxPremium1).div(availableCapacity1);
@@ -344,7 +337,10 @@ describe('capacityEngine', function () {
       // Verify prices
       expect(response.minAnnualPrice.toString()).to.equal(expectedMinPrice.toString());
       expect(response.maxAnnualPrice.toString()).to.equal(expectedMaxPrice.toString());
-      expect(response.minAnnualPrice).to.not.deep.equal(response.maxAnnualPrice);
+
+      // TODO: check this (minminAnnualPrice = maxAnnualPrice after surge price removal);
+      // expect(response.minAnnualPrice).to.not.deep.equal(response.maxAnnualPrice);
+
       expect(response.maxAnnualPrice).to.not.deep.equal(Zero);
     });
   });
@@ -537,7 +533,17 @@ describe('capacityEngine', function () {
       expect(response.usedCapacity.toString()).to.equal(expectedUsedCapacity.toString());
 
       // Verify price calculations
-      verifyPriceCalculations(response, products[productId]);
+      expect(response.minAnnualPrice).to.be.instanceOf(BigNumber);
+      expect(response.maxAnnualPrice).to.be.instanceOf(BigNumber);
+      expect(response.minAnnualPrice.gt(Zero)).to.equal(true);
+      expect(response.maxAnnualPrice.gt(Zero)).to.equal(true);
+
+      if (products[productId].useFixedPrice) {
+        expect(response.minAnnualPrice.toString()).to.equal(response.maxAnnualPrice.toString());
+      } else {
+        // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
+        expect(response.minAnnualPrice.toString()).to.be.equal(response.maxAnnualPrice.toString());
+      }
     });
   });
 
@@ -766,7 +772,8 @@ describe('capacityEngine', function () {
             expect(product.minAnnualPrice.toString()).to.equal(expectedPoolProduct.targetPrice.toString());
           }
         } else {
-          expect(product.minAnnualPrice.toString()).to.not.equal(product.maxAnnualPrice.toString());
+          // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
+          expect(product.minAnnualPrice.toString()).to.be.equal(product.maxAnnualPrice.toString());
           expect(BigNumber.from(product.minAnnualPrice).gt(Zero)).to.equal(true);
           expect(BigNumber.from(product.maxAnnualPrice).gt(Zero)).to.equal(true);
         }

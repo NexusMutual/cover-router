@@ -6,9 +6,6 @@ const {
   TRANCHE_DURATION,
   TARGET_PRICE_DENOMINATOR,
   PRICE_CHANGE_PER_DAY,
-  SURGE_THRESHOLD_RATIO,
-  SURGE_THRESHOLD_DENOMINATOR,
-  SURGE_PRICE_RATIO,
 } = require('./constants');
 
 const { BigNumber } = ethers;
@@ -104,12 +101,10 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
 
     // calculating the capacity in allocation points
     const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
-    const total = trancheCapacities.reduce((total, capacity) => total.add(capacity), Zero);
 
     const availableCapacity = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
 
     // convert to nxm
-    const totalInNXM = total.mul(NXM_PER_ALLOCATION_UNIT);
     const usedInNXM = used.mul(NXM_PER_ALLOCATION_UNIT);
     const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
 
@@ -133,18 +128,14 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     // the minimum price depends on the surge
     // so we buy the smallest possible unit of capacity
     // and calculate the premium per year
-    const unitPremium = useFixedPrice
-      ? calculateFixedPricePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice)
-      : calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice, usedInNXM, totalInNXM);
+    const unitPremium = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice);
 
     const poolMinPrice = WeiPerEther.mul(unitPremium).div(NXM_PER_ALLOCATION_UNIT);
 
     // the maximum price a user would get can only be determined if the entire available
     // capacity is bought because the routing will always pick the cheapest
     // so we're summing up the premium for all pools and then calculate the average at the end
-    const poolPremium = useFixedPrice
-      ? calculateFixedPricePremiumPerYear(availableInNXM, basePrice)
-      : calculatePremiumPerYear(availableInNXM, basePrice, usedInNXM, totalInNXM);
+    const poolPremium = calculatePremiumPerYear(availableInNXM, basePrice);
 
     const poolMaxPrice = availableInNXM.isZero() ? Zero : WeiPerEther.mul(poolPremium).div(availableInNXM);
 
@@ -188,29 +179,8 @@ const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now
   return bnMax(targetPrice, bumpedPrice.sub(priceDrop));
 };
 
-const calculateFixedPricePremiumPerYear = (coverAmount, price) => {
-  return coverAmount.mul(price).div(TARGET_PRICE_DENOMINATOR);
-};
-
-const calculatePremiumPerYear = (coverAmount, basePrice, initialCapacityUsed, totalCapacity) => {
-  const basePremium = coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
-  const finalCapacityUsed = initialCapacityUsed.add(coverAmount);
-  const surgeStartPoint = totalCapacity.mul(SURGE_THRESHOLD_RATIO).div(SURGE_THRESHOLD_DENOMINATOR);
-
-  if (finalCapacityUsed.lte(surgeStartPoint)) {
-    return basePremium;
-  }
-
-  const amountOnSurgeSkip = initialCapacityUsed.sub(surgeStartPoint).gt(0)
-    ? initialCapacityUsed.sub(surgeStartPoint)
-    : Zero;
-
-  const amountOnSurge = finalCapacityUsed.sub(surgeStartPoint);
-  const totalSurgePremium = amountOnSurge.mul(amountOnSurge).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const skipSurgePremium = amountOnSurgeSkip.mul(amountOnSurgeSkip).mul(SURGE_PRICE_RATIO).div(totalCapacity).div(2);
-  const surgePremium = totalSurgePremium.sub(skipSurgePremium);
-
-  return basePremium.add(surgePremium);
+const calculatePremiumPerYear = (coverAmount, basePrice) => {
+  return coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
 };
 
 module.exports = {
@@ -225,6 +195,5 @@ module.exports = {
   calculateAvailableCapacity,
   calculateProductDataForTranche,
   calculateBasePrice,
-  calculateFixedPricePremiumPerYear,
   calculatePremiumPerYear,
 };
