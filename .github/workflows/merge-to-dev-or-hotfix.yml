@@ -1,9 +1,10 @@
-name: Merge to dev
+name: Merge to dev or hotfix
 
 on:
   push:
     branches:
       - dev
+      - hotfix
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -14,25 +15,25 @@ jobs:
     uses: NexusMutual/workflows/.github/workflows/reset.yml@master
     with:
       target-ref: release-candidate
-      base-ref: dev
+      base-ref: ${{ github.ref_name }}
       environment: production
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
 
-  bump:
+  bump-version:
     needs: reset-release-candidate
     uses: NexusMutual/workflows/.github/workflows/bump.yml@master
     with:
       ref: 'release-candidate'
-      bump-command: npm version patch --no-git-tag-version
+      bump-command: GITHUB_REF=refs/heads/release-candidate npx semantic-release --dry-run --no-ci 
       environment: production
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
-      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+      DEPLOYER_APP_PK : ${{ secrets.DEPLOYER_APP_PK }}
 
   build:
-    needs: bump
+    needs: bump-version
     uses: NexusMutual/workflows/.github/workflows/build.yml@master
     with:
       ref: 'release-candidate'
