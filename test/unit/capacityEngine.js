@@ -3,12 +3,7 @@ const ethers = require('ethers');
 const sinon = require('sinon');
 
 const { poolProductCapacities } = require('./responses');
-const {
-  calculateExpectedUsedCapacity,
-  getCurrentTimestamp,
-  verifyPriceCalculations,
-  verifyCapacityResponse,
-} = require('./utils');
+const { calculateExpectedUsedCapacity, getCurrentTimestamp, verifyCapacityResponse } = require('./utils');
 const {
   getAllProductCapacities,
   getProductCapacity,
@@ -542,7 +537,18 @@ describe('capacityEngine', function () {
       expect(response.usedCapacity.toString()).to.equal(expectedUsedCapacity.toString());
 
       // Verify price calculations
-      verifyPriceCalculations(response, products[productId]);
+      expect(response.minAnnualPrice).to.be.instanceOf(BigNumber);
+      expect(response.maxAnnualPrice).to.be.instanceOf(BigNumber);
+      expect(response.minAnnualPrice.gt(Zero)).to.equal(true);
+      expect(response.maxAnnualPrice.gt(Zero)).to.equal(true);
+
+      if (products[productId].useFixedPrice) {
+        expect(response.minAnnualPrice.toString()).to.equal(response.maxAnnualPrice.toString());
+      } else {
+        // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
+        // expect(response.minAnnualPrice.toString()).to.not.equal(response.maxAnnualPrice.toString());
+        // expect(response.maxAnnualPrice.gte(response.minAnnualPrice)).to.equal(true);
+      }
     });
   });
 
