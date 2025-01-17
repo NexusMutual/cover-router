@@ -192,8 +192,7 @@ describe('capacityEngine', function () {
       expect(response.maxAnnualPrice.toString()).to.equal(expectedMaxPrice.toString());
 
       // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
-      // expect(response.minAnnualPrice.toString()).to.not.equal(response.maxAnnualPrice.toString());
-      // expect(response.minAnnualPrice.lt(response.maxAnnualPrice)).to.equal(true);
+      expect(response.minAnnualPrice.toString()).to.be.equal(response.maxAnnualPrice.toString());
 
       response.capacityPerPool.forEach(poolCapacity =>
         verifyPoolCapacity(poolCapacity, productId, products, poolProducts, now, assets, assetRates),
@@ -543,8 +542,7 @@ describe('capacityEngine', function () {
         expect(response.minAnnualPrice.toString()).to.equal(response.maxAnnualPrice.toString());
       } else {
         // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
-        // expect(response.minAnnualPrice.toString()).to.not.equal(response.maxAnnualPrice.toString());
-        // expect(response.maxAnnualPrice.gte(response.minAnnualPrice)).to.equal(true);
+        expect(response.minAnnualPrice.toString()).to.be.equal(response.maxAnnualPrice.toString());
       }
     });
   });
@@ -775,7 +773,7 @@ describe('capacityEngine', function () {
           }
         } else {
           // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
-          // expect(product.minAnnualPrice.toString()).to.not.equal(product.maxAnnualPrice.toString());
+          expect(product.minAnnualPrice.toString()).to.be.equal(product.maxAnnualPrice.toString());
           expect(BigNumber.from(product.minAnnualPrice).gt(Zero)).to.equal(true);
           expect(BigNumber.from(product.maxAnnualPrice).gt(Zero)).to.equal(true);
         }
