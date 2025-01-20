@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  fast-forward:
+  ff-master:
     uses: NexusMutual/workflows/.github/workflows/fast-forward.yml@master
     with:
       environment: production
@@ -20,7 +20,7 @@ jobs:
 
   tag-image:
     uses: NexusMutual/workflows/.github/workflows/tag-image.yml@master
-    needs: fast-forward
+    needs: ff-master
     with:
       environment: production
       image: ${{ github.repository }}
@@ -31,13 +31,34 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-  fast-forward-dev:
-    needs: fast-forward
-    uses: NexusMutual/workflows/.github/workflows/fast-forward.yml@master
+  tag-version:
+    needs: ff-master
+    uses: NexusMutual/workflows/.github/workflows/git-tag.yml@master
+    with:
+      environment: production
+      ref: master
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  sync-dev:
+    needs: ff-master
+    uses: NexusMutual/workflows/.github/workflows/ff-or-rebase.yml@master
     with:
       environment: production
       source-ref: master
       target-ref: dev
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  sync-hotfix:
+    needs: ff-master
+    uses: NexusMutual/workflows/.github/workflows/ff-or-rebase.yml@master
+    with:
+      environment: production
+      source-ref: master
+      target-ref: hotfix
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
