@@ -43,7 +43,7 @@ jobs:
 
   sync-dev:
     needs: ff-master
-    uses: NexusMutual/workflows/.github/workflows/ff-or-rebase.yml@master
+    uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
     with:
       environment: production
       source-ref: master
@@ -52,9 +52,9 @@ jobs:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
 
-  sync-hotfix:
+  rebase-hotfix:
     needs: ff-master
-    uses: NexusMutual/workflows/.github/workflows/ff-or-rebase.yml@master
+    uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
     with:
       environment: production
       source-ref: master

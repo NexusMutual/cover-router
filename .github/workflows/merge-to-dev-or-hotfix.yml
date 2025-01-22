@@ -26,7 +26,13 @@ jobs:
     uses: NexusMutual/workflows/.github/workflows/bump.yml@master
     with:
       ref: 'release-candidate'
-      bump-command: GITHUB_REF=refs/heads/release-candidate npx semantic-release --dry-run --no-ci 
+      bump-command: |
+        BUMP=$(timeout 5s npx conventional-recommended-bump --config .github/config/conventional-bump-setup.js --verbose | head -n1) || true
+        if [ ! -z "$BUMP" ] && [[ "$BUMP" != *"No version bump needed"* ]]; then
+          npm version "$BUMP" --no-git-tag-version
+        else
+          echo "No version bump"
+        fi
       environment: production
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
