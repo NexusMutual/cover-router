@@ -9,7 +9,7 @@ module.exports = {
 
   // base price bump
   // +0.05% for each 1% of capacity used, ie +5% for 100%
-  PRICE_BUMP_RATIO: 5_00, // 20%
+  PRICE_BUMP_RATIO: 5_00, // 5%
 
   // bumped price smoothing
   // 2% per day
@@ -32,7 +32,7 @@ module.exports = {
   MIN_UNIT_SIZE_DAI: WeiPerEther.mul(10000), // 10k DAI
 
   UNIT_DIVISOR: 100,
-  SURGE_CHUNK_DIVISOR: 10_000, // 0.01% of total capacity
+  CAPACITY_MARGIN_DIVISOR: 100,
 
   SECONDS_PER_DAY: BigNumber.from(24 * 60 * 60),
 };

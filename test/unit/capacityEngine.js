@@ -191,7 +191,6 @@ describe('capacityEngine', function () {
       expect(response.minAnnualPrice.toString()).to.equal(expectedMinPrice.toString());
       expect(response.maxAnnualPrice.toString()).to.equal(expectedMaxPrice.toString());
 
-      // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
       expect(response.minAnnualPrice.toString()).to.be.equal(response.maxAnnualPrice.toString());
 
       response.capacityPerPool.forEach(poolCapacity =>
@@ -338,8 +337,7 @@ describe('capacityEngine', function () {
       expect(response.minAnnualPrice.toString()).to.equal(expectedMinPrice.toString());
       expect(response.maxAnnualPrice.toString()).to.equal(expectedMaxPrice.toString());
 
-      // TODO: check this (minminAnnualPrice = maxAnnualPrice after surge price removal);
-      // expect(response.minAnnualPrice).to.not.deep.equal(response.maxAnnualPrice);
+      expect(response.minAnnualPrice).to.deep.equal(response.maxAnnualPrice);
 
       expect(response.maxAnnualPrice).to.not.deep.equal(Zero);
     });
@@ -525,7 +523,7 @@ describe('capacityEngine', function () {
 
       verifyCapacityResponse(response);
 
-      const { poolProducts, products } = store.getState();
+      const { poolProducts } = store.getState();
       const poolProduct = poolProducts[`${productId}_${poolId}`];
 
       // Verify used capacity
@@ -538,12 +536,7 @@ describe('capacityEngine', function () {
       expect(response.minAnnualPrice.gt(Zero)).to.equal(true);
       expect(response.maxAnnualPrice.gt(Zero)).to.equal(true);
 
-      if (products[productId].useFixedPrice) {
-        expect(response.minAnnualPrice.toString()).to.equal(response.maxAnnualPrice.toString());
-      } else {
-        // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
-        expect(response.minAnnualPrice.toString()).to.be.equal(response.maxAnnualPrice.toString());
-      }
+      expect(response.minAnnualPrice.toString()).to.equal(response.maxAnnualPrice.toString());
     });
   });
 
@@ -772,7 +765,6 @@ describe('capacityEngine', function () {
             expect(product.minAnnualPrice.toString()).to.equal(expectedPoolProduct.targetPrice.toString());
           }
         } else {
-          // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
           expect(product.minAnnualPrice.toString()).to.be.equal(product.maxAnnualPrice.toString());
           expect(BigNumber.from(product.minAnnualPrice).gt(Zero)).to.equal(true);
           expect(BigNumber.from(product.maxAnnualPrice).gt(Zero)).to.equal(true);
