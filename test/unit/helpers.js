@@ -169,8 +169,7 @@ describe('helpers', () => {
       expect(capacityPerPool).to.have.lengthOf(1);
       expect(pool1Capacity.poolId).to.equal(1);
 
-      // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
-      expect(pool1Capacity.minAnnualPrice.toString()).to.be.equal(pool1Capacity.maxAnnualPrice.toString());
+      expect(pool1Capacity.minAnnualPrice.toString()).to.equal(pool1Capacity.maxAnnualPrice.toString());
 
       const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
       assertAvailableCapacity(pool1Capacity, availableInNXM);
@@ -241,8 +240,7 @@ describe('helpers', () => {
 
       // Additional checks for each pool
       capacityPerPool.forEach((poolCapacity, index) => {
-        // TODO: check this (minAnnualPrice = maxAnnualPrice after surge price removal)
-        expect(poolCapacity.minAnnualPrice.toString()).to.be.equal(poolCapacity.maxAnnualPrice.toString());
+        expect(poolCapacity.minAnnualPrice.toString()).to.equal(poolCapacity.maxAnnualPrice.toString());
         expect(poolCapacity.availableCapacity.length).to.not.equal(0);
 
         const { allocations, trancheCapacities } = productPools[index];
