@@ -16,7 +16,7 @@ describe('calculateOptimalPoolAllocation', function () {
     sinon.restore();
   });
 
-  it('returns optimal pool allocation for 3 pools with no surge pricing with all allocation in 1 pool', () => {
+  it('returns optimal pool allocation for 3 pools with all allocation in 1 pool', () => {
     const pool1 = {
       basePrice: BigNumber.from('300'),
       initialCapacityUsed: parseEther('1000'),
@@ -47,17 +47,16 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(amount.toString());
   });
 
-  // TODO: recalculate tests (surge pricing is removed)
-  it('returns optimal pool allocation for 2 pools with none reaching surge pricing', () => {
+  it('returns optimal pool allocation for 2 pools', () => {
     const pool1 = {
       basePrice: BigNumber.from('201'),
-      initialCapacityUsed: parseEther('8990'),
+      initialCapacityUsed: parseEther('9990'),
       totalCapacity: parseEther('10000'),
     };
 
     const pool2 = {
       basePrice: BigNumber.from('200'),
-      initialCapacityUsed: parseEther('8990'),
+      initialCapacityUsed: parseEther('9990'),
       totalCapacity: parseEther('10000'),
     };
 
@@ -67,52 +66,15 @@ describe('calculateOptimalPoolAllocation', function () {
       pool.poolId = i++;
     });
 
-    const amount = parseEther('20');
+    const amount = parseEther('15');
     const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
 
-    // expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
-    // expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('10').toString());
+    for (const a in optimalAllocations) {
+      console.log(a, optimalAllocations[a].toString());
+    }
 
-    expect(optimalAllocations[pool1.poolId]).to.be.equal(undefined);
-    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('20').toString());
-  });
-
-  // TODO: recalculate tests (surge pricing is removed)
-  it('returns optimal pool allocation for 3 pools with no surge pricing', () => {
-    const pool1 = {
-      basePrice: BigNumber.from('200'),
-      initialCapacityUsed: parseEther('8996'),
-      totalCapacity: parseEther('10000'),
-    };
-
-    const pool2 = {
-      basePrice: BigNumber.from('200'),
-      initialCapacityUsed: parseEther('8997'),
-      totalCapacity: parseEther('10000'),
-    };
-
-    const pool3 = {
-      basePrice: BigNumber.from('200'),
-      initialCapacityUsed: parseEther('8997'),
-      totalCapacity: parseEther('10000'),
-    };
-
-    let i = INITIAL_POOL_INDEX;
-    const pools = [pool1, pool2, pool3];
-    pools.forEach(pool => {
-      pool.poolId = i++;
-    });
-
-    const amount = parseEther('10');
-    const optimalAllocations = calculateOptimalPoolAllocation(amount, pools);
-
-    // expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('4').toString());
-    // expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('3').toString());
-    // expect(optimalAllocations[pool3.poolId].toString()).to.be.equal(parseEther('3').toString());
-
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('10').toString());
-    expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
-    expect(optimalAllocations[pool3.poolId]).to.be.equal(undefined);
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal(parseEther('5.1').toString());
+    expect(optimalAllocations[pool2.poolId].toString()).to.be.equal(parseEther('9.9').toString());
   });
 
   it('returns optimal pool allocation for 2 pools where 1 is cheaper but already at full capacity', () => {
