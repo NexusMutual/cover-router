@@ -523,7 +523,7 @@ describe('capacityEngine', function () {
 
       verifyCapacityResponse(response);
 
-      const { poolProducts, products } = store.getState();
+      const { poolProducts } = store.getState();
       const poolProduct = poolProducts[`${productId}_${poolId}`];
 
       // Verify used capacity
