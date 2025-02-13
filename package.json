@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/NexusMutual/cover-router#readme",
   "dependencies": {
-    "@nexusmutual/deployments": "^2.10.0",
+    "@nexusmutual/deployments": "^2.11.0",
     "@nexusmutual/utils": "^0.0.1",
     "convict": "^6.2.4",
     "dotenv": "^16.0.3",
