@@ -44,7 +44,7 @@ const calculatePoolAllocations = (coverAmount, pools) => {
 
   for (const pool of pools) {
     const actualCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
-    const capacityBuffer = bnMin(
+    const capacityBuffer = bnMax(
       actualCapacity.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
       CAPACITY_BUFFER_MINIMUM,
     );
