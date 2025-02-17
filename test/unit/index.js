@@ -3,7 +3,7 @@ describe('unit tests', function () {
   require('./quoteEngine');
   require('./eventApi');
   require('./routes');
-  require('./calculateOptimalPoolAllocation');
+  require('./calculatePoolAllocations');
   require('./cache');
   require('./synchronizer');
   require('./helpers');

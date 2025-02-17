@@ -2,13 +2,20 @@ const { inspect } = require('util');
 
 const { BigNumber, ethers } = require('ethers');
 
-const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR, CAPACITY_MARGIN_DIVISOR } = require('./constants');
+const {
+  NXM_PER_ALLOCATION_UNIT,
+  ONE_YEAR,
+  CAPACITY_BUFFER_MINIMUM,
+  CAPACITY_BUFFER_RATIO,
+  CAPACITY_BUFFER_DENOMINATOR,
+} = require('./constants');
 const {
   calculateFirstUsableTrancheIndex,
   calculateBasePrice,
   calculatePremiumPerYear,
   divCeil,
   bnMin,
+  bnMax,
 } = require('./helpers');
 const {
   selectAsset,
@@ -26,25 +33,24 @@ const { formatEther } = ethers.utils;
  *
  * It sorts pools by the base price and then takes full capacity from the pools with
  * the lower prices until it reaches desired coverAmount
- * @param {number} coverAmount - The amount to be covered.
+ * @param {BigNumber} coverAmount - The amount to be covered.
  * @param {Array<object>} pools - An array of pool data objects.
  * @returns {object} - An object containing the allocations by pool ID. (poolId => BigNumber amount)
  */
-const calculateOptimalPoolAllocation = (coverAmount, pools) => {
-  // Pool Id (number) -> Capacity Amount (BigNumber)
+const calculatePoolAllocations = (coverAmount, pools) => {
+  // pool id (number) -> capacity amount
   const allocations = {};
-
   let coverAmountLeft = coverAmount;
 
-  pools.sort((a, b) => a.basePrice - b.basePrice);
-
   for (const pool of pools) {
-    let availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
+    const actualCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
+    const capacityBuffer = bnMin(
+      actualCapacity.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
+      CAPACITY_BUFFER_MINIMUM,
+    );
+    const availableCapacity = bnMax(actualCapacity.sub(capacityBuffer), Zero);
 
-    // don't take all available capacity because it can change when executing tx due to small change in NXM price
-    availableCapacity = availableCapacity.sub(availableCapacity.div(CAPACITY_MARGIN_DIVISOR));
-
-    if (availableCapacity.eq(0)) {
+    if (availableCapacity.lte(0)) {
       continue;
     }
 
@@ -64,47 +70,17 @@ const calculateOptimalPoolAllocation = (coverAmount, pools) => {
   return allocations;
 };
 
-/**
- * Allocates a given amount to pools based on a custom pool ID priority list.
- *
- * @param {number} amountToAllocate - The amount to be allocated.
- * @param {Array<object>} poolsData - An array of pool data objects.
- * @param {Array<number>} customPoolIdPriority - A list of pool IDs in priority order.
- * @return {object} An object containing the allocations by pool ID. (poolId => BigNumber amount)
- */
-const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customPoolIdPriority) => {
-  const allocations = {};
-  let coverAmountLeft = amountToAllocate;
-  const customPoolIdPriorityCopy = customPoolIdPriority.slice(0); // avoid mutation on the customPoolIdPriority array
+function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
+  const poolIdsByPrice = poolsData.sort((a, b) => a.basePrice - b.basePrice).map(p => p.poolId);
+  const allPoolIds = poolsData.map(p => p.poolId);
 
-  while (coverAmountLeft > 0 && customPoolIdPriorityCopy.length > 0) {
-    const poolId = customPoolIdPriorityCopy.shift();
-    const pool = poolsData.find(poolData => poolData.poolId === poolId);
-    if (!pool) {
-      console.warn(`Unable to find pool ${poolId} in poolsData array. Skipping\n`);
-      console.warn(`Available poolIds in poolsData: ${poolsData.map(p => p.poolId).join(', ')}`);
-      console.debug('poolsData: ', inspect(poolsData, { depth: null }));
-      continue;
-    }
+  const prioritized = new Set(customPoolIdPriorityFixedPrice.filter(poolId => allPoolIds.includes(poolId)));
+  const nonPrioritized = poolIdsByPrice.filter(poolId => !prioritized.has(poolId));
+  const orderedPoolIds = [...prioritized, ...nonPrioritized];
+  console.info('Priority ordered pools:', orderedPoolIds.join(', '));
 
-    let availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
-
-    // don't take all available capacity because it can change when executing tx due to small change in NXM price
-    availableCapacity = availableCapacity.sub(availableCapacity.div(CAPACITY_MARGIN_DIVISOR));
-
-    const poolAllocation = bnMin(availableCapacity, coverAmountLeft);
-
-    allocations[poolId] = poolAllocation;
-    coverAmountLeft = coverAmountLeft.gt(poolAllocation) ? coverAmountLeft.sub(poolAllocation) : 0;
-  }
-
-  if (coverAmountLeft > 0) {
-    // not enough total capacity available
-    return {};
-  }
-
-  return allocations;
-};
+  return orderedPoolIds.map(id => poolsData.find(p => p.poolId === id));
+}
 
 /**
  * Calculates the premium and allocations for a given insurance product based on the specified parameters.
@@ -182,11 +158,9 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     };
   });
 
-  const customPoolIdPriorityFixedPrice = selectProductPriorityPoolsFixedPrice(store, productId);
-
-  const allocations = customPoolIdPriorityFixedPrice
-    ? customAllocationPriorityFixedPrice(amountToAllocate, poolsData, customPoolIdPriorityFixedPrice)
-    : calculateOptimalPoolAllocation(amountToAllocate, poolsData);
+  const customPoolIdPriorityFixedPrice = selectProductPriorityPoolsFixedPrice(store, productId) || [];
+  const poolsInPriorityOrder = sortPools(poolsData, customPoolIdPriorityFixedPrice);
+  const allocations = calculatePoolAllocations(amountToAllocate, poolsInPriorityOrder);
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
     poolId = parseInt(poolId);
@@ -236,6 +210,5 @@ module.exports = {
   quoteEngine,
   calculateBasePrice,
   calculatePremiumPerYear,
-  calculateOptimalPoolAllocation,
-  customAllocationPriorityFixedPrice,
+  calculatePoolAllocations,
 };
