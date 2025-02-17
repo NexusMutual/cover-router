@@ -28,8 +28,17 @@ const load = defaultState => {
   }
 
   const contents = fs.readFileSync(stateFile, 'utf8');
+  let rawData;
 
-  const parsedData = parseCache(JSON.parse(contents));
+  try {
+    // sometimes due to concurrent writes the contents may get corrupted
+    rawData = JSON.parse(contents);
+  } catch (e) {
+    console.error('Error parsing cache file', e.message);
+    return defaultState;
+  }
+
+  const parsedData = parseCache(rawData);
 
   // refresh constants values
   parsedData.assets = { ...defaultState.assets };
