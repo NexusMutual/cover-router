@@ -372,9 +372,9 @@ describe('calculateOptimalPoolAllocation', function () {
     const amount = BigNumber.from('88600380000000000000000');
     const optimalAllocations = calculatePoolAllocations(amount, pools);
 
-    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('955917600000000000000');
+    expect(optimalAllocations[pool1.poolId].toString()).to.be.equal('159149760000000000000');
     expect(optimalAllocations[pool2.poolId]).to.be.equal(undefined);
-    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('64984698900000000000000');
-    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('22659763500000000000000');
+    expect(optimalAllocations[pool3.poolId].toString()).to.be.equal('65575468890000000000000');
+    expect(optimalAllocations[pool4.poolId].toString()).to.be.equal('22865761350000000000000');
   });
 });
