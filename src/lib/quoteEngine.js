@@ -77,9 +77,8 @@ const calculatePoolAllocations = (coverAmount, pools) => {
  */
 function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
   const poolIdsByPrice = poolsData.sort((a, b) => a.basePrice - b.basePrice).map(p => p.poolId);
-  const allPoolIds = poolsData.map(p => p.poolId);
 
-  const prioritized = new Set(customPoolIdPriorityFixedPrice.filter(poolId => allPoolIds.includes(poolId)));
+  const prioritized = new Set(customPoolIdPriorityFixedPrice.filter(poolId => poolIdsByPrice.includes(poolId)));
   const nonPrioritized = poolIdsByPrice.filter(poolId => !prioritized.has(poolId));
   const orderedPoolIds = [...prioritized, ...nonPrioritized];
   console.info('Priority ordered pools:', orderedPoolIds.join(', '));
