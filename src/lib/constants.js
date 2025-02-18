@@ -1,4 +1,5 @@
-const { BigNumber, parseEther } = require('ethers');
+const { BigNumber, ethers } = require('ethers');
+const { parseEther } = ethers.utils;
 
 module.exports = {
   BEACON_PROXY_INIT_CODE_HASH: '1eb804b66941a2e8465fa0951be9c8b855b7794ee05b0789ab22a02ee1298ebe',
