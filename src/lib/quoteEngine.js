@@ -29,10 +29,8 @@ const { WeiPerEther, Zero } = ethers.constants;
 const { formatEther } = ethers.utils;
 
 /**
- * This function calculates optimal allocation based on the current pool prices
+ * This function allocates the requested amount in the provided list of pools in the provided order
  *
- * It sorts pools by the base price and then takes full capacity from the pools with
- * the lower prices until it reaches desired coverAmount
  * @param {BigNumber} coverAmount - The amount to be covered.
  * @param {Array<object>} pools - An array of pool data objects.
  * @returns {object} - An object containing the allocations by pool ID. (poolId => BigNumber amount)
@@ -70,6 +68,13 @@ const calculatePoolAllocations = (coverAmount, pools) => {
   return allocations;
 };
 
+/**
+ * Sorts the pools based on the custom pool priority and the base price.
+ *
+ * @param {Array<object>} poolsData - An array of pool data objects
+ * @param {Array<Number>} customPoolIdPriorityFixedPrice - An array of pool IDs in the desired order
+ * @return {Array<object>} - A sorted array of pool data objects
+ */
 function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
   const poolIdsByPrice = poolsData.sort((a, b) => a.basePrice - b.basePrice).map(p => p.poolId);
   const allPoolIds = poolsData.map(p => p.poolId);
