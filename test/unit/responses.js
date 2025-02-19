@@ -7,8 +7,6 @@ const assets = {
   255: { id: 255, symbol: 'NXM', decimals: 18 },
 };
 
-// TODO: check changed maxAnnualPrices after surge pricing removal
-
 // capacities response for product across ALL pools
 const capacities = [
   {

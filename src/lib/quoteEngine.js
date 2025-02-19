@@ -2,13 +2,20 @@ const { inspect } = require('util');
 
 const { BigNumber, ethers } = require('ethers');
 
-const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR, SURGE_CHUNK_DIVISOR } = require('./constants');
+const {
+  NXM_PER_ALLOCATION_UNIT,
+  ONE_YEAR,
+  CAPACITY_BUFFER_MINIMUM,
+  CAPACITY_BUFFER_RATIO,
+  CAPACITY_BUFFER_DENOMINATOR,
+} = require('./constants');
 const {
   calculateFirstUsableTrancheIndex,
   calculateBasePrice,
   calculatePremiumPerYear,
   divCeil,
   bnMin,
+  bnMax,
 } = require('./helpers');
 const {
   selectAsset,
@@ -18,148 +25,39 @@ const {
   selectProductPriorityPoolsFixedPrice,
 } = require('../store/selectors');
 
-const { WeiPerEther, Zero, MaxUint256 } = ethers.constants;
+const { WeiPerEther, Zero } = ethers.constants;
 const { formatEther } = ethers.utils;
 
-const calculatePoolPriceAndCapacity = (totalCapacity, basePrice, usedCapacity, useFixedPrice) => {
-  // use 0.01% of total capacity or the remaining capacity, whichever is smaller
-  const chunk = bnMin(totalCapacity.div(SURGE_CHUNK_DIVISOR), totalCapacity.sub(usedCapacity));
-
-  if (totalCapacity.eq(0) || chunk.eq(0)) {
-    return {
-      chunk: Zero,
-      chunkBasePrice: basePrice,
-      poolBasePrice: basePrice,
-      usedCapacity,
-      totalCapacity,
-    };
-  }
-
-  return {
-    chunk: totalCapacity.sub(usedCapacity),
-    chunkBasePrice: basePrice,
-    poolBasePrice: basePrice,
-    usedCapacity,
-    totalCapacity,
-  };
-};
-
 /**
- * This function allocates chunks of capacity depending on the price for that amount
+ * This function allocates the requested amount in the provided list of pools in the provided order
  *
- * To solve the allocation problem we map the chunks of capacities and their prices
- * and use that for the rest of the computations.
- *
- * With each iteration we recalculate the price and chunk for the pool used in the previous iteration
- *
- * if the pool is not in the surge we use the base price and capacity left until we reach the surge, once we reach
- * the surge we use percentage of the capacity for the chunk and calculate the price for that chunk.
- *
- * If there is no pool with capacity available the function returns
- * with an empty list (aborts allocation completely - no partial allocations supported).
- *
- * chunk size in the surge is dynamically computed as 0.01% (1 / SURGE_CHUNK_DIVISOR) of the total capacity.
- *
- * Complexity O(n)  where n is the number of chunks
- * @param coverAmount
- * @param pools
- * @param useFixedPrice
- * @returns {{lowestCostAllocation: *, lowestCost: *}} - object
+ * @param {BigNumber} coverAmount - The amount to be covered.
+ * @param {Array<object>} pools - An array of pool data objects.
+ * @returns {object} - An object containing the allocations by pool ID. (poolId => BigNumber amount)
  */
-const calculateOptimalPoolAllocation = (coverAmount, pools, useFixedPrice = false) => {
-  // Pool Id (number) -> Capacity Amount (BigNumber)
+const calculatePoolAllocations = (coverAmount, pools) => {
+  // pool id (number) -> capacity amount
   const allocations = {};
-
-  // map prices and their capacities
-  const priceMapping = {};
-  for (const pool of pools) {
-    priceMapping[pool.poolId] = calculatePoolPriceAndCapacity(
-      pool.totalCapacity,
-      pool.basePrice,
-      pool.initialCapacityUsed,
-      useFixedPrice,
-    );
-  }
-
   let coverAmountLeft = coverAmount;
-  while (coverAmountLeft.gt(0)) {
-    // find the cheapest pool
-    const lowestPricePool = Object.entries(priceMapping).reduce(
-      (acc, [poolId, pool]) => {
-        if (acc.chunkBasePrice.gt(pool.chunkBasePrice) && pool.chunk.gt(0)) {
-          return {
-            chunkBasePrice: pool.chunkBasePrice,
-            poolBasePrice: pool.poolBasePrice,
-            chunk: pool.chunk,
-            usedCapacity: pool.usedCapacity,
-            totalCapacity: pool.totalCapacity,
-            poolId,
-          };
-        }
-        return acc;
-      },
-      {
-        chunk: Zero,
-        chunkBasePrice: MaxUint256,
-        poolId: Zero,
-        poolBasePrice: Zero,
-        usedCapacity: Zero,
-        totalCapacity: Zero,
-      },
+
+  for (const pool of pools) {
+    const actualCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
+    const capacityBuffer = bnMax(
+      actualCapacity.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
+      CAPACITY_BUFFER_MINIMUM,
     );
+    const availableCapacity = bnMax(actualCapacity.sub(capacityBuffer), Zero);
 
-    if (lowestPricePool.chunk.eq(0)) {
-      // not enough total capacity available
-      return {};
-    }
-
-    const allocationAmount = bnMin(lowestPricePool.chunk, coverAmountLeft);
-
-    allocations[lowestPricePool.poolId] = allocations[lowestPricePool.poolId]
-      ? allocations[lowestPricePool.poolId].add(allocationAmount)
-      : allocationAmount;
-
-    coverAmountLeft = coverAmountLeft.sub(allocationAmount);
-
-    priceMapping[lowestPricePool.poolId] = calculatePoolPriceAndCapacity(
-      lowestPricePool.totalCapacity,
-      lowestPricePool.poolBasePrice,
-      lowestPricePool.usedCapacity.add(allocationAmount),
-      useFixedPrice,
-    );
-  }
-
-  return allocations;
-};
-
-/**
- * Allocates a given amount to pools based on a custom pool ID priority list.
- *
- * @param {number} amountToAllocate - The amount to be allocated.
- * @param {Array<object>} poolsData - An array of pool data objects.
- * @param {Array<number>} customPoolIdPriority - A list of pool IDs in priority order.
- * @return {object} An object containing the allocations by pool ID. (poolId => BigNumber amount)
- */
-const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customPoolIdPriority) => {
-  const allocations = {};
-  let coverAmountLeft = amountToAllocate;
-  const customPoolIdPriorityCopy = customPoolIdPriority.slice(0); // avoid mutation on the customPoolIdPriority array
-
-  while (coverAmountLeft > 0 && customPoolIdPriorityCopy.length > 0) {
-    const poolId = customPoolIdPriorityCopy.shift();
-    const pool = poolsData.find(poolData => poolData.poolId === poolId);
-    if (!pool) {
-      console.warn(`Unable to find pool ${poolId} in poolsData array. Skipping\n`);
-      console.warn(`Available poolIds in poolsData: ${poolsData.map(p => p.poolId).join(', ')}`);
-      console.debug('poolsData: ', inspect(poolsData, { depth: null }));
+    if (availableCapacity.lte(0)) {
       continue;
     }
 
-    const availableCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed).mul(99).div(100);
-    const poolAllocation = bnMin(availableCapacity, coverAmountLeft);
+    allocations[pool.poolId] = bnMin(availableCapacity, coverAmountLeft);
+    coverAmountLeft = coverAmountLeft.sub(allocations[pool.poolId]);
 
-    allocations[poolId] = poolAllocation;
-    coverAmountLeft = coverAmountLeft.gt(poolAllocation) ? coverAmountLeft.sub(poolAllocation) : 0;
+    if (coverAmountLeft.eq(0)) {
+      break;
+    }
   }
 
   if (coverAmountLeft > 0) {
@@ -169,6 +67,24 @@ const customAllocationPriorityFixedPrice = (amountToAllocate, poolsData, customP
 
   return allocations;
 };
+
+/**
+ * Sorts the pools based on the custom pool priority and the base price.
+ *
+ * @param {Array<object>} poolsData - An array of pool data objects
+ * @param {Array<Number>} customPoolIdPriorityFixedPrice - An array of pool IDs in the desired order
+ * @return {Array<object>} - A sorted array of pool data objects
+ */
+function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
+  const poolIdsByPrice = poolsData.sort((a, b) => a.basePrice - b.basePrice).map(p => p.poolId);
+
+  const prioritized = new Set(customPoolIdPriorityFixedPrice.filter(poolId => poolIdsByPrice.includes(poolId)));
+  const nonPrioritized = poolIdsByPrice.filter(poolId => !prioritized.has(poolId));
+  const orderedPoolIds = [...prioritized, ...nonPrioritized];
+  console.info('Priority ordered pools:', orderedPoolIds.join(', '));
+
+  return orderedPoolIds.map(id => poolsData.find(p => p.poolId === id));
+}
 
 /**
  * Calculates the premium and allocations for a given insurance product based on the specified parameters.
@@ -246,11 +162,9 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     };
   });
 
-  const customPoolIdPriorityFixedPrice = selectProductPriorityPoolsFixedPrice(store, productId);
-
-  const allocations = customPoolIdPriorityFixedPrice
-    ? customAllocationPriorityFixedPrice(amountToAllocate, poolsData, customPoolIdPriorityFixedPrice)
-    : calculateOptimalPoolAllocation(amountToAllocate, poolsData, product.useFixedPrice);
+  const customPoolIdPriorityFixedPrice = selectProductPriorityPoolsFixedPrice(store, productId) || [];
+  const poolsInPriorityOrder = sortPools(poolsData, customPoolIdPriorityFixedPrice);
+  const allocations = calculatePoolAllocations(amountToAllocate, poolsInPriorityOrder);
 
   const poolsWithPremium = Object.keys(allocations).map(poolId => {
     poolId = parseInt(poolId);
@@ -300,6 +214,5 @@ module.exports = {
   quoteEngine,
   calculateBasePrice,
   calculatePremiumPerYear,
-  calculateOptimalPoolAllocation,
-  customAllocationPriorityFixedPrice,
+  calculatePoolAllocations,
 };

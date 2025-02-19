@@ -8,6 +8,14 @@ const {
 } = require('./actions');
 const config = require('../config');
 
+// Automatically populate productPriorityPoolsFixedPrice
+const customPriorityPoolsOrder = config.get('customPriorityPoolsOrder') || {};
+const productPriorityPoolsFixedPrice = {};
+
+for (const [productId, orderArray] of Object.entries(customPriorityPoolsOrder)) {
+  productPriorityPoolsFixedPrice[productId] = orderArray;
+}
+
 const initialState = {
   assetRates: {}, // assetId -> rate
   assets: {
@@ -21,15 +29,9 @@ const initialState = {
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
   products: {}, // productId -> { product }
-  productPriorityPoolsFixedPrice: {},
+  productPriorityPoolsFixedPrice,
   trancheId: 0,
 };
-
-// Automatically populate productPriorityPoolsFixedPrice
-const customPriorityPoolsOrder = config.get('customPriorityPoolsOrder') || {};
-for (const [productId, orderArray] of Object.entries(customPriorityPoolsOrder)) {
-  initialState.productPriorityPoolsFixedPrice[productId] = orderArray;
-}
 
 function reducer(state = initialState, { type, payload }) {
   if (type === SET_PRODUCT) {
