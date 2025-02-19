@@ -1,6 +1,6 @@
 {
   "name": "cover-router",
-  "version": "2.3.11",
+  "version": "2.3.12",
   "description": "Cover Router",
   "main": "src/index.js",
   "engines": {
