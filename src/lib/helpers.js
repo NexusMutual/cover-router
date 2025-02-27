@@ -6,6 +6,9 @@ const {
   TRANCHE_DURATION,
   TARGET_PRICE_DENOMINATOR,
   PRICE_CHANGE_PER_DAY,
+  CAPACITY_BUFFER_RATIO,
+  CAPACITY_BUFFER_DENOMINATOR,
+  CAPACITY_BUFFER_MINIMUM,
 } = require('./constants');
 
 const { BigNumber } = ethers;
@@ -67,7 +70,15 @@ const calculateFirstUsableTrancheIndex = (now, gracePeriod, period) => {
 
 /* Capacity Calculations */
 
-function calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex) {
+const bufferedCapacity = capacityInNxm => {
+  const capacityBuffer = bnMax(
+    capacityInNxm.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
+    CAPACITY_BUFFER_MINIMUM,
+  );
+  return bnMax(capacityInNxm.sub(capacityBuffer), Zero);
+};
+
+function calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex) {
   const unused = trancheCapacities.reduce((available, capacity, index) => {
     const allocationDifference = capacity.sub(allocations[index]);
     const allocationToAdd =
@@ -76,7 +87,16 @@ function calculateAvailableCapacity(trancheCapacities, allocations, firstUsableT
         : allocationDifference;
     return available.add(allocationToAdd);
   }, Zero);
-  return bnMax(unused, Zero);
+
+  return bufferedCapacity(unused.mul(NXM_PER_ALLOCATION_UNIT));
+}
+
+function getCapacitiesInAssets(capacityInNXM, assets, assetRates) {
+  return Object.keys(assets).map(assetId => ({
+    assetId: Number(assetId),
+    amount: capacityInNXM.mul(assetRates[assetId]).div(WeiPerEther),
+    asset: assets[assetId],
+  }));
 }
 
 function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, useFixedPrice, now, assets, assetRates) {
@@ -102,16 +122,19 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     // calculating the capacity in allocation points
     const used = allocations.reduce((total, allocation) => total.add(allocation), Zero);
 
-    const availableCapacity = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+    const availableCapacityInNXM = calculateAvailableCapacityInNXM(
+      trancheCapacities,
+      allocations,
+      firstUsableTrancheIndex,
+    );
 
     // convert to nxm
     const usedInNXM = used.mul(NXM_PER_ALLOCATION_UNIT);
-    const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
 
     aggregatedData.capacityUsedNXM = aggregatedData.capacityUsedNXM.add(usedInNXM);
-    aggregatedData.capacityAvailableNXM = aggregatedData.capacityAvailableNXM.add(availableInNXM);
+    aggregatedData.capacityAvailableNXM = aggregatedData.capacityAvailableNXM.add(availableCapacityInNXM);
 
-    if (availableCapacity.isZero()) {
+    if (availableCapacityInNXM.isZero()) {
       return {
         poolId,
         availableCapacity: [],
@@ -135,9 +158,11 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     // the maximum price a user would get can only be determined if the entire available
     // capacity is bought because the routing will always pick the cheapest
     // so we're summing up the premium for all pools and then calculate the average at the end
-    const poolPremium = calculatePremiumPerYear(availableInNXM, basePrice);
+    const poolPremium = calculatePremiumPerYear(availableCapacityInNXM, basePrice);
 
-    const poolMaxPrice = availableInNXM.isZero() ? Zero : WeiPerEther.mul(poolPremium).div(availableInNXM);
+    const poolMaxPrice = availableCapacityInNXM.isZero()
+      ? Zero
+      : WeiPerEther.mul(poolPremium).div(availableCapacityInNXM);
 
     if (aggregatedData.minPrice.isZero() || poolMinPrice.lt(aggregatedData.minPrice)) {
       aggregatedData.minPrice = poolMinPrice;
@@ -145,11 +170,7 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
     aggregatedData.totalPremium = aggregatedData.totalPremium.add(poolPremium);
 
     // The available capacity of a product for a particular pool
-    const availableCapacityInAssets = Object.keys(assets).map(assetId => ({
-      assetId: Number(assetId),
-      amount: availableInNXM.mul(assetRates[assetId]).div(WeiPerEther),
-      asset: assets[assetId],
-    }));
+    const availableCapacityInAssets = getCapacitiesInAssets(availableCapacityInNXM, assets, assetRates);
 
     return {
       poolId,
@@ -192,7 +213,9 @@ module.exports = {
   calculateTrancheId,
   calculateBucketId,
   calculateFirstUsableTrancheIndex,
-  calculateAvailableCapacity,
+  bufferedCapacity,
+  calculateAvailableCapacityInNXM,
+  getCapacitiesInAssets,
   calculateProductDataForTranche,
   calculateBasePrice,
   calculatePremiumPerYear,

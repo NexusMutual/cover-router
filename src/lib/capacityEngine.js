@@ -6,6 +6,7 @@ const {
   calculateTrancheId,
   calculateFirstUsableTrancheIndex,
   calculateProductDataForTranche,
+  getCapacitiesInAssets,
 } = require('./helpers');
 const { selectProduct, selectProductPools, selectProductsInPool } = require('../store/selectors');
 
@@ -119,11 +120,7 @@ function calculateProductCapacity(
   const { capacityAvailableNXM, capacityUsedNXM, minPrice } = aggregatedData;
 
   // The available (i.e. remaining) capacity of a product
-  const capacityInAssets = Object.keys(assets).map(assetId => ({
-    assetId: Number(assetId),
-    amount: capacityAvailableNXM.mul(assetRates[assetId]).div(WeiPerEther),
-    asset: assets[assetId],
-  }));
+  const capacityInAssets = getCapacitiesInAssets(capacityAvailableNXM, assets, assetRates);
 
   const capacityData = {
     productId: Number(productId),
