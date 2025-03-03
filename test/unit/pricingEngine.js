@@ -135,25 +135,21 @@ describe('pricingEngine', () => {
         '1_1': {
           ...mockStore.poolProducts['1_1'],
           targetPrice: BigNumber.from(100),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: [
-            ...Array(7).fill(BigNumber.from(0)),
-            BigNumber.from(75), // 60 available + 15 allocated
-          ],
+          // 60k available + 15k allocated
+          allocations: [...Array(7).fill(BigNumber.from(0)), BigNumber.from(15000)],
+          trancheCapacities: [...Array(7).fill(BigNumber.from(0)), BigNumber.from(75000)],
         },
         '1_2': {
           ...mockStore.poolProducts['1_2'],
           targetPrice: BigNumber.from(200),
-          allocations: Array(8).fill(BigNumber.from(0)),
-          trancheCapacities: [
-            ...Array(7).fill(BigNumber.from(0)),
-            BigNumber.from(25), // 20 available + 5 allocated
-          ],
+          // 20k available + 5k allocated
+          allocations: [...Array(7).fill(BigNumber.from(0)), BigNumber.from(5000)],
+          trancheCapacities: [...Array(7).fill(BigNumber.from(0)), BigNumber.from(25000)],
         },
       });
 
       const result = pricingEngine(store, 1);
-      // Weighted average: ((100 * 60) + (200 * 20)) / (60 + 20) = 125
+      // Weighted average: ((100 * 60k) + (200 * 20k)) / (60k + 20k) = 125
       expect(result.weightedAveragePrice.toString()).to.equal('125');
       expect(result.pricePerPool).to.have.length(2);
     });
