@@ -78,6 +78,16 @@ const bufferedCapacity = capacityInNxm => {
   return bnMax(capacityInNxm.sub(capacityBuffer), Zero);
 };
 
+/**
+ * Calculates the available capacity in NXM across all trancehs.
+ * Buffer is applied because using capacity up to the limit may lead to reverted transactions
+ * in the cases of small price changes of cover assets.
+ *
+ * @param {Array<BigNumber>} trancheCapacities - An array of tranche capacities
+ * @param {Array<BigNumber>} allocations - An array of allocated amounts corresponding to each tranche
+ * @param {number} firstUsableTrancheIndex - The index of the first usable tranche
+ * @returns {BigNumber} The available capacity in NXM, adjusted with buffering
+ */
 function calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex) {
   const unused = trancheCapacities.reduce((available, capacity, index) => {
     const allocationDifference = capacity.sub(allocations[index]);

@@ -21,7 +21,8 @@ const { WeiPerEther } = ethers.constants;
 const { formatEther } = ethers.utils;
 
 /**
- * This function allocates the requested amount in the provided list of pools in the provided order
+ * This function allocates the requested amount in the provided list of pools in the provided order.
+ * Empty array is returned if not enough capacity is available.
  *
  * @param {BigNumber} coverAmount - The amount to be covered.
  * @param {Array<object>} pools - An array of pool data objects.
