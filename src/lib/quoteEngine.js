@@ -49,7 +49,7 @@ const calculatePoolAllocations = (coverAmount, pools) => {
     }
   }
 
-  if (coverAmountLeft > 0) {
+  if (coverAmountLeft.gt(0)) {
     // not enough total capacity available
     return [];
   }

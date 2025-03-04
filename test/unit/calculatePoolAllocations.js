@@ -104,7 +104,7 @@ describe('calculateOptimalPoolAllocation', function () {
     expect(calculatePoolAllocations(coverAmount, pools)).to.deep.equal(expectedAllocations);
   });
 
-  it('return empty object when there is not enough capacity available to satisfy coverAmount', () => {
+  it('return empty array when there is not enough capacity available to satisfy coverAmount', () => {
     const coverAmount = parseEther('1000');
 
     const pools = formatPools([
