@@ -41,17 +41,6 @@ jobs:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
 
-  sync-dev:
-    needs: ff-master
-    uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
-    with:
-      environment: production
-      source-ref: master
-      target-ref: dev
-    secrets:
-      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
-      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
-
   rebase-hotfix:
     needs: ff-master
     uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
@@ -59,6 +48,18 @@ jobs:
       environment: production
       source-ref: master
       target-ref: hotfix
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  rebase-dev:
+    # should be done AFTER rebase-hotfix
+    needs: rebase-hotfix
+    uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
+    with:
+      environment: production
+      source-ref: master
+      target-ref: dev
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
