@@ -158,12 +158,7 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
       ? targetPrice
       : calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
 
-    // the minimum price depends on the surge
-    // so we buy the smallest possible unit of capacity
-    // and calculate the premium per year
-    const unitPremium = calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, basePrice);
-
-    const poolMinPrice = WeiPerEther.mul(unitPremium).div(NXM_PER_ALLOCATION_UNIT);
+    const poolMinPrice = WeiPerEther.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
 
     // the maximum price a user would get can only be determined if the entire available
     // capacity is bought because the routing will always pick the cheapest
