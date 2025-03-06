@@ -206,7 +206,11 @@ router.get(
       capacities: quote.capacities.map(({ poolId, capacity }) => ({
         poolId: poolId.toString(),
         // NOTE: capacity[n].assetId is currently a string (it should ideally a number - BREAKING CHANGE)
-        capacity: capacity.map(({ assetId, amount, asset }) => ({ assetId, amount: amount.toString(), asset })),
+        capacity: capacity.map(({ assetId, amount, asset }) => ({
+          assetId: assetId.toString(),
+          amount: amount.toString(),
+          asset,
+        })),
       })),
     };
 

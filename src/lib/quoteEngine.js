@@ -1,68 +1,58 @@
-const { inspect } = require('util');
-
 const { BigNumber, ethers } = require('ethers');
 
-const {
-  NXM_PER_ALLOCATION_UNIT,
-  ONE_YEAR,
-  CAPACITY_BUFFER_MINIMUM,
-  CAPACITY_BUFFER_RATIO,
-  CAPACITY_BUFFER_DENOMINATOR,
-} = require('./constants');
+const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR } = require('./constants');
 const {
   calculateFirstUsableTrancheIndex,
   calculateBasePrice,
   calculatePremiumPerYear,
+  calculateAvailableCapacityInNXM,
+  getCapacitiesInAssets,
   divCeil,
   bnMin,
-  bnMax,
 } = require('./helpers');
 const {
-  selectAsset,
   selectAssetRate,
   selectProductPools,
   selectProduct,
   selectProductPriorityPoolsFixedPrice,
 } = require('../store/selectors');
 
-const { WeiPerEther, Zero } = ethers.constants;
+const { WeiPerEther } = ethers.constants;
 const { formatEther } = ethers.utils;
 
 /**
- * This function allocates the requested amount in the provided list of pools in the provided order
+ * This function allocates the requested amount in the provided list of pools in the provided order.
+ * Empty array is returned if not enough capacity is available.
  *
  * @param {BigNumber} coverAmount - The amount to be covered.
  * @param {Array<object>} pools - An array of pool data objects.
- * @returns {object} - An object containing the allocations by pool ID. (poolId => BigNumber amount)
+ * @returns {Array<object>} - An array of objects containing pool and allocation amount for that pool
  */
 const calculatePoolAllocations = (coverAmount, pools) => {
-  // pool id (number) -> capacity amount
-  const allocations = {};
+  const allocations = [];
   let coverAmountLeft = coverAmount;
 
   for (const pool of pools) {
-    const actualCapacity = pool.totalCapacity.sub(pool.initialCapacityUsed);
-    const capacityBuffer = bnMax(
-      actualCapacity.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
-      CAPACITY_BUFFER_MINIMUM,
-    );
-    const availableCapacity = bnMax(actualCapacity.sub(capacityBuffer), Zero);
-
-    if (availableCapacity.lte(0)) {
+    if (pool.availableCapacityInNXM.lte(0)) {
       continue;
     }
 
-    allocations[pool.poolId] = bnMin(availableCapacity, coverAmountLeft);
-    coverAmountLeft = coverAmountLeft.sub(allocations[pool.poolId]);
+    const allocation = {
+      poolId: pool.poolId,
+      amount: bnMin(pool.availableCapacityInNXM, coverAmountLeft),
+    };
+
+    coverAmountLeft = coverAmountLeft.sub(allocation.amount);
+    allocations.push(allocation);
 
     if (coverAmountLeft.eq(0)) {
       break;
     }
   }
 
-  if (coverAmountLeft > 0) {
+  if (coverAmountLeft.gt(0)) {
     // not enough total capacity available
-    return {};
+    return [];
   }
 
   return allocations;
@@ -113,7 +103,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
 
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
-  const assetRates = store.getState().assetRates;
+  const { assets, assetRates } = store.getState();
 
   const now = BigNumber.from(Date.now()).div(1000);
   const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, period);
@@ -126,39 +116,20 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const poolsData = productPools.map(pool => {
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;
 
-    const totalCapacity = trancheCapacities
-      .slice(firstUsableTrancheIndex)
-      .reduce((total, capacity) => total.add(capacity), Zero)
-      .mul(NXM_PER_ALLOCATION_UNIT);
-
-    const initialCapacityUsed = trancheCapacities
-      .reduce((used, capacity, index) => {
-        if (index < firstUsableTrancheIndex) {
-          const carryOver = capacity.sub(allocations[index]);
-          return carryOver.lt(0) ? used.add(carryOver.abs()) : used;
-        }
-        return used.add(allocations[index]);
-      }, Zero)
-      .mul(NXM_PER_ALLOCATION_UNIT);
+    const availableCapacityInNXM = calculateAvailableCapacityInNXM(
+      trancheCapacities,
+      allocations,
+      firstUsableTrancheIndex,
+    );
 
     const basePrice = product.useFixedPrice
       ? targetPrice
       : calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
 
-    if (totalCapacity.lte(initialCapacityUsed)) {
-      return {
-        poolId,
-        basePrice,
-        initialCapacityUsed: Zero,
-        totalCapacity: Zero,
-      };
-    }
-
     return {
       poolId,
       basePrice,
-      initialCapacityUsed,
-      totalCapacity,
+      availableCapacityInNXM,
     };
   });
 
@@ -166,42 +137,25 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const poolsInPriorityOrder = sortPools(poolsData, customPoolIdPriorityFixedPrice);
   const allocations = calculatePoolAllocations(amountToAllocate, poolsInPriorityOrder);
 
-  const poolsWithPremium = Object.keys(allocations).map(poolId => {
-    poolId = parseInt(poolId);
-
-    const amountToAllocate = allocations[poolId];
-
-    const pool = poolsData.find(data => poolId.toString() === data.poolId.toString());
-    if (!pool) {
-      console.info(`Available poolIds in poolsData: ${poolsData.map(p => p.poolId).join(', ')}`);
-      console.debug('poolsData: ', inspect(poolsData, { depth: null }));
-      throw new Error(`Unable to find pool ${poolId} in poolsData`);
-    }
-
-    const premiumPerYear = calculatePremiumPerYear(amountToAllocate, pool.basePrice);
+  const poolsWithPremium = allocations.map(allocation => {
+    const pool = poolsData.find(data => allocation.poolId === data.poolId);
+    const premiumPerYear = calculatePremiumPerYear(allocation.amount, pool.basePrice);
 
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
     const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);
 
-    const capacityInNxm = pool.totalCapacity.sub(pool.initialCapacityUsed);
-    const capacity = Object.entries(assetRates).map(([assetId, rate]) => ({
-      assetId,
-      amount: capacityInNxm.mul(rate).div(WeiPerEther),
-      asset: selectAsset(store, assetId),
-    }));
+    const capacity = getCapacitiesInAssets(pool.availableCapacityInNXM, assets, assetRates);
 
-    console.info('Pool:', poolId);
-    console.info('Initially used capacity:', formatEther(pool.initialCapacityUsed), 'nxm');
-    console.info('Total pool capacity    :', formatEther(pool.totalCapacity), 'nxm');
-    console.info('Pool capacity          :', formatEther(capacityInNxm), 'nxm');
+    console.info('Pool:', pool.poolId);
+    console.info('Available pool capacity:', formatEther(pool.availableCapacityInNXM), 'nxm');
 
-    const coverAmountInAsset = amountToAllocate.mul(assetRate).div(WeiPerEther);
+    const coverAmountInAsset = allocation.amount.mul(assetRate).div(WeiPerEther);
 
     return {
-      poolId,
+      poolId: pool.poolId,
       premiumInNxm,
       premiumInAsset,
-      coverAmountInNxm: amountToAllocate,
+      coverAmountInNxm: allocation.amount,
       coverAmountInAsset,
       capacities: { poolId: pool.poolId, capacity },
     };

@@ -12,7 +12,8 @@ const {
 const {
   calculateFirstUsableTrancheIndex,
   calculateProductDataForTranche,
-  calculateAvailableCapacity,
+  calculateAvailableCapacityInNXM,
+  bufferedCapacity,
   calculateBasePrice,
   calculatePremiumPerYear,
   calculateBucketId,
@@ -131,17 +132,17 @@ describe('helpers', () => {
       const [capacityPool] = capacityPerPool;
       const lastIndex = allocations.length - 1;
 
-      expect(aggregatedData.capacityUsedNXM.toString()).to.equal(allocations[lastIndex].toString());
-      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(
-        trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT).toString(),
+      const availableInNXM = bufferedCapacity(
+        trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT),
       );
+
+      expect(aggregatedData.capacityUsedNXM.toString()).to.equal(allocations[lastIndex].toString());
+      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(availableInNXM.toString());
 
       expect(capacityPerPool).to.have.lengthOf(1);
       expect(capacityPool.poolId).to.equal(1);
       expect(capacityPool.minAnnualPrice.toString()).to.equal(capacityPool.maxAnnualPrice.toString());
       expect(capacityPool.allocatedNxm.toString()).to.equal(allocations[lastIndex].toString());
-
-      const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
       assertAvailableCapacity(capacityPool, availableInNXM);
     });
 
@@ -162,16 +163,16 @@ describe('helpers', () => {
       const [pool1Capacity] = capacityPerPool;
       const lastIndex = allocations.length - 1;
 
-      expect(aggregatedData.capacityUsedNXM.toString()).to.equal(allocations[lastIndex].toString());
-      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(
-        trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT).toString(),
+      const availableInNXM = bufferedCapacity(
+        trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT),
       );
+
+      expect(aggregatedData.capacityUsedNXM.toString()).to.equal(allocations[lastIndex].toString());
+      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(availableInNXM.toString());
       expect(capacityPerPool).to.have.lengthOf(1);
       expect(pool1Capacity.poolId).to.equal(1);
 
       expect(pool1Capacity.minAnnualPrice.toString()).to.equal(pool1Capacity.maxAnnualPrice.toString());
-
-      const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
       assertAvailableCapacity(pool1Capacity, availableInNXM);
     });
 
@@ -227,13 +228,20 @@ describe('helpers', () => {
       expect(aggregatedData.capacityUsedNXM.toString()).to.equal(
         pool1Product0.allocations[lastIndex1].add(pool2Product0.allocations[lastIndex2]).toString(),
       );
-      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(
+
+      const availableInNXM = bufferedCapacity(
         pool1Product0.trancheCapacities[lastIndex1]
           .sub(pool1Product0.allocations[lastIndex1])
-          .add(pool2Product0.trancheCapacities[lastIndex2].sub(pool2Product0.allocations[lastIndex2]))
-          .mul(NXM_PER_ALLOCATION_UNIT)
-          .toString(),
+          .mul(NXM_PER_ALLOCATION_UNIT),
+      ).add(
+        bufferedCapacity(
+          pool2Product0.trancheCapacities[lastIndex2]
+            .sub(pool2Product0.allocations[lastIndex2])
+            .mul(NXM_PER_ALLOCATION_UNIT),
+        ),
       );
+
+      expect(aggregatedData.capacityAvailableNXM.toString()).to.equal(availableInNXM.toString());
 
       expect(pool1Capacity.poolId).to.equal(1);
       expect(pool2Capacity.poolId).to.equal(2);
@@ -245,7 +253,9 @@ describe('helpers', () => {
 
         const { allocations, trancheCapacities } = productPools[index];
         const lastIndex = allocations.length - 1;
-        const availableInNXM = trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT);
+        const availableInNXM = bufferedCapacity(
+          trancheCapacities[lastIndex].sub(allocations[lastIndex]).mul(NXM_PER_ALLOCATION_UNIT),
+        );
         assertAvailableCapacity(poolCapacity, availableInNXM);
       });
     });
@@ -298,7 +308,7 @@ describe('helpers', () => {
       const availableCapacity = total.sub(used);
 
       // Convert to NXM
-      const expectedCapacityNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
+      const expectedCapacityNXM = bufferedCapacity(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT));
 
       // Calculate expected available capacity per asset
       const expectedAvailableCapacity = Object.keys(assets).map(assetId => ({
@@ -341,24 +351,28 @@ describe('helpers', () => {
     });
   });
 
-  describe('calculateAvailableCapacity', () => {
+  describe('calculateAvailableCapacityInNXM', () => {
     const trancheCapacities = [BigNumber.from(100), BigNumber.from(200), BigNumber.from(300), BigNumber.from(400)];
     const allocations = [BigNumber.from(50), BigNumber.from(150), BigNumber.from(250), BigNumber.from(350)];
 
     it('should calculate available capacity correctly with firstUsableTrancheIndex = 0', () => {
       const firstUsableTrancheIndex = 0;
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+      const result = calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex);
 
       // Expected: sum of all (capacity - allocation) = (50 + 50 + 50 + 50) = 200
-      expect(result.toString()).to.equal('200');
+      const expectedAllocationUnits = 200;
+      const expectedInNXM = bufferedCapacity(BigNumber.from(expectedAllocationUnits).mul(NXM_PER_ALLOCATION_UNIT));
+      expect(result.toString()).to.equal(expectedInNXM.toString());
     });
 
     it('should calculate available capacity correctly with firstUsableTrancheIndex > 0', () => {
       const firstUsableTrancheIndex = 2;
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+      const result = calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex);
 
       // Expected: only tranches 2 and 3: (50 + 50) = 100
-      expect(result.toString()).to.equal('100');
+      const expectedAllocationUnits = 100;
+      const expectedInNXM = bufferedCapacity(BigNumber.from(expectedAllocationUnits).mul(NXM_PER_ALLOCATION_UNIT));
+      expect(result.toString()).to.equal(expectedInNXM.toString());
     });
 
     it('should calculate available capacity correctly when all tranches are usable', function () {
@@ -366,9 +380,11 @@ describe('helpers', () => {
       const allocations = [BigNumber.from(50), BigNumber.from(100), BigNumber.from(150)];
       const firstUsableTrancheIndex = 0;
 
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+      const result = calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex);
 
-      expect(result.toString()).to.equal('300'); // (100-50) + (200-100) + (300-150) = 300
+      const expectedAllocationUnits = 300; // (100-50) + (200-100) + (300-150) = 300
+      const expectedInNXM = bufferedCapacity(BigNumber.from(expectedAllocationUnits).mul(NXM_PER_ALLOCATION_UNIT));
+      expect(result.toString()).to.equal(expectedInNXM.toString());
     });
 
     it('should handle unusable tranches correctly', function () {
@@ -376,9 +392,11 @@ describe('helpers', () => {
       const allocations = [BigNumber.from(50), BigNumber.from(100), BigNumber.from(150)];
       const firstUsableTrancheIndex = 1;
 
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+      const result = calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex);
 
-      expect(result.toString()).to.equal('250'); // 0 + (200-100) + (300-150) = 250
+      const expectedAllocationUnits = 250; // 0 + (200-100) + (300-150) = 250
+      const expectedInNXM = bufferedCapacity(BigNumber.from(expectedAllocationUnits).mul(NXM_PER_ALLOCATION_UNIT));
+      expect(result.toString()).to.equal(expectedInNXM.toString());
     });
 
     it('should handle negative differences before firstUsableTrancheIndex', () => {
@@ -389,7 +407,7 @@ describe('helpers', () => {
         BigNumber.from(350),
       ];
       const firstUsableTrancheIndex = 2;
-      const result = calculateAvailableCapacity(trancheCapacities, overAllocated, firstUsableTrancheIndex);
+      const result = calculateAvailableCapacityInNXM(trancheCapacities, overAllocated, firstUsableTrancheIndex);
 
       // Expected: carry over negative (-100) and add tranches 2,3: (50 + 50 - 100) = 0
       expect(result.toString()).to.equal('0');
@@ -398,14 +416,14 @@ describe('helpers', () => {
     it('should return zero when all capacity is allocated', () => {
       const fullAllocations = trancheCapacities.map(c => c);
       const firstUsableTrancheIndex = 0;
-      const result = calculateAvailableCapacity(trancheCapacities, fullAllocations, firstUsableTrancheIndex);
+      const result = calculateAvailableCapacityInNXM(trancheCapacities, fullAllocations, firstUsableTrancheIndex);
 
       expect(result.toString()).to.equal('0');
     });
 
     it('should handle empty arrays', () => {
       const firstUsableTrancheIndex = 0;
-      const result = calculateAvailableCapacity([], [], firstUsableTrancheIndex);
+      const result = calculateAvailableCapacityInNXM([], [], firstUsableTrancheIndex);
 
       expect(result.toString()).to.equal('0');
     });
@@ -415,9 +433,26 @@ describe('helpers', () => {
       const allocations = [BigNumber.from(150), BigNumber.from(250)];
       const firstUsableTrancheIndex = 0;
 
-      const result = calculateAvailableCapacity(trancheCapacities, allocations, firstUsableTrancheIndex);
+      const result = calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex);
 
       expect(result.toString()).to.equal('0');
+    });
+  });
+
+  describe('bufferedCapacity', () => {
+    it('should subtract 0.1% from available capacity', () => {
+      const capacity = parseEther('1000');
+      expect(bufferedCapacity(capacity).toString()).to.be.equal(parseEther('999').toString());
+    });
+
+    it('should subtract at least 0.1 nxm', () => {
+      const capacity = parseEther('10');
+      expect(bufferedCapacity(capacity).toString()).to.be.equal(parseEther('9.9').toString());
+    });
+
+    it('should not be negative', () => {
+      const capacity = parseEther('0.05');
+      expect(bufferedCapacity(capacity).toString()).to.be.equal('0');
     });
   });
 

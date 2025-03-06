@@ -98,23 +98,23 @@ describe('Quote Engine tests', () => {
 
     const [quote1, quote2, quote3] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
-    expect(quote1.poolId).to.be.equal(1); // partially filled
-    expect(quote1.premiumInNxm.toString()).to.be.equal('51949989041095890');
-    expect(quote1.premiumInAsset.toString()).to.be.equal('1492234291979572267');
-    expect(quote1.coverAmountInNxm.toString()).to.be.equal('31602910000000000000');
-    expect(quote1.coverAmountInAsset.toString()).to.be.equal('907775860954239803444');
+    expect(quote1.poolId).to.be.equal(18); // capacity filled
+    expect(quote1.premiumInNxm.toString()).to.be.equal('2740621019178082191');
+    expect(quote1.premiumInAsset.toString()).to.be.equal('78722801325373825281');
+    expect(quote1.coverAmountInNxm.toString()).to.be.equal('1667211120000000000000');
+    expect(quote1.coverAmountInAsset.toString()).to.be.equal('47889704139602410393499');
 
-    expect(quote2.poolId).to.be.equal(18); // capacity filled
-    expect(quote2.premiumInNxm.toString()).to.be.equal('2740621019178082191');
-    expect(quote2.premiumInAsset.toString()).to.be.equal('78722801325373825281');
-    expect(quote2.coverAmountInNxm.toString()).to.be.equal('1667211120000000000000');
-    expect(quote2.coverAmountInAsset.toString()).to.be.equal('47889704139602410393499');
+    expect(quote2.poolId).to.be.equal(22); // capacity filled
+    expect(quote2.premiumInNxm.toString()).to.be.equal('3044672827397260273');
+    expect(quote2.premiumInAsset.toString()).to.be.equal('87456518947607277504');
+    expect(quote2.coverAmountInNxm.toString()).to.be.equal('1852175970000000000000');
+    expect(quote2.coverAmountInAsset.toString()).to.be.equal('53202715693127760499173');
 
-    expect(quote3.poolId).to.be.equal(22); // capacity filled
-    expect(quote3.premiumInNxm.toString()).to.be.equal('3044672827397260273');
-    expect(quote3.premiumInAsset.toString()).to.be.equal('87456518947607277504');
-    expect(quote3.coverAmountInNxm.toString()).to.be.equal('1852175970000000000000');
-    expect(quote3.coverAmountInAsset.toString()).to.be.equal('53202715693127760499173');
+    expect(quote3.poolId).to.be.equal(1); // partially filled
+    expect(quote3.premiumInNxm.toString()).to.be.equal('51949989041095890');
+    expect(quote3.premiumInAsset.toString()).to.be.equal('1492234291979572267');
+    expect(quote3.coverAmountInNxm.toString()).to.be.equal('31602910000000000000');
+    expect(quote3.coverAmountInAsset.toString()).to.be.equal('907775860954239803444');
   });
 
   it('should return empty array for cover over the capacity', () => {

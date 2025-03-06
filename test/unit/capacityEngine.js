@@ -2,7 +2,6 @@ const { expect } = require('chai');
 const ethers = require('ethers');
 const sinon = require('sinon');
 
-const { poolProductCapacities } = require('./responses');
 const { calculateExpectedUsedCapacity, getCurrentTimestamp, verifyCapacityResponse } = require('./utils');
 const {
   getAllProductCapacities,
@@ -15,12 +14,13 @@ const {
 } = require('../../src/lib/capacityEngine');
 const { MAX_COVER_PERIOD, SECONDS_PER_DAY, NXM_PER_ALLOCATION_UNIT } = require('../../src/lib/constants');
 const {
-  calculateAvailableCapacity,
+  calculateAvailableCapacityInNXM,
   calculateBasePrice,
   calculateFirstUsableTrancheIndex,
   calculatePremiumPerYear,
   calculateProductDataForTranche,
   calculateTrancheId,
+  bufferedCapacity,
 } = require('../../src/lib/helpers');
 const mockStore = require('../mocks/store');
 
@@ -40,7 +40,7 @@ const verifyPoolCapacity = (poolCapacity, productId, products, poolProducts, now
   );
 
   // Calculate available capacity considering all usable tranches
-  const availableCapacity = calculateAvailableCapacity(
+  const availableCapacity = calculateAvailableCapacityInNXM(
     poolProduct.trancheCapacities,
     poolProduct.allocations,
     firstUsableTrancheIndex,
@@ -48,7 +48,7 @@ const verifyPoolCapacity = (poolCapacity, productId, products, poolProducts, now
 
   // Check pool-specific NXM capacity
   const nxmCapacityAmount = poolCapacity.availableCapacity.find(c => c.assetId === 255)?.amount || Zero;
-  expect(nxmCapacityAmount.toString()).to.equal(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT).toString());
+  expect(nxmCapacityAmount.toString()).to.equal(availableCapacity.toString());
 
   // Check pool-specific used capacity
   const expectedAllocatedNxm = poolProduct.allocations
@@ -91,11 +91,11 @@ describe('capacityEngine', function () {
     };
 
     const calculatePoolCapacity = (poolProduct, firstUsableTrancheIndex = 0) => {
-      return calculateAvailableCapacity(
+      return calculateAvailableCapacityInNXM(
         poolProduct.trancheCapacities,
         poolProduct.allocations,
         firstUsableTrancheIndex,
-      ).mul(NXM_PER_ALLOCATION_UNIT);
+      );
     };
 
     it('should calculate product capacity correctly', function () {
@@ -140,7 +140,7 @@ describe('capacityEngine', function () {
       // Calculate expected fixed price
       const used = allocations[lastIndex].mul(NXM_PER_ALLOCATION_UNIT);
       const availableCapacity = trancheCapacities[lastIndex].sub(allocations[lastIndex]);
-      const availableInNXM = availableCapacity.mul(NXM_PER_ALLOCATION_UNIT);
+      const availableInNXM = bufferedCapacity(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT));
       const expectedFixedPrice = WeiPerEther.mul(calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, targetPrice)).div(
         NXM_PER_ALLOCATION_UNIT,
       );
@@ -215,6 +215,7 @@ describe('capacityEngine', function () {
     it('should filter by poolId when provided', function () {
       const productId = '0';
       const poolId = 2;
+      const productPool = mockStore.poolProducts['0_2'];
       const now = getCurrentTimestamp();
       const response = calculateProductCapacity(store, productId, {
         poolId,
@@ -224,15 +225,12 @@ describe('capacityEngine', function () {
         assetRates: mockStore.assetRates,
       });
 
-      const { availableCapacity } = poolProductCapacities[poolId].productsCapacity.find(
-        p => p.productId === Number(productId),
-      );
-      const expectedAvailableCapacity = availableCapacity.map(cap => ({
-        ...cap,
-        amount: BigNumber.from(cap.amount),
-      }));
+      const poolCapacity = calculatePoolCapacity(productPool);
+      const nxmCapacity = response.availableCapacity.find(c => c.assetId === 255);
+      verifyNXMCapacity(nxmCapacity, poolCapacity);
 
-      expect(response.availableCapacity).to.deep.equal(expectedAvailableCapacity);
+      expect(response.capacityPerPool.length).to.be.equal(1);
+      expect(response.capacityPerPool[0].poolId).to.be.equal(poolId);
     });
 
     it('should return null for non-existing product', function () {
@@ -357,12 +355,12 @@ describe('capacityEngine', function () {
 
       const expectedAvailableNXM = poolIds.reduce((total, poolId) => {
         const poolProduct = poolProducts[`${product.productId}_${poolId}`];
-        const availableCapacity = calculateAvailableCapacity(
+        const availableCapacity = calculateAvailableCapacityInNXM(
           poolProduct.trancheCapacities,
           poolProduct.allocations,
           firstUsableTrancheIndex,
         );
-        return total.add(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT));
+        return total.add(availableCapacity);
       }, Zero);
 
       const nxmCapacity = product.availableCapacity.find(c => c.assetId === 255);
@@ -489,15 +487,15 @@ describe('capacityEngine', function () {
         );
 
         // Calculate available capacity
-        const availableCapacity = calculateAvailableCapacity(
+        const availableCapacity = calculateAvailableCapacityInNXM(
           poolProduct.trancheCapacities,
           poolProduct.allocations,
           firstUsableTrancheIndex,
         );
 
         const nxmCapacity = product.availableCapacity.find(c => c.assetId === 255);
-        expect(nxmCapacity.amount.toString()).to.equal(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT).toString());
-        totalAvailableNXM = totalAvailableNXM.add(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT));
+        expect(nxmCapacity.amount.toString()).to.equal(availableCapacity.toString());
+        totalAvailableNXM = totalAvailableNXM.add(availableCapacity);
 
         // Check used capacity
         let productUsedCapacity = Zero;
@@ -710,11 +708,11 @@ describe('capacityEngine', function () {
                 products[expectedProductId].gracePeriod,
                 SECONDS_PER_DAY.mul(30),
               );
-              expectedAmount = calculateAvailableCapacity(
+              expectedAmount = calculateAvailableCapacityInNXM(
                 expectedPoolProduct.trancheCapacities,
                 expectedPoolProduct.allocations,
                 firstUsableTrancheIndex,
-              ).mul(NXM_PER_ALLOCATION_UNIT);
+              );
             } else {
               // For multi-pool responses, sum capacities across all pools
               expectedAmount = productPoolIds[expectedProductId].reduce((total, pid) => {
@@ -724,11 +722,11 @@ describe('capacityEngine', function () {
                   products[expectedProductId].gracePeriod,
                   SECONDS_PER_DAY.mul(30),
                 );
-                const poolCapacity = calculateAvailableCapacity(
+                const poolCapacity = calculateAvailableCapacityInNXM(
                   poolProduct.trancheCapacities,
                   poolProduct.allocations,
                   firstUsableTrancheIndex,
-                ).mul(NXM_PER_ALLOCATION_UNIT);
+                );
                 return total.add(poolCapacity);
               }, Zero);
             }

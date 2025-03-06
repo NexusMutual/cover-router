@@ -17,27 +17,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '4761714669056628480',
+        amount: '4756936506323084609',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '13305160151201388636532',
+        amount: '13291809031947765136018',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '13305160144',
+        amount: '13291809025',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '38109316',
+        amount: '38071075',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '463200000000000000000',
+        amount: '462735200000000000000',
         asset: assets[255],
       },
     ],
@@ -50,27 +50,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '5267492652039327360',
+        amount: '5262225159387288032',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '14718402550681328880309',
+        amount: '14703684148130647551429',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '14718402543',
+        amount: '14703684141',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '42157197',
+        amount: '42115040',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '512400000000000000000',
+        amount: '511887600000000000000',
         asset: assets[255],
       },
     ],
@@ -83,27 +83,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '4761714669056628480',
+        amount: '4756936506323084609',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '13305160151201388636532',
+        amount: '13291809031947765136018',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '13305160144',
+        amount: '13291809025',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '38109316',
+        amount: '38071075',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '463200000000000000000',
+        amount: '462735200000000000000',
         asset: assets[255],
       },
     ],
@@ -113,27 +113,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '650955796175312058720',
+        amount: '650304840379136746661',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '1818897544564809351595684',
+        amount: '1817078647020244542244088',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '1818897543689',
+        amount: '1817078646146',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '5209778910',
+        amount: '5204569131',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '63322300000000000000000',
+        amount: '63258977700000000000000',
         asset: assets[255],
       },
     ],
@@ -146,27 +146,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '37227212755184497584',
+        amount: '37189969094364825844',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '104020098245136227727466',
+        amount: '103916032187788669387861',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '104020098195',
+        amount: '103916032137',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '297939658',
+        amount: '297641587',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '3621310000000000000000',
+        amount: '3617687090000000000000',
         asset: assets[255],
       },
     ],
@@ -183,7 +183,7 @@ const productCapacityPerPools = {
       allocatedNxm: '0',
       availableCapacity: [
         {
-          amount: '1011555965965397760',
+          amount: '1010527961934945120',
           asset: {
             decimals: 18,
             id: 0,
@@ -192,7 +192,7 @@ const productCapacityPerPools = {
           assetId: 0,
         },
         {
-          amount: '2826484798959880487553',
+          amount: '2823612355058498495188',
           asset: {
             decimals: 18,
             id: 1,
@@ -201,7 +201,7 @@ const productCapacityPerPools = {
           assetId: 1,
         },
         {
-          amount: '2826484797',
+          amount: '2823612353',
           asset: {
             decimals: 6,
             id: 6,
@@ -210,7 +210,7 @@ const productCapacityPerPools = {
           assetId: 6,
         },
         {
-          amount: '8095761',
+          amount: '8087534',
           asset: {
             decimals: 8,
             id: 7,
@@ -219,7 +219,7 @@ const productCapacityPerPools = {
           assetId: 7,
         },
         {
-          amount: '98400000000000000000',
+          amount: '98300000000000000000',
           asset: {
             decimals: 18,
             id: 255,
@@ -236,7 +236,7 @@ const productCapacityPerPools = {
       allocatedNxm: '0',
       availableCapacity: [
         {
-          amount: '3750158703091230720',
+          amount: '3746408544388139489',
           asset: {
             decimals: 18,
             id: 0,
@@ -245,7 +245,7 @@ const productCapacityPerPools = {
           assetId: 0,
         },
         {
-          amount: '10478675352241508148979',
+          amount: '10468196676889266640830',
           asset: {
             decimals: 18,
             id: 1,
@@ -254,7 +254,7 @@ const productCapacityPerPools = {
           assetId: 1,
         },
         {
-          amount: '10478675347',
+          amount: '10468196671',
           asset: {
             decimals: 6,
             id: 6,
@@ -263,7 +263,7 @@ const productCapacityPerPools = {
           assetId: 6,
         },
         {
-          amount: '30013555',
+          amount: '29983541',
           asset: {
             decimals: 8,
             id: 7,
@@ -272,7 +272,7 @@ const productCapacityPerPools = {
           assetId: 7,
         },
         {
-          amount: '364800000000000000000',
+          amount: '364435200000000000000',
           asset: {
             decimals: 18,
             id: 255,
@@ -307,27 +307,27 @@ const poolProductCapacities = {
         availableCapacity: [
           {
             assetId: 0,
-            amount: '3750158703091230720',
+            amount: '3746408544388139489',
             asset: { id: 0, symbol: 'ETH', decimals: 18 },
           },
           {
             assetId: 1,
-            amount: '10478675352241508148979',
+            amount: '10468196676889266640830',
             asset: { id: 1, symbol: 'DAI', decimals: 18 },
           },
           {
             assetId: 6,
-            amount: '10478675347',
+            amount: '10468196671',
             asset: { id: 6, symbol: 'USDC', decimals: 6 },
           },
           {
             assetId: 7,
-            amount: '30013555',
+            amount: '29983541',
             asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
           },
           {
             assetId: 255,
-            amount: '364800000000000000000',
+            amount: '364435200000000000000',
             asset: { id: 255, symbol: 'NXM', decimals: 18 },
           },
         ],
@@ -340,27 +340,27 @@ const poolProductCapacities = {
         availableCapacity: [
           {
             assetId: 0,
-            amount: '3750158703091230720',
+            amount: '3746408544388139489',
             asset: { id: 0, symbol: 'ETH', decimals: 18 },
           },
           {
             assetId: 1,
-            amount: '10478675352241508148979',
+            amount: '10468196676889266640830',
             asset: { id: 1, symbol: 'DAI', decimals: 18 },
           },
           {
             assetId: 6,
-            amount: '10478675347',
+            amount: '10468196671',
             asset: { id: 6, symbol: 'USDC', decimals: 6 },
           },
           {
             assetId: 7,
-            amount: '30013555',
+            amount: '29983541',
             asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
           },
           {
             assetId: 255,
-            amount: '364800000000000000000',
+            amount: '364435200000000000000',
             asset: { id: 255, symbol: 'NXM', decimals: 18 },
           },
         ],
@@ -373,27 +373,27 @@ const poolProductCapacities = {
         availableCapacity: [
           {
             assetId: 0,
-            amount: '3750158703091230720',
+            amount: '3746408544388139489',
             asset: { id: 0, symbol: 'ETH', decimals: 18 },
           },
           {
             assetId: 1,
-            amount: '10478675352241508148979',
+            amount: '10468196676889266640830',
             asset: { id: 1, symbol: 'DAI', decimals: 18 },
           },
           {
             assetId: 6,
-            amount: '10478675347',
+            amount: '10468196671',
             asset: { id: 6, symbol: 'USDC', decimals: 6 },
           },
           {
             assetId: 7,
-            amount: '30013555',
+            amount: '29983541',
             asset: { id: 7, symbol: 'cbBTC', decimals: 8 },
           },
           {
             assetId: 255,
-            amount: '364800000000000000000',
+            amount: '364435200000000000000',
             asset: { id: 255, symbol: 'NXM', decimals: 18 },
           },
         ],
@@ -464,27 +464,27 @@ const getQuote = assetId => ({
       capacity: [
         {
           assetId: '0',
-          amount: '1011555965965397760',
+          amount: '1010527961934945120',
           asset: assets[0],
         },
         {
           assetId: '1',
-          amount: '2826484798959880487553',
+          amount: '2823612355058498495188',
           asset: assets[1],
         },
         {
           assetId: '6',
-          amount: '2826484797',
+          amount: '2823612353',
           asset: assets[6],
         },
         {
           assetId: '7',
-          amount: '8095761',
+          amount: '8087534',
           asset: assets[7],
         },
         {
           assetId: '255',
-          amount: '98400000000000000000',
+          amount: '98300000000000000000',
           asset: assets[255],
         },
       ],
