@@ -33,7 +33,7 @@ describe('calculateOptimalPoolAllocation', function () {
       { price: '400', capacity: '1000' },
     ]);
 
-    const expectedAllocations = [{ pool: pools[0], amount: coverAmount }];
+    const expectedAllocations = [{ poolId: pools[0].poolId, amount: coverAmount }];
 
     expect(calculatePoolAllocations(coverAmount, pools)).to.deep.equal(expectedAllocations);
   });
@@ -47,8 +47,8 @@ describe('calculateOptimalPoolAllocation', function () {
     ]);
 
     const expectedAllocations = [
-      { pool: pools[0], amount: parseEther('10') },
-      { pool: pools[1], amount: parseEther('5') },
+      { poolId: pools[0].poolId, amount: parseEther('10') },
+      { poolId: pools[1].poolId, amount: parseEther('5') },
     ];
 
     expect(calculatePoolAllocations(coverAmount, pools)).to.deep.equal(expectedAllocations);
@@ -62,7 +62,7 @@ describe('calculateOptimalPoolAllocation', function () {
       { price: '210', capacity: '100' },
     ]);
 
-    const expectedAllocations = [{ pool: pools[1], amount: parseEther('30') }];
+    const expectedAllocations = [{ poolId: pools[1].poolId, amount: parseEther('30') }];
 
     expect(calculatePoolAllocations(coverAmount, pools)).to.deep.equal(expectedAllocations);
   });
@@ -77,9 +77,9 @@ describe('calculateOptimalPoolAllocation', function () {
     ]);
 
     const expectedAllocations = [
-      { pool: pools[0], amount: parseEther('300000') },
-      { pool: pools[1], amount: parseEther('500000') },
-      { pool: pools[2], amount: parseEther('200000') },
+      { poolId: pools[0].poolId, amount: parseEther('300000') },
+      { poolId: pools[1].poolId, amount: parseEther('500000') },
+      { poolId: pools[2].poolId, amount: parseEther('200000') },
     ];
 
     expect(calculatePoolAllocations(coverAmount, pools)).to.deep.equal(expectedAllocations);
@@ -96,9 +96,9 @@ describe('calculateOptimalPoolAllocation', function () {
     ]);
 
     const expectedAllocations = [
-      { pool: pools[0], amount: parseEther('15') },
-      { pool: pools[1], amount: parseEther('10') },
-      { pool: pools[3], amount: parseEther('5') },
+      { poolId: pools[0].poolId, amount: parseEther('15') },
+      { poolId: pools[1].poolId, amount: parseEther('10') },
+      { poolId: pools[3].poolId, amount: parseEther('5') },
     ];
 
     expect(calculatePoolAllocations(coverAmount, pools)).to.deep.equal(expectedAllocations);

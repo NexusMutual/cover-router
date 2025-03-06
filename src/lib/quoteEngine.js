@@ -38,7 +38,7 @@ const calculatePoolAllocations = (coverAmount, pools) => {
     }
 
     const allocation = {
-      pool,
+      poolId: pool.poolId,
       amount: bnMin(pool.availableCapacityInNXM, coverAmountLeft),
     };
 
@@ -138,7 +138,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const allocations = calculatePoolAllocations(amountToAllocate, poolsInPriorityOrder);
 
   const poolsWithPremium = allocations.map(allocation => {
-    const pool = allocation.pool;
+    const pool = poolsData.find(data => allocation.poolId === data.poolId);
     const premiumPerYear = calculatePremiumPerYear(allocation.amount, pool.basePrice);
 
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
