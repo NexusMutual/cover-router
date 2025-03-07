@@ -31,8 +31,8 @@ jobs:
 
           if [ "$PACKAGE_VERSION" = "$LATEST_TAG_VERSION" ]; then
             echo "::error::The package version to be released ($PACKAGE_VERSION) is the same as the latest tag version ($LATEST_TAG_VERSION)"
-            echo "Commit messages on the dev branch must include changes beyond 'docs', 'style', 'test', or 'ci'"
-            echo "Please ensure your commits reflect meaningful changes to trigger an automatic version bump."
+            echo "::warning::Commit messages on the dev branch must include changes beyond 'docs', 'style', 'test', or 'ci'"
+            echo "::info::Please ensure your commits reflect meaningful changes to trigger an automatic version bump."
             exit 1
           fi
 

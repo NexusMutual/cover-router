@@ -16,7 +16,7 @@ env:
   LOG_LEVEL: 'SILENCE'
 
 jobs:
-  lint_and_test:
+  lint-and-test:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
@@ -37,11 +37,11 @@ jobs:
       - name: Test
         run: npm test
 
-  build_and_push:
+  build-and-push:
     name: Build Image
     runs-on: ubuntu-22.04
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/dev'
-    needs: ["lint_and_test"]
+    needs: ["lint-and-test"]
     permissions:
       id-token: write
       contents: read
@@ -116,7 +116,7 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/dev'
-    needs: ["lint_and_test", "build_and_push"]
+    needs: ["lint-and-test", "build-and-push"]
     steps:
       - name: Set Env
         run: |
