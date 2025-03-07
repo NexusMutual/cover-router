@@ -10,9 +10,47 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: '22.14'
+
 jobs:
+  needs-version-bump:
+    runs-on: ubuntu-latest
+    outputs:
+      needs_bump: ${{ steps.check-bump.outputs.needs_bump }}
+      bump_type: ${{ steps.check-bump.outputs.bump_type }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --prefer-offline --no-audit --no-fund
+
+      - id: check-bump
+        run: |
+          echo "Running conventional-recommended-bump to check for version changes..."
+          BUMP=$(timeout 5s npx conventional-recommended-bump --config .github/config/conventional-bump-setup.js --verbose | head -n1) || true
+
+          if [ ! -z "$BUMP" ] && [[ "$BUMP" != *"No version bump needed"* ]]; then
+            echo "A version bump is needed: '$BUMP'"
+            echo "needs_bump=true" >> $GITHUB_OUTPUT
+            echo "bump_type=${BUMP}" >> $GITHUB_OUTPUT
+          else
+            echo "No version bump needed."
+            echo "needs_bump=false" >> $GITHUB_OUTPUT
+          fi
+
   reset-release-candidate:
-    uses: NexusMutual/workflows/.github/workflows/reset.yml@master
+    needs: needs-version-bump
+    if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
+    uses: NexusMutual/workflows/.github/workflows/reset.yml@a09534b91b0eaad1f8c9787578cc83a03974cf33
     with:
       target-ref: release-candidate
       base-ref: ${{ github.ref_name }}
@@ -22,24 +60,22 @@ jobs:
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
 
   bump-version:
-    needs: reset-release-candidate
-    uses: NexusMutual/workflows/.github/workflows/bump.yml@master
+    needs: [needs-version-bump, reset-release-candidate]
+    if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
+    uses: NexusMutual/workflows/.github/workflows/bump.yml@a09534b91b0eaad1f8c9787578cc83a03974cf33
     with:
       ref: 'release-candidate'
       bump-command: |
-        BUMP=$(timeout 5s npx conventional-recommended-bump --config .github/config/conventional-bump-setup.js --verbose | head -n1) || true
-        if [ ! -z "$BUMP" ] && [[ "$BUMP" != *"No version bump needed"* ]]; then
-          npm version "$BUMP" --no-git-tag-version
-        else
-          echo "No version bump"
-        fi
+        echo 'executing npm version bump: ' "${{ needs.needs-version-bump.outputs.bump_type }}"
+        npm version "${{ needs.needs-version-bump.outputs.bump_type }}" --no-git-tag-version
       environment: production
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
-      DEPLOYER_APP_PK : ${{ secrets.DEPLOYER_APP_PK }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
 
   build:
-    needs: bump-version
+    needs: [needs-version-bump, bump-version]
+    if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
     uses: NexusMutual/workflows/.github/workflows/build.yml@master
     with:
       ref: 'release-candidate'
@@ -51,7 +87,8 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
   tag-image:
-    needs: build
+    needs: [needs-version-bump, build]
+    if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
     uses: NexusMutual/workflows/.github/workflows/tag-image.yml@master
     with:
       environment: production
