@@ -17,17 +17,28 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Validate version bump
-        id: validate-version-bump
+      - name: Get package.json version
+        id: package-version
         run: |
-          # Get current package.json version
           PACKAGE_VERSION=$(jq -r .version package.json)
+          echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+          echo "Package version: $PACKAGE_VERSION"
 
-          # Get latest tag version
+      - name: Get latest git tag version
+        id: tag-version
+        run: |
+          # git tags has v prefix
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           LATEST_TAG_VERSION=${LATEST_TAG#v} # Remove 'v' prefix
+          echo "version=$LATEST_TAG_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest tag version: $LATEST_TAG_VERSION (from tag: $LATEST_TAG)"
 
-          echo "Latest tag: $LATEST_TAG (current version: $LATEST_TAG_VERSION)"
+      - name: Validate version bump
+        run: |
+          PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
+          LATEST_TAG_VERSION="${{ steps.tag-version.outputs.version }}"
+
+          echo "Comparing package version ($PACKAGE_VERSION) with latest tag version ($LATEST_TAG_VERSION)"
 
           if [ "$PACKAGE_VERSION" = "$LATEST_TAG_VERSION" ]; then
             echo "::error::The package version to be released ($PACKAGE_VERSION) is the same as the latest tag version ($LATEST_TAG_VERSION)"
