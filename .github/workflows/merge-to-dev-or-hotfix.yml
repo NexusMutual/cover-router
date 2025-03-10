@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '22.14'
+  NODE_VERSION: 22
 
 jobs:
   needs-version-bump:
@@ -36,7 +36,7 @@ jobs:
       - id: check-bump
         run: |
           echo "Running conventional-recommended-bump to check for version changes..."
-          BUMP=$(timeout 5s npx conventional-recommended-bump --config .github/config/conventional-bump-setup.js --verbose | head -n1) || true
+          BUMP=$(timeout 5s npx conventional-recommended-bump --config .github/config/conventional-bump-setup.js) || true
 
           if [ ! -z "$BUMP" ] && [[ "$BUMP" != *"No version bump needed"* ]]; then
             echo "A version bump is needed: '$BUMP'"
@@ -50,7 +50,7 @@ jobs:
   reset-release-candidate:
     needs: needs-version-bump
     if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
-    uses: NexusMutual/workflows/.github/workflows/reset.yml@a09534b91b0eaad1f8c9787578cc83a03974cf33
+    uses: NexusMutual/workflows/.github/workflows/reset.yml@master
     with:
       target-ref: release-candidate
       base-ref: ${{ github.ref_name }}
@@ -62,7 +62,7 @@ jobs:
   bump-version:
     needs: [needs-version-bump, reset-release-candidate]
     if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
-    uses: NexusMutual/workflows/.github/workflows/bump.yml@a09534b91b0eaad1f8c9787578cc83a03974cf33
+    uses: NexusMutual/workflows/.github/workflows/bump.yml@master
     with:
       ref: 'release-candidate'
       bump-command: |
