@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon src/index.js",
+    "build": "echo 'No build step'",
     "lint": "eslint --max-warnings 0 .",
     "lint:fix": "npm run lint -- --fix",
     "start": "node src/index.js",
