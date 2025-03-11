@@ -1,10 +1,18 @@
 name: Merge to dev or hotfix
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - dev
       - hotfix
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Target branch (dev or hotfix)'
+        required: true
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -16,6 +24,7 @@ env:
 jobs:
   needs-version-bump:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_call' || github.event.pull_request.merged == true
     outputs:
       needs_bump: ${{ steps.check-bump.outputs.needs_bump }}
       bump_type: ${{ steps.check-bump.outputs.bump_type }}
@@ -23,6 +32,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.branch || github.ref_name }}
 
       - uses: actions/setup-node@v4
         with:
@@ -49,11 +59,11 @@ jobs:
 
   reset-release-candidate:
     needs: needs-version-bump
-    if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
+    if: (github.event_name == 'workflow_call' || github.event.pull_request.merged == true) && needs.needs-version-bump.outputs.needs_bump == 'true'
     uses: NexusMutual/workflows/.github/workflows/reset.yml@master
     with:
       target-ref: release-candidate
-      base-ref: ${{ github.ref_name }}
+      base-ref: ${{ inputs.branch || github.ref_name }}
       environment: production
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
@@ -61,7 +71,7 @@ jobs:
 
   bump-version:
     needs: [needs-version-bump, reset-release-candidate]
-    if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
+    if: (github.event_name == 'workflow_call' || github.event.pull_request.merged == true) && needs.needs-version-bump.outputs.needs_bump == 'true'
     uses: NexusMutual/workflows/.github/workflows/bump.yml@master
     with:
       ref: 'release-candidate'
@@ -75,7 +85,7 @@ jobs:
 
   build:
     needs: [needs-version-bump, bump-version]
-    if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
+    if: (github.event_name == 'workflow_call' || github.event.pull_request.merged == true) && needs.needs-version-bump.outputs.needs_bump == 'true'
     uses: NexusMutual/workflows/.github/workflows/build.yml@master
     with:
       ref: 'release-candidate'
@@ -88,7 +98,7 @@ jobs:
 
   tag-image:
     needs: [needs-version-bump, build]
-    if: ${{ needs.needs-version-bump.outputs.needs_bump == 'true' }}
+    if: (github.event_name == 'workflow_call' || github.event.pull_request.merged == true) && needs.needs-version-bump.outputs.needs_bump == 'true'
     uses: NexusMutual/workflows/.github/workflows/tag-image.yml@master
     with:
       environment: production
