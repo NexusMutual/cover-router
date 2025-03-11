@@ -117,8 +117,7 @@ jobs:
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
 
   rebase-dev:
-    # should be done AFTER rebase-hotfix
-    needs: rebase-hotfix
+    needs: ff-master
     uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
     with:
       environment: production
@@ -127,3 +126,15 @@ jobs:
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  sync-rc-dev:
+    needs: ff-master
+    uses: ./.github/workflows/merge-to-dev-or-hotfix.yml
+    with:
+      branch: dev
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
