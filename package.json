@@ -12,6 +12,8 @@
     "lint:fix": "npm run lint -- --fix",
     "start": "node src/index.js",
     "test": "nyc --reporter=text mocha test/**/*.js --exit",
+    "ts:build": "echo 'No TS build step'",
+    "ts:check": "echo 'No TS type check step'",
     "prepare": "husky"
   },
   "repository": {
@@ -27,6 +29,7 @@
   "dependencies": {
     "@nexusmutual/deployments": "^2.11.0",
     "@nexusmutual/utils": "^0.0.1",
+    "conventional-recommended-bump": "^11.0.0",
     "convict": "^6.2.4",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
@@ -49,12 +52,11 @@
     "eslint-plugin-n": "^15.7.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-standard": "^5.0.0",
     "husky": "^9.1.6",
     "mocha": "^10.2.0",
     "nodemon": "^3.1.2",
     "nyc": "^15.1.0",
     "sinon": "^15.0.2",
-    "supertest": "^6.3.4"
+    "supertest": "^7.0.0"
   }
 }
