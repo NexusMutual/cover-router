@@ -11,3 +11,10 @@ coverage/
 
 # env
 .env
+
+# compile
+dist
+cache.json
+
+# misc
+.DS_Store
