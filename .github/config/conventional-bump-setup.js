@@ -26,11 +26,11 @@ const config = {
     let patchCount = 0;
 
     console.error('Processing commits:', commits.length);
-    
+
     commits.forEach(commit => {
       console.error(`Processing commit: type=${commit.type}, subject="${commit.subject}"`);
       console.error(`Commit type mapping: ${commit.type} -> ${COMMIT_TYPES[commit.type]}`);
-      
+
       const locations = [commit.body, commit.subject, commit.footer];
       const notesTitles = (commit.notes || []).map(note => note.title);
       const allLocations = [...locations, ...notesTitles];
@@ -44,7 +44,7 @@ const config = {
 
       const commitTypeValue = COMMIT_TYPES[commit.type];
       console.error(`Evaluating commit type value: ${commitTypeValue}`);
-      
+
       switch (commitTypeValue) {
         case 'major':
           console.error('Incrementing breaking count');
@@ -64,7 +64,7 @@ const config = {
     });
 
     console.error(`Final counts: breaking=${breakingCount}, feature=${featureCount}, patch=${patchCount}`);
-    
+
     if (breakingCount > 0) {
       level = 0;
     } else if (featureCount > 0) {
@@ -76,7 +76,7 @@ const config = {
     const summary = `There are ${breakingCount} breaking changes, ${featureCount} features, and ${patchCount} patches`;
     const releaseMsg = level === null ? 'No version bump needed.' : `Bumping ${RELEASE_TYPES[level]} version.`;
     const reason = `${summary}. ${releaseMsg}`;
-    
+
     console.warn(reason);
     console.error(`Returning level=${level}`);
 
