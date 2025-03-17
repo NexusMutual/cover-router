@@ -10,7 +10,7 @@
     "plugin:n/recommended", // Uses the recommended rules from eslint-plugin-n (node)
     "prettier" // enables eslint-plugin-prettier and displays prettier errors as ESLint errors. (must be the last config in extends array)
   ],
-  "ignorePatterns": ["node_modules/"],
+  "ignorePatterns": ["node_modules/", "!.github"],
   "parserOptions": {
     "ecmaVersion": "latest"
   },
