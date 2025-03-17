@@ -25,23 +25,19 @@ const config = {
     let featureCount = 0;
     let patchCount = 0;
 
-    console.error('Processing commits:', commits.length);
-
     commits.forEach(commit => {
-      console.error(`Processing commit: type=${commit.type}, subject="${commit.subject}"`);
-      console.error(`Commit type mapping: ${commit.type} -> ${COMMIT_TYPES[commit.type]}`);
-
+      // commit message validation
       const locations = [commit.body, commit.subject, commit.footer];
       const notesTitles = (commit.notes || []).map(note => note.title);
-      const allLocations = [...locations, ...notesTitles];
-      const hasBreakingChangeText = allLocations.some(text => text?.includes('BREAKING CHANGE'));
+      const hasBreakingChangeText = [...locations, ...notesTitles].some(text => text?.includes('BREAKING CHANGE'));
 
       if (hasBreakingChangeText) {
         console.error('Breaking change text found in commit');
         breakingCount++;
-        return;
+        return; // if has breaking change, no need to check semantic commit type
       }
 
+      // semantic commit type validation
       const commitTypeValue = COMMIT_TYPES[commit.type];
       console.error(`Evaluating commit type value: ${commitTypeValue}`);
 
@@ -63,8 +59,6 @@ const config = {
       }
     });
 
-    console.error(`Final counts: breaking=${breakingCount}, feature=${featureCount}, patch=${patchCount}`);
-
     if (breakingCount > 0) {
       level = 0;
     } else if (featureCount > 0) {
@@ -78,7 +72,6 @@ const config = {
     const reason = `${summary}. ${releaseMsg}`;
 
     console.warn(reason);
-    console.error(`Returning level=${level}`);
 
     return {
       level,
