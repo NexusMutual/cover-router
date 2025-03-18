@@ -12,7 +12,7 @@
   ],
   "ignorePatterns": ["node_modules/", "!.github"],
   "parserOptions": {
-    "ecmaVersion": "latest"
+    "ecmaVersion": 2022
   },
   "rules": {
     "comma-dangle": ["warn", "always-multiline"],
@@ -27,8 +27,10 @@
     "n/no-process-exit": "off",
     "n/no-unsupported-features/es-syntax": "off",
     "n/no-missing-import": "off", // disable as it conflicts with TS compiling to ES modules.
+    "n/no-unpublished-import": "off",
     "n/no-extraneous-import": "error",
-    "prettier/prettier": "error", // Ensure Prettier discrepancies are treated as errors
+    "import/no-unresolved": "error", // replaces the above n/no-missing-import
+    "prettier/prettier": ["error", { "endOfLine": "auto" }], // Ensure Prettier discrepancies are treated as errors
     "import/order": [
       1,
       {
