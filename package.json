@@ -2,9 +2,18 @@
   "name": "cover-router",
   "version": "2.3.13",
   "description": "Cover Router",
-  "main": "src/index.js",
+  "author": "nexusmutual.io",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NexusMutual/cover-router.git"
+  },
+  "homepage": "https://github.com/NexusMutual/cover-router#readme",
+  "bugs": {
+    "url": "https://github.com/NexusMutual/cover-router/issues"
+  },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "lint": "eslint --max-warnings 0 .",
@@ -16,20 +25,9 @@
     "ts:build": "echo 'No TS build step'",
     "ts:check": "echo 'No TS type check step'"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/NexusMutual/cover-router.git"
-  },
-  "author": "nexusmutual.io",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/NexusMutual/cover-router/issues"
-  },
-  "homepage": "https://github.com/NexusMutual/cover-router#readme",
   "dependencies": {
     "@nexusmutual/deployments": "^2.11.0",
     "@nexusmutual/utils": "^0.0.1",
-    "conventional-recommended-bump": "^11.0.0",
     "convict": "^6.2.4",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
@@ -43,14 +41,12 @@
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
     "chai": "^4.3.7",
+    "conventional-recommended-bump": "^11.0.0",
     "eslint": "^8.33.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-config-semistandard": "^17.0.0",
-    "eslint-config-standard": "^17.0.0",
-    "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-mocha": "^10.1.0",
     "eslint-plugin-n": "^15.7.0",
-    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.2.1",
     "husky": "^9.1.6",
     "mocha": "^10.2.0",
