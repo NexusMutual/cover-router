@@ -40,6 +40,8 @@
   "devDependencies": {
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
     "chai": "^4.3.7",
     "conventional-recommended-bump": "^11.0.0",
     "eslint": "^8.33.0",
