@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  check-tag-version-equality:
+    uses: NexusMutual/workflows/.github/workflows/check-tag-version-equality.yml@master
+    with:
+      environment: production
+      ref: release-candidate
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+   
+  check-workflow-status:
+    uses: NexusMutual/workflows/.github/workflows/check-workflow-status.yml@master
+    with:
+      workflow-name: merge-to-dev-or-hotfix.yml
+      workflow-status: in_progress
+      fail-if-exists: true
+
+  ff-master:
+    needs: [check-tag-version-equality, check-workflow-status]
+    uses: NexusMutual/workflows/.github/workflows/fast-forward.yml@master
+    with:
+      environment: production
+      source-ref: release-candidate
+      target-ref: master
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  tag-image:
+    needs: ff-master
+    uses: NexusMutual/workflows/.github/workflows/tag-image.yml@master
+    with:
+      environment: production
+      image: ${{ github.repository }}
+      ref: master
+      target-tag: latest
+    secrets:
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  git-tag-release:
+    needs: ff-master
+    uses: NexusMutual/workflows/.github/workflows/git-tag-github-release.yml@master
+    with:
+      environment: production
+      ref: master
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  # NOTE: the push that happens in the rebase.yml will trigger merge-to-dev-or-hotfix workflow
+  rebase-hotfix:
+    needs: ff-master
+    uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
+    with:
+      environment: production
+      source-ref: master
+      target-ref: hotfix
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
+  # NOTE: the push that happens in the rebase.yml will trigger merge-to-dev-or-hotfix workflow
+  rebase-dev:
+    needs: ff-master
+    uses: NexusMutual/workflows/.github/workflows/rebase.yml@master
+    with:
+      environment: production
+      source-ref: master
+      target-ref: dev
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}

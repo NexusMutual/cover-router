@@ -1,39 +1,56 @@
-name: Merge to dev
+name: Merge to dev or hotfix
 
 on:
   push:
     branches:
       - dev
+      - hotfix
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
+  # Outputs bump_type and triggers_bump
+  check-version-bump:
+    uses: NexusMutual/workflows/.github/workflows/check-version-bump.yml@master
+    with:
+      ref: ${{ github.ref_name }}
+      environment: production
+      bump-command: |
+        timeout 5s npx conventional-recommended-bump --config .github/config/conventional-bump-setup.js
+    secrets:
+      DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
+      DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
+
   reset-release-candidate:
+    needs: check-version-bump
+    if: needs.check-version-bump.outputs.triggers_bump == 'true'
     uses: NexusMutual/workflows/.github/workflows/reset.yml@master
     with:
       target-ref: release-candidate
-      base-ref: dev
+      base-ref: ${{ github.ref_name }}
       environment: production
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
 
-  bump:
-    needs: reset-release-candidate
+  bump-version:
+    needs: [check-version-bump, reset-release-candidate]
     uses: NexusMutual/workflows/.github/workflows/bump.yml@master
     with:
       ref: 'release-candidate'
-      bump-command: npm version patch --no-git-tag-version
+      bump-command: |
+        echo 'Executing npm version bump: ${{ needs.check-version-bump.outputs.bump_type }}'
+        npm version "${{ needs.check-version-bump.outputs.bump_type }}" --no-git-tag-version
       environment: production
     secrets:
       DEPLOYER_APP_ID: ${{ secrets.DEPLOYER_APP_ID }}
       DEPLOYER_APP_PK: ${{ secrets.DEPLOYER_APP_PK }}
 
-  build:
-    needs: bump
-    uses: NexusMutual/workflows/.github/workflows/build.yml@master
+  build-image:
+    needs: bump-version
+    uses: NexusMutual/workflows/.github/workflows/build-image.yml@master
     with:
       ref: 'release-candidate'
       environment: production
@@ -44,13 +61,13 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
   tag-image:
-    needs: build
+    needs: build-image
     uses: NexusMutual/workflows/.github/workflows/tag-image.yml@master
     with:
       environment: production
       image: ${{ github.repository }}
       ref: 'release-candidate'
-      target-tag: ${{ github.ref_name == 'master' && 'latest' || 'staging' }}
+      target-tag: staging
     secrets:
       TOKEN: ${{ secrets.GITHUB_TOKEN }}
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
