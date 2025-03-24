@@ -1,9 +1,40 @@
+# Docker
 Dockerfile
+
+# Dependencies and build artifacts
+**/node_modules/
+**/dist
+
+# Config files
+commitlint.config*
+.env
 .env.sample
+.eslintrc*
+.prettierrc
+.husky
+
+# Git
 .git
 .github
 .gitignore
-.husky
+
+# IDE files
+.vscode
+.idea
+
+# Test files
+test/
+**/*.spec.*
+**/*.test.*
+
+# Coverage
+.coverage
+.coverage.*
+.nyc_output
+
+# Logs
+npm-debug.log
+
+# Docs
 LICENSE
 README.md
-test
