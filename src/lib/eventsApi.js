@@ -15,6 +15,7 @@ module.exports = async (provider, contracts) => {
   const cover = contracts('Cover');
   const coverProducts = contracts('CoverProducts');
   const stakingProducts = contracts('StakingProducts');
+  const individualClaims = contracts('IndividualClaims');
 
   // tranche id checker
   const now = Math.floor(Date.now() / 1000);
@@ -95,8 +96,10 @@ module.exports = async (provider, contracts) => {
     emitter.emit('product:change', productId);
     emitter.emit('cover:change', coverId);
   });
-
-  // TODO: add cover:change on burnStake, there is no good event for it?!
+  individualClaims.on('ClaimPayoutRedeemed', (user, amount, claimId, coverId) => {
+    console.info(`Event: Claim payout redeemed for cover id ${coverId}`);
+    emitter.emit('cover:change', coverId);
+  });
 
   return {
     on: emitter.on.bind(emitter),
