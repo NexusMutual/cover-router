@@ -11,6 +11,8 @@ const { selectAsset } = require('../store/selectors');
 const router = express.Router();
 const { Zero } = ethers.constants;
 
+// TODO: update openapi description
+
 /**
  * @openapi
  * /v2/quote:
@@ -149,9 +151,11 @@ router.get(
     const amount = BigNumber.from(req.query.amount);
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
+    // todo: should this be required anyway?
+    const coverEditId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
 
     const store = req.app.get('store');
-    const route = await quoteEngine(store, productId, amount, period, coverAsset);
+    const route = await quoteEngine(store, productId, amount, period, coverAsset, coverEditId);
 
     if (!route) {
       return res.status(400).send({ error: 'Invalid Product Id', response: null });
@@ -174,6 +178,7 @@ router.get(
     };
 
     const quote = route.reduce((quote, pool) => {
+      // TODO: allocationRequest changed after new deployments
       const allocationRequest = {
         poolId: pool.poolId.toString(),
         coverAmountInAsset: pool.coverAmountInAsset.toString(),
@@ -187,6 +192,8 @@ router.get(
         poolAllocationRequests: [...quote.poolAllocationRequests, allocationRequest],
       };
     }, initialQuote);
+
+    // TODO: add refund calculation for edited cover
 
     const annualPrice = quote.premiumInAsset
       .mul(365 * 24 * 3600)

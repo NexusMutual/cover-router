@@ -7,11 +7,13 @@ const {
   calculatePremiumPerYear,
   calculateAvailableCapacityInNXM,
   getCapacitiesInAssets,
+  getCoverTrancheAllocations,
   divCeil,
   bnMin,
 } = require('./helpers');
 const {
   selectAssetRate,
+  selectCover,
   selectProductPools,
   selectProduct,
   selectProductPriorityPoolsFixedPrice,
@@ -76,6 +78,13 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
   return orderedPoolIds.map(id => poolsData.find(p => p.poolId === id));
 }
 
+function getLatestCover(originalCoverId) {
+  const originalCover = selectCover(originalCoverId);
+  return originalCover.reference.latestCoverId === originalCoverId
+    ? originalCover
+    : selectCover(originalCover.reference.latestCoverId);
+}
+
 /**
  * Calculates the premium and allocations for a given insurance product based on the specified parameters.
  *
@@ -84,9 +93,10 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
  * @param {BigNumber} amount - The amount of coverage requested.
  * @param {number} period - The cover period in seconds.
  * @param {string} coverAsset - The assetId of the asset to be covered.
+ * @param {number} coverEditId - The ID of the cover which is edited. ID is 0 when getting quote for new cover.
  * @returns {Array<object>} - An array of objects containing pool allocations and premiums.
  */
-const quoteEngine = (store, productId, amount, period, coverAsset) => {
+const quoteEngine = (store, productId, amount, period, coverAsset, coverEditId) => {
   const product = selectProduct(store, productId);
 
   if (!product) {
@@ -113,6 +123,8 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const amountToAllocate = divCeil(coverAmountInNxm, NXM_PER_ALLOCATION_UNIT).mul(NXM_PER_ALLOCATION_UNIT);
   console.info(`Amount to allocate: ${formatEther(amountToAllocate)} nxm`);
 
+  const cover = coverEditId !== 0 ? getLatestCover(coverEditId) : undefined;
+
   const poolsData = productPools.map(pool => {
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;
 
@@ -120,6 +132,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       trancheCapacities,
       allocations,
       firstUsableTrancheIndex,
+      coverEditId !== 0 ? getCoverTrancheAllocations(cover, poolId, now) : [],
     );
 
     const basePrice = product.useFixedPrice
