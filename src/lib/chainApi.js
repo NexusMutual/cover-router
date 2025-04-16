@@ -81,6 +81,48 @@ const createChainApi = async contracts => {
     };
   };
 
+  // todo: temporary helper function
+  const getPoolAllocations = async coverId => {
+    const poolAllocations = [];
+    for (let id = 0; id < 5; id++) {
+      // quick hack to get array from contract
+      try {
+        const allocation = await cover.coverSegmentAllocations(coverId, 0, id);
+        poolAllocations.push(allocation);
+      } catch (e) {
+        break;
+      }
+    }
+    return poolAllocations;
+  };
+
+  // todo: change to getCoverDataCount when deployments updated
+  const fetchCoverCount = async () => cover.coverDataCount();
+
+  const fetchCover = async coverId => {
+    // todo: add coverReference when deployments updated
+    // const { data: coverData, reference: coverReference } = await cover.getCoverDataWithReference(coverId);
+    const data = await cover.coverData(coverId);
+
+    // todo: change to getPoolAllocations when deployments updated
+    // const poolAllocations = await cover.getPoolAllocations(coverId);
+    const poolAllocations = await getPoolAllocations(coverId);
+
+    return {
+      data,
+      // reference,
+      poolAllocations,
+    };
+  };
+
+  const fetchCoverPoolTrancheAllocations = async (coverId, poolId, allocationId) => {
+    const stakingPool = contracts('StakingPool', poolId);
+    console.info(`Fetching allocations for cover ${coverId} in pool ${poolId} at address ${stakingPool.address}`);
+
+    const packedTrancheAllocation = await stakingPool.coverTrancheAllocations(allocationId);
+    return packedTrancheAllocation;
+  };
+
   return {
     fetchProducts,
     fetchProduct,
@@ -91,6 +133,9 @@ const createChainApi = async contracts => {
     fetchProductCount,
     fetchPoolProduct,
     fetchTokenPriceInAsset,
+    fetchCoverCount,
+    fetchCover,
+    fetchCoverPoolTrancheAllocations,
   };
 };
 
