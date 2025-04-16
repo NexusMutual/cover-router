@@ -9,6 +9,7 @@ const {
   CAPACITY_BUFFER_RATIO,
   CAPACITY_BUFFER_DENOMINATOR,
   CAPACITY_BUFFER_MINIMUM,
+  MAX_ACTIVE_TRANCHES,
 } = require('./constants');
 
 const { BigNumber } = ethers;
@@ -52,6 +53,25 @@ const calculateBucketId = time => {
   return Math.floor(timeNumber / BUCKET_DURATION);
 };
 
+const getCoverTrancheAllocations = (cover, poolId, now) => {
+  const packedTrancheAllocations = cover.poolAllocations.find(p => p.poolId === poolId)?.packedTrancheAllocations;
+  if (!packedTrancheAllocations) {
+    return [];
+  }
+
+  const bitmask32 = ethers.BigNumber.from('0xFFFFFFFF');
+  const firstActiveTrancheId = calculateTrancheId(now);
+  const offset = firstActiveTrancheId - cover.coverData.start / TRANCHE_DURATION;
+
+  const coverTrancheAllocations = [];
+  for (let i = offset; i < MAX_ACTIVE_TRANCHES; i++) {
+    const allocation = packedTrancheAllocations.shr(i * 32).and(bitmask32);
+    coverTrancheAllocations.push(allocation);
+  }
+
+  return coverTrancheAllocations;
+};
+
 /**
  * Calculates the first usable tranche index based on the current time, grace period, and period.
  *
@@ -86,11 +106,20 @@ const bufferedCapacity = capacityInNxm => {
  * @param {Array<BigNumber>} trancheCapacities - An array of tranche capacities
  * @param {Array<BigNumber>} allocations - An array of allocated amounts corresponding to each tranche
  * @param {number} firstUsableTrancheIndex - The index of the first usable tranche
+ * @param {Array<BigNumber>} coverAllocations - An array of allocated amounts in each tranche for edited cover
  * @returns {BigNumber} The available capacity in NXM, adjusted with buffering
  */
-function calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex) {
+function calculateAvailableCapacityInNXM(
+  trancheCapacities,
+  allocations,
+  firstUsableTrancheIndex,
+  coverAllocations = [],
+) {
   const unused = trancheCapacities.reduce((available, capacity, index) => {
-    const allocationDifference = capacity.sub(allocations[index]);
+    const allocationDifference = capacity
+      .sub(allocations[index])
+      .add(index < coverAllocations.length ? coverAllocations[index] : 0); // add amount that will be deallocated
+
     const allocationToAdd =
       index < firstUsableTrancheIndex
         ? bnMin(allocationDifference, Zero) // only carry over the negative
@@ -224,4 +253,5 @@ module.exports = {
   calculateProductDataForTranche,
   calculateBasePrice,
   calculatePremiumPerYear,
+  getCoverTrancheAllocations,
 };
