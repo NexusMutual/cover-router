@@ -33,4 +33,7 @@ module.exports = {
   CAPACITY_BUFFER_DENOMINATOR: 100_00,
 
   SECONDS_PER_DAY: BigNumber.from(24 * 60 * 60),
+
+  // TODO: set to minimal cover id which is not expired, 818?
+  FETCH_COVER_DATA_FROM_ID: 2230,
 };

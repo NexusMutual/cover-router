@@ -93,7 +93,10 @@ module.exports = async (provider, contracts) => {
   cover.on('CoverBought', (coverId, originalCoverId, productId) => {
     console.info(`Event: Cover ${coverId} for product ${productId} bought`);
     emitter.emit('product:change', productId);
+    emitter.emit('cover:change', coverId);
   });
+
+  // TODO: add cover:change on burnStake, there is no good event for it?!
 
   return {
     on: emitter.on.bind(emitter),

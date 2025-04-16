@@ -4,6 +4,7 @@ const {
   SET_PRODUCT,
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
+  SET_COVER,
   RESET_PRODUCT_POOLS,
 } = require('./actions');
 const config = require('../config');
@@ -29,6 +30,7 @@ const initialState = {
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
   products: {}, // productId -> { product }
+  covers: {}, // coverId -> { cover }
   productPriorityPoolsFixedPrice,
   trancheId: 0,
 };
@@ -64,6 +66,12 @@ function reducer(state = initialState, { type, payload }) {
 
   if (type === SET_TRANCHE_ID) {
     return { ...state, trancheId: payload };
+  }
+
+  if (type === SET_COVER) {
+    const { coverId, cover } = payload;
+    const covers = { ...state.covers, [coverId]: cover };
+    return { ...state, covers };
   }
 
   if (type === RESET_PRODUCT_POOLS) {
