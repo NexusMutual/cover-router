@@ -46,6 +46,18 @@ const chainApiMock = {
   fetchTokenPriceInAsset: async assetId => {
     return data.assetRates[assetId];
   },
+
+  fetchCoverCount: async () => {
+    return data.covers.length;
+  },
+
+  fetchCover: async coverId => {
+    return data.covers[coverId];
+  },
+
+  fetchCoverPoolTrancheAllocations: async (coverId, poolId, allocationId) => {
+    return data.covers[coverId].poolAllocations.find(p => p.poolId === poolId).packedTrancheAllocations;
+  },
 };
 
 module.exports = chainApiMock;

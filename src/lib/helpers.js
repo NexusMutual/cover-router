@@ -53,25 +53,6 @@ const calculateBucketId = time => {
   return Math.floor(timeNumber / BUCKET_DURATION);
 };
 
-const getCoverTrancheAllocations = (cover, poolId, now) => {
-  const packedTrancheAllocations = cover.poolAllocations.find(p => p.poolId === poolId)?.packedTrancheAllocations;
-  if (!packedTrancheAllocations) {
-    return [];
-  }
-
-  const bitmask32 = ethers.BigNumber.from('0xFFFFFFFF');
-  const firstActiveTrancheId = calculateTrancheId(now);
-  const offset = firstActiveTrancheId - cover.coverData.start / TRANCHE_DURATION;
-
-  const coverTrancheAllocations = [];
-  for (let i = offset; i < MAX_ACTIVE_TRANCHES; i++) {
-    const allocation = packedTrancheAllocations.shr(i * 32).and(bitmask32);
-    coverTrancheAllocations.push(allocation);
-  }
-
-  return coverTrancheAllocations;
-};
-
 /**
  * Calculates the first usable tranche index based on the current time, grace period, and period.
  *
@@ -238,6 +219,34 @@ const calculatePremiumPerYear = (coverAmount, basePrice) => {
   return coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
 };
 
+/* Cover Calculations */
+
+const getCoverTrancheAllocations = (cover, poolId, now) => {
+  const packedTrancheAllocations = cover.poolAllocations.find(p => p.poolId === poolId)?.packedTrancheAllocations;
+  if (!packedTrancheAllocations) {
+    return [];
+  }
+
+  const bitmask32 = ethers.BigNumber.from('0xFFFFFFFF');
+  const firstActiveTrancheId = calculateTrancheId(now);
+  const offset = firstActiveTrancheId - Math.floor(cover.start / TRANCHE_DURATION);
+
+  const coverTrancheAllocations = [];
+  for (let i = offset; i < MAX_ACTIVE_TRANCHES; i++) {
+    const allocation = packedTrancheAllocations.shr(i * 32).and(bitmask32);
+    coverTrancheAllocations.push(allocation);
+  }
+
+  return coverTrancheAllocations;
+};
+
+const calculateCoverRefundInNXM = (cover, now) => {
+  const totalPremiumInNXM = cover.poolAllocations.reduce((total, allocation) => {
+    return total.add(allocation.premiumInNXM);
+  }, Zero);
+  return totalPremiumInNXM.mul(cover.start + cover.period - now.toNumber()).div(cover.period);
+};
+
 module.exports = {
   bnMax,
   bnMin,
@@ -254,4 +263,5 @@ module.exports = {
   calculateBasePrice,
   calculatePremiumPerYear,
   getCoverTrancheAllocations,
+  calculateCoverRefundInNXM,
 };

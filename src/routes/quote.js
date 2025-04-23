@@ -151,7 +151,6 @@ router.get(
     const amount = BigNumber.from(req.query.amount);
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
-    // todo: should this be required anyway?
     const coverEditId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
 
     const store = req.app.get('store');
@@ -161,7 +160,7 @@ router.get(
       return res.status(400).send({ error: 'Invalid Product Id', response: null });
     }
 
-    if (route.length === 0) {
+    if (route.poolsWithPremium.length === 0) {
       return res.status(400).send({ error: 'Not enough capacity for the cover amount', response: null });
     }
 
@@ -177,12 +176,10 @@ router.get(
       poolAllocationRequests: [],
     };
 
-    const quote = route.reduce((quote, pool) => {
-      // TODO: allocationRequest changed after new deployments
+    const quoteTotals = route.poolsWithPremium.reduce((quote, pool) => {
       const allocationRequest = {
         poolId: pool.poolId.toString(),
         coverAmountInAsset: pool.coverAmountInAsset.toString(),
-        skip: false,
       };
       return {
         totalCoverAmountInAsset: quote.totalCoverAmountInAsset.add(pool.coverAmountInAsset),
@@ -193,7 +190,16 @@ router.get(
       };
     }, initialQuote);
 
-    // TODO: add refund calculation for edited cover
+    // substract edited cover refund
+    const quote = {
+      ...quoteTotals,
+      premiumInNXM: quoteTotals.premiumInNXM.gt(route.refundInNXM)
+        ? quoteTotals.premiumInNXM.sub(route.refundInNXM)
+        : Zero,
+      premiumInAsset: quoteTotals.premiumInAsset.gt(route.refundInAsset)
+        ? quoteTotals.premiumInAsset.sub(route.refundInAsset)
+        : Zero,
+    };
 
     const annualPrice = quote.premiumInAsset
       .mul(365 * 24 * 3600)

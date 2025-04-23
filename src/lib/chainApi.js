@@ -81,38 +81,18 @@ const createChainApi = async contracts => {
     };
   };
 
-  // todo: temporary helper function
-  const getPoolAllocations = async coverId => {
-    const poolAllocations = [];
-    for (let id = 0; id < 5; id++) {
-      // quick hack to get array from contract
-      try {
-        const allocation = await cover.coverSegmentAllocations(coverId, 0, id);
-        poolAllocations.push(allocation);
-      } catch (e) {
-        break;
-      }
-    }
-    return poolAllocations;
-  };
-
-  // todo: change to getCoverDataCount when deployments updated
-  const fetchCoverCount = async () => cover.coverDataCount();
+  const fetchCoverCount = async () => cover.getCoverDataCount();
 
   const fetchCover = async coverId => {
-    // todo: add coverReference when deployments updated
-    // const { data: coverData, reference: coverReference } = await cover.getCoverDataWithReference(coverId);
-    const data = await cover.coverData(coverId);
+    const [{ productId, coverAsset, amount, start, period }, { originalCoverId, latestCoverId }] =
+      await cover.getCoverDataWithReference(coverId);
 
-    // todo: change to getPoolAllocations when deployments updated
-    // const poolAllocations = await cover.getPoolAllocations(coverId);
-    const poolAllocations = await getPoolAllocations(coverId);
+    const poolAllocations = (await cover.getPoolAllocations(coverId)).map(poolAllocation => {
+      const { poolId, coverAmountInNXM, premiumInNXM, allocationId } = poolAllocation;
+      return { poolId, coverAmountInNXM, premiumInNXM, allocationId };
+    });
 
-    return {
-      data,
-      // reference,
-      poolAllocations,
-    };
+    return { productId, coverAsset, amount, start, period, originalCoverId, latestCoverId, poolAllocations };
   };
 
   const fetchCoverPoolTrancheAllocations = async (coverId, poolId, allocationId) => {

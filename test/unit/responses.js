@@ -414,7 +414,6 @@ const ethQuote = {
     {
       poolId: '1',
       coverAmountInAsset: '100024792163041872',
-      skip: false,
     },
   ],
 };
@@ -428,7 +427,6 @@ const daiQuote = {
     {
       poolId: '1',
       coverAmountInAsset: '1148977560552796946',
-      skip: false,
     },
   ],
 };
@@ -442,7 +440,6 @@ const usdcQuote = {
     {
       poolId: '1',
       coverAmountInAsset: '10053553',
-      skip: false,
     },
   ],
 };
