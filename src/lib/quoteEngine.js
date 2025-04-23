@@ -8,6 +8,7 @@ const {
   calculateAvailableCapacityInNXM,
   getCapacitiesInAssets,
   getCoverTrancheAllocations,
+  calculateCoverRefundInNXM,
   divCeil,
   bnMin,
 } = require('./helpers');
@@ -19,7 +20,7 @@ const {
   selectProductPriorityPoolsFixedPrice,
 } = require('../store/selectors');
 
-const { WeiPerEther } = ethers.constants;
+const { WeiPerEther, Zero } = ethers.constants;
 const { formatEther } = ethers.utils;
 
 /**
@@ -78,11 +79,11 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
   return orderedPoolIds.map(id => poolsData.find(p => p.poolId === id));
 }
 
-function getLatestCover(originalCoverId) {
-  const originalCover = selectCover(originalCoverId);
-  return originalCover.reference.latestCoverId === originalCoverId
+function getLatestCover(store, originalCoverId) {
+  const originalCover = selectCover(store, originalCoverId);
+  return originalCover.latestCoverId === originalCoverId
     ? originalCover
-    : selectCover(originalCover.reference.latestCoverId);
+    : selectCover(store, originalCover.latestCoverId);
 }
 
 /**
@@ -96,7 +97,7 @@ function getLatestCover(originalCoverId) {
  * @param {number} coverEditId - The ID of the cover which is edited. ID is 0 when getting quote for new cover.
  * @returns {Array<object>} - An array of objects containing pool allocations and premiums.
  */
-const quoteEngine = (store, productId, amount, period, coverAsset, coverEditId) => {
+const quoteEngine = (store, productId, amount, period, coverAsset, coverEditId = 0) => {
   const product = selectProduct(store, productId);
 
   if (!product) {
@@ -123,7 +124,8 @@ const quoteEngine = (store, productId, amount, period, coverAsset, coverEditId) 
   const amountToAllocate = divCeil(coverAmountInNxm, NXM_PER_ALLOCATION_UNIT).mul(NXM_PER_ALLOCATION_UNIT);
   console.info(`Amount to allocate: ${formatEther(amountToAllocate)} nxm`);
 
-  const cover = coverEditId !== 0 ? getLatestCover(coverEditId) : undefined;
+  const cover = coverEditId !== 0 ? getLatestCover(store, coverEditId) : undefined;
+  console.log('cover', cover);
 
   const poolsData = productPools.map(pool => {
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;
@@ -132,7 +134,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset, coverEditId) 
       trancheCapacities,
       allocations,
       firstUsableTrancheIndex,
-      coverEditId !== 0 ? getCoverTrancheAllocations(cover, poolId, now) : [],
+      cover ? getCoverTrancheAllocations(cover, poolId, now) : [],
     );
 
     const basePrice = product.useFixedPrice
@@ -174,7 +176,10 @@ const quoteEngine = (store, productId, amount, period, coverAsset, coverEditId) 
     };
   });
 
-  return poolsWithPremium;
+  const refundInNXM = coverEditId !== 0 ? calculateCoverRefundInNXM(cover, now) : Zero;
+  const refundInAsset = refundInNXM.mul(assetRate).div(WeiPerEther);
+
+  return { poolsWithPremium, refundInNXM, refundInAsset };
 };
 
 module.exports = {

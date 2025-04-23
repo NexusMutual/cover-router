@@ -4,7 +4,7 @@ const {
 } = require('ethers');
 const { BigNumber } = require('ethers');
 
-const { MIN_COVER_PERIOD } = require('../../src/lib/constants');
+const { MIN_COVER_PERIOD, TRANCHE_DURATION } = require('../../src/lib/constants');
 const { quoteEngine } = require('../../src/lib/quoteEngine');
 const mockStore = require('../mocks/store');
 
@@ -15,7 +15,9 @@ describe('Quote Engine tests', () => {
     const productId = 1;
     const amount = parseEther('1');
 
-    const [quote] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 0);
+    const {
+      poolsWithPremium: [quote],
+    } = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 0);
 
     expect(quote.poolId).to.be.equal(1);
     expect(quote.premiumInNxm.toString()).to.be.equal('159912328767123287');
@@ -28,7 +30,9 @@ describe('Quote Engine tests', () => {
     const productId = 1;
     const amount = parseEther('1000');
 
-    const [quote] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
+    const {
+      poolsWithPremium: [quote],
+    } = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
     expect(quote.poolId).to.be.equal(1);
     expect(quote.premiumInNxm.toString()).to.be.equal('57238356164383561');
@@ -41,7 +45,9 @@ describe('Quote Engine tests', () => {
     const productId = 1;
     const amount = parseUnits('1000', 6);
 
-    const [quote] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 6);
+    const {
+      poolsWithPremium: [quote],
+    } = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 6);
 
     expect(quote.poolId).to.be.equal(1);
     expect(quote.premiumInNxm.toString()).to.be.equal('57238356164383561');
@@ -54,7 +60,7 @@ describe('Quote Engine tests', () => {
     const productId = 1;
     const amount = parseEther('12000');
 
-    const quotes = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
+    const { poolsWithPremium: quotes } = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
     {
       const quote = quotes[0];
@@ -83,7 +89,9 @@ describe('Quote Engine tests', () => {
     const productId = 2;
     const amount = parseEther('1');
 
-    const [quote] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 0);
+    const {
+      poolsWithPremium: [quote],
+    } = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 0);
 
     expect(quote.poolId).to.be.equal(1);
     expect(quote.premiumInNxm.toString()).to.be.equal('159912328767123287');
@@ -96,7 +104,9 @@ describe('Quote Engine tests', () => {
     const productId = 4;
     const amount = parseEther('102000');
 
-    const [quote1, quote2, quote3] = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
+    const {
+      poolsWithPremium: [quote1, quote2, quote3],
+    } = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
     expect(quote1.poolId).to.be.equal(18); // capacity filled
     expect(quote1.premiumInNxm.toString()).to.be.equal('2740621019178082191');
@@ -123,7 +133,7 @@ describe('Quote Engine tests', () => {
 
     const quotes = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
-    expect(quotes.length).to.be.equal(0);
+    expect(quotes.poolsWithPremium.length).to.be.equal(0);
   });
 
   it('should return null non existing product', () => {
@@ -133,5 +143,89 @@ describe('Quote Engine tests', () => {
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
 
     expect(quote).to.be.equal(null);
+  });
+
+  it('should account for capacity deallocation when editing a cover which started in an active tranche', () => {
+    const productId = 4;
+    const amount = parseEther('102000');
+
+    const now = BigNumber.from(Date.now()).div(1000);
+    mockStore.covers[1].start = now.toNumber();
+
+    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
+    const [quote1, quote2] = quote.poolsWithPremium;
+
+    expect(quote.poolsWithPremium.length).to.equal(2);
+
+    expect(quote1.poolId).to.be.equal(18); // capacity filled
+    expect(quote1.premiumInNxm.toString()).to.be.equal('2921262115068493150');
+    expect(quote1.premiumInAsset.toString()).to.be.equal('83911615467667531712');
+    expect(quote1.coverAmountInNxm.toString()).to.be.equal('1777101120000000000000');
+    expect(quote1.coverAmountInAsset.toString()).to.be.equal('51046232742831081803837');
+
+    expect(quote2.poolId).to.be.equal(22); // partially filled
+    expect(quote2.premiumInNxm.toString()).to.be.equal('2915981720547945205');
+    expect(quote2.premiumInAsset.toString()).to.be.equal('83759939097293143370');
+    expect(quote2.coverAmountInNxm.toString()).to.be.equal('1773888880000000000000');
+    expect(quote2.coverAmountInAsset.toString()).to.be.equal('50953962950853328892279');
+  });
+
+  it('should account for capacity deallocation when editing a cover which started in a previous tranche', () => {
+    const productId = 4;
+    const amount = parseEther('102000');
+
+    const now = BigNumber.from(Date.now()).div(1000);
+    mockStore.covers[1].start = now.sub(TRANCHE_DURATION).toNumber();
+
+    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
+    const [quote1, quote2, quote3] = quote.poolsWithPremium;
+
+    expect(quote.poolsWithPremium.length).to.equal(3);
+
+    expect(quote1.poolId).to.be.equal(18); // capacity filled
+    expect(quote1.premiumInNxm.toString()).to.be.equal('2757042936986301369');
+    expect(quote1.premiumInAsset.toString()).to.be.equal('79194511701945980409');
+    expect(quote1.coverAmountInNxm.toString()).to.be.equal('1677201120000000000000');
+    expect(quote1.coverAmountInAsset.toString()).to.be.equal('48176661285350471430803');
+
+    expect(quote2.poolId).to.be.equal(22); // capacity filled
+    expect(quote2.premiumInNxm.toString()).to.be.equal('3061094745205479452');
+    expect(quote2.premiumInAsset.toString()).to.be.equal('87928229324179432661');
+    expect(quote2.coverAmountInNxm.toString()).to.be.equal('1862165970000000000000');
+    expect(quote2.coverAmountInAsset.toString()).to.be.equal('53489672838875821536476');
+
+    expect(quote3.poolId).to.be.equal(1); // partially filled
+    expect(quote3.premiumInNxm.toString()).to.be.equal('19106153424657534');
+    expect(quote3.premiumInAsset.toString()).to.be.equal('548813538835262012');
+    expect(quote3.coverAmountInNxm.toString()).to.be.equal('11622910000000000000');
+    expect(quote3.coverAmountInAsset.toString()).to.be.equal('333861569458117728837');
+
+    console.log;
+  });
+
+  it('should calculate full discount for edited cover that started now', () => {
+    const productId = 4;
+    const amount = parseEther('102000');
+
+    const now = BigNumber.from(Date.now()).div(1000);
+    mockStore.covers[1].start = now.toNumber();
+
+    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
+
+    expect(quote.refundInNXM.toString()).to.equal('55000000000000000000');
+    expect(quote.refundInAsset.toString()).to.equal('1579844145760095800970');
+  });
+
+  it('should calculate half discount for edited cover which is at half period', () => {
+    const productId = 4;
+    const amount = parseEther('102000');
+
+    const now = BigNumber.from(Date.now()).div(1000);
+    mockStore.covers[1].start = now.sub(Math.floor(mockStore.covers[1].period / 2)).toNumber();
+
+    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
+
+    expect(quote.refundInNXM.toString()).to.equal('27500000000000000000');
+    expect(quote.refundInAsset.toString()).to.equal('789922072880047900485');
   });
 });
