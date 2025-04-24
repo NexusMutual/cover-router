@@ -34,7 +34,7 @@ const createChainApi = async contracts => {
 
   const fetchProduct = async id => {
     const { productType, capacityReductionRatio, useFixedPrice, isDeprecated } = await coverProducts.getProduct(id);
-    const { gracePeriod } = await coverProducts.getProductType(productType);
+    const { gracePeriod } = productType === 2 ? 0 : await coverProducts.getProductType(productType);
     return { productType, capacityReductionRatio, useFixedPrice, gracePeriod, isDeprecated };
   };
 
