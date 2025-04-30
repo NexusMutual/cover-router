@@ -125,7 +125,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset, coverEditId =
   console.info(`Amount to allocate: ${formatEther(amountToAllocate)} nxm`);
 
   const cover = coverEditId !== 0 ? getLatestCover(store, coverEditId) : undefined;
-  console.log('cover', cover);
 
   const poolsData = productPools.map(pool => {
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;

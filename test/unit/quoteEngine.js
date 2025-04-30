@@ -175,7 +175,7 @@ describe('Quote Engine tests', () => {
     const amount = parseEther('102000');
 
     const now = BigNumber.from(Date.now()).div(1000);
-    mockStore.covers[1].start = now.sub(TRANCHE_DURATION).toNumber();
+    mockStore.covers[1].start = now.sub(2 * TRANCHE_DURATION).toNumber(); // 2 tranches passed since start
 
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
     const [quote1, quote2, quote3] = quote.poolsWithPremium;
@@ -199,8 +199,6 @@ describe('Quote Engine tests', () => {
     expect(quote3.premiumInAsset.toString()).to.be.equal('548813538835262012');
     expect(quote3.coverAmountInNxm.toString()).to.be.equal('11622910000000000000');
     expect(quote3.coverAmountInAsset.toString()).to.be.equal('333861569458117728837');
-
-    console.log;
   });
 
   it('should calculate full discount for edited cover that started now', () => {
