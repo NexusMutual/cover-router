@@ -107,6 +107,21 @@ module.exports = async (store, chainApi, eventsApi) => {
 
     store.dispatch({ type: SET_COVER, payload: { coverId, cover } });
     console.info(`Update: Cover data for cover id ${coverId}`);
+
+    // todo: add test for this
+    // todo: Q: should we fetch if we know it must be latestCoverId == coverId (id of currently edited cover)
+
+    // fetching new reference for original cover id if this is edited cover
+    if (cover.originalCoverId !== coverId) {
+      const { latestCoverId } = chainApi.fetchCoverReference(cover.originalCoverId);
+      const { covers } = store.getState();
+      const changedOriginalCover = {
+        ...covers[cover.originalCoverId],
+        latestCoverId,
+      };
+      store.dispatch({ type: SET_COVER, payload: { coverId: cover.originalCoverId, cover: changedOriginalCover } });
+      console.info(`Update: Cover reference for original cover id ${cover.originalCoverId}`);
+    }
   };
 
   eventsApi.on('pool:change', updatePool);
