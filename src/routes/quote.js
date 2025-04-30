@@ -1,15 +1,13 @@
 const { inspect } = require('node:util');
 
-const { BigNumber, ethers } = require('ethers');
+const { BigNumber } = require('ethers');
 const express = require('express');
 
-const { TARGET_PRICE_DENOMINATOR } = require('../lib/constants');
 const { asyncRoute } = require('../lib/helpers');
 const { quoteEngine } = require('../lib/quoteEngine');
 const { selectAsset } = require('../store/selectors');
 
 const router = express.Router();
-const { Zero } = ethers.constants;
 
 // TODO: update openapi description
 
@@ -151,10 +149,10 @@ router.get(
     const amount = BigNumber.from(req.query.amount);
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
-    const coverEditId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
+    const editedCoverId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
 
     const store = req.app.get('store');
-    const route = await quoteEngine(store, productId, amount, period, coverAsset, coverEditId);
+    const route = await quoteEngine(store, productId, amount, period, coverAsset, editedCoverId);
 
     if (!route) {
       return res.status(400).send({ error: 'Invalid Product Id', response: null });
@@ -168,55 +166,26 @@ router.get(
       return res.status(400).send({ error: 'Product is deprecated', response: null });
     }
 
-    const initialQuote = {
-      premiumInNXM: Zero,
-      premiumInAsset: Zero,
-      totalCoverAmountInAsset: Zero,
-      capacities: [],
-      poolAllocationRequests: [],
-    };
-
-    const quoteTotals = route.poolsWithPremium.reduce((quote, pool) => {
-      const allocationRequest = {
-        poolId: pool.poolId.toString(),
-        coverAmountInAsset: pool.coverAmountInAsset.toString(),
-      };
-      return {
-        totalCoverAmountInAsset: quote.totalCoverAmountInAsset.add(pool.coverAmountInAsset),
-        premiumInNXM: quote.premiumInNXM.add(pool.premiumInNxm),
-        premiumInAsset: quote.premiumInAsset.add(pool.premiumInAsset),
-        capacities: [...quote.capacities, pool.capacities],
-        poolAllocationRequests: [...quote.poolAllocationRequests, allocationRequest],
-      };
-    }, initialQuote);
-
-    // substract edited cover refund
-    const quote = {
-      ...quoteTotals,
-      premiumInNXM: quoteTotals.premiumInNXM.gt(route.refundInNXM)
-        ? quoteTotals.premiumInNXM.sub(route.refundInNXM)
-        : Zero,
-      premiumInAsset: quoteTotals.premiumInAsset.gt(route.refundInAsset)
-        ? quoteTotals.premiumInAsset.sub(route.refundInAsset)
-        : Zero,
-    };
-
-    const annualPrice = quote.premiumInAsset
-      .mul(365 * 24 * 3600)
-      .mul(TARGET_PRICE_DENOMINATOR)
-      .div(period)
-      .div(quote.totalCoverAmountInAsset);
+    const poolAllocationRequests = route.poolsWithPremium.reduce((poolAllocationRequests, pool) => {
+      return [
+        ...poolAllocationRequests,
+        {
+          poolId: pool.poolId.toString(),
+          coverAmountInAsset: pool.coverAmountInAsset.toString(),
+        },
+      ];
+    }, []);
 
     const response = {
       quote: {
-        totalCoverAmountInAsset: quote.totalCoverAmountInAsset.toString(),
-        annualPrice: annualPrice.toString(),
-        premiumInNXM: quote.premiumInNXM.toString(),
-        premiumInAsset: quote.premiumInAsset.toString(),
-        poolAllocationRequests: quote.poolAllocationRequests,
+        totalCoverAmountInAsset: route.quoteTotals.coverAmountInAsset.toString(),
+        annualPrice: route.quoteTotals.annualPrice.toString(),
+        premiumInNXM: route.quoteTotals.premiumInNXM.toString(),
+        premiumInAsset: route.quoteTotals.premiumInAsset.toString(),
+        poolAllocationRequests,
         asset: selectAsset(store, coverAsset),
       },
-      capacities: quote.capacities.map(({ poolId, capacity }) => ({
+      capacities: route.capacities.map(({ poolId, capacity }) => ({
         poolId: poolId.toString(),
         // NOTE: capacity[n].assetId is currently a string (it should ideally a number - BREAKING CHANGE)
         capacity: capacity.map(({ assetId, amount, asset }) => ({
