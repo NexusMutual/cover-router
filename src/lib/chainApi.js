@@ -95,6 +95,11 @@ const createChainApi = async contracts => {
     return { productId, coverAsset, amount, start, period, originalCoverId, latestCoverId, poolAllocations };
   };
 
+  const fetchCoverReference = async coverId => {
+    const { originalCoverId, latestCoverId } = cover.getCoverReference(coverId);
+    return { originalCoverId, latestCoverId };
+  };
+
   const fetchCoverPoolTrancheAllocations = async (coverId, poolId, allocationId) => {
     const stakingPool = contracts('StakingPool', poolId);
     console.info(`Fetching allocations for cover ${coverId} in pool ${poolId} at address ${stakingPool.address}`);
@@ -116,6 +121,7 @@ const createChainApi = async contracts => {
     fetchCoverCount,
     fetchCover,
     fetchCoverPoolTrancheAllocations,
+    fetchCoverReference,
   };
 };
 
