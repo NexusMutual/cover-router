@@ -48,11 +48,15 @@ const chainApiMock = {
   },
 
   fetchCoverCount: async () => {
-    return data.covers.length;
+    return Object.keys(data.covers).length;
   },
 
   fetchCover: async coverId => {
     return data.covers[coverId];
+  },
+
+  fetchCoverReference: async coverId => {
+    return data.covers[coverId].newCoverReference;
   },
 
   fetchCoverPoolTrancheAllocations: async (coverId, poolId, allocationId) => {

@@ -83,7 +83,6 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
 function getLatestCover(store, originalCoverId) {
   const originalCover = selectCover(store, originalCoverId);
 
-  // TODO: add test
   if (originalCover.originalCoverId !== originalCoverId) {
     throw new ApiError('Not original cover id', HTTP_STATUS.BAD_REQUEST);
   }

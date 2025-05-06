@@ -500,17 +500,35 @@ const store = {
         {
           poolId: 1,
           premiumInNXM: parseEther('10'),
-          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [10000, 1000, 0, ..., 0]
+          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [0, 10000, 1000, 0, ..., 0]
         },
         {
           poolId: 18,
           premiumInNXM: parseEther('20'),
-          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [10000, 1000, 0, ..., 0]
+          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [0, 10000, 1000, 0, ..., 0]
         },
         {
           poolId: 22,
           premiumInNXM: parseEther('25'),
-          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [10000, 1000, 0, ..., 0]
+          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [0, 10000, 1000, 0, ..., 0]
+        },
+      ],
+      newCoverReference: {
+        originalCoverId: 1,
+        latestCoverId: 2,
+      },
+    },
+    2: {
+      start: 0,
+      coverAsset: 1,
+      period: 30 * 24 * 3600,
+      originalCoverId: 1, // coverId != originalCoverId
+      latestCoverId: 2,
+      poolAllocations: [
+        {
+          poolId: 1,
+          premiumInNXM: parseEther('1'),
+          packedTrancheAllocations: BigNumber.from('0x0'),
         },
       ],
     },
