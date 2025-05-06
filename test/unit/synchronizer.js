@@ -73,4 +73,17 @@ describe('synchronizer', () => {
     expect(state.globalCapacityRatio).to.be.deep.equal(mockStore.globalCapacityRatio);
     expect(state.poolProducts).to.be.deep.equal(mockStore.poolProducts);
   });
+
+  it('should update cover reference of original cover after editing', async () => {
+    const store = createStore(initialState);
+    const synchronizer = await createSynchronizer(store, mockChainApi, eventApi);
+
+    await synchronizer.updateCover(1);
+    const { covers: coversBefore } = store.getState();
+    expect(coversBefore['1'].latestCoverId).to.be.equal(1);
+
+    await synchronizer.updateCover(2);
+    const { covers: coversAfter } = store.getState();
+    expect(coversAfter['1'].latestCoverId).to.be.equal(2);
+  });
 });

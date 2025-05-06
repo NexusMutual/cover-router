@@ -224,4 +224,11 @@ describe('Quote Engine tests', () => {
     expect(quote.refundInNXM.toString()).to.equal('27500000000000000000');
     expect(quote.refundInAsset.toString()).to.equal('789922072880047900485');
   });
+
+  it('should return error if not original cover id passed', () => {
+    const productId = 4;
+    const amount = parseEther('102000');
+
+    expect(() => quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 2)).to.throw('Not original cover id');
+  });
 });

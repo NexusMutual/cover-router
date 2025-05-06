@@ -75,7 +75,7 @@ module.exports = async (store, chainApi, eventsApi) => {
 
     const coverCount = await chainApi.fetchCoverCount();
     const coverIds = Array.from(
-      { length: coverCount - FETCH_COVER_DATA_FROM_ID },
+      { length: coverCount - FETCH_COVER_DATA_FROM_ID + 1 },
       (_, i) => FETCH_COVER_DATA_FROM_ID + i,
     );
 
@@ -108,12 +108,11 @@ module.exports = async (store, chainApi, eventsApi) => {
     store.dispatch({ type: SET_COVER, payload: { coverId, cover } });
     console.info(`Update: Cover data for cover id ${coverId}`);
 
-    // todo: add test for this
     // todo: Q: should we fetch if we know it must be latestCoverId == coverId (id of currently edited cover)
 
     // fetching new reference for original cover id if this is edited cover
     if (cover.originalCoverId !== coverId) {
-      const { latestCoverId } = chainApi.fetchCoverReference(cover.originalCoverId);
+      const { latestCoverId } = await chainApi.fetchCoverReference(cover.originalCoverId);
       const { covers } = store.getState();
       const changedOriginalCover = {
         ...covers[cover.originalCoverId],
@@ -134,5 +133,6 @@ module.exports = async (store, chainApi, eventsApi) => {
   return {
     updateAll,
     updateAssetRates,
+    updateCover,
   };
 };
