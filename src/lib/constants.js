@@ -1,6 +1,17 @@
 const { BigNumber, ethers } = require('ethers');
 const { parseEther } = ethers.utils;
 
+const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  UNAUTHORIZED: 401,
+  SERVER_ERROR: 500,
+};
+
 module.exports = {
   BEACON_PROXY_INIT_CODE_HASH: '1eb804b66941a2e8465fa0951be9c8b855b7794ee05b0789ab22a02ee1298ebe',
   TRANCHE_DURATION: 91 * 24 * 3600, // 91 days in seconds
@@ -36,4 +47,6 @@ module.exports = {
 
   // TODO: set to minimal cover id which is not expired, 818?
   FETCH_COVER_DATA_FROM_ID: 2230,
+
+  HTTP_STATUS,
 };

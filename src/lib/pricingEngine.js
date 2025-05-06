@@ -1,5 +1,7 @@
 const { BigNumber } = require('ethers');
 
+const { HTTP_STATUS } = require('./constants');
+const { ApiError } = require('./error');
 const { calculateProductDataForTranche } = require('./helpers');
 const { selectProductPools, selectProduct } = require('../store/selectors');
 
@@ -19,7 +21,7 @@ function pricingEngine(store, productId) {
   const now = BigNumber.from(Math.floor(Date.now() / 1000));
 
   if (!product || !productPools.length) {
-    return null;
+    throw new ApiError('Product not found', HTTP_STATUS.NOT_FOUND);
   }
 
   const pricePerPool = [];

@@ -30,7 +30,7 @@ describe('Capacity Routes', () => {
       const invalidPeriod = 10;
       const url = `/v2/capacity?period=${invalidPeriod}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
-      expect(response.error).to.be.equal('Invalid period: must be an integer between 28 and 365');
+      expect(response.message).to.be.equal('Invalid period: must be an integer between 28 and 365');
     });
   });
 
@@ -50,14 +50,14 @@ describe('Capacity Routes', () => {
       const nonExistentProductId = 999;
       const url = `/v2/capacity/${nonExistentProductId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
-      expect(response.error).to.be.equal('Invalid Product Id');
+      expect(response.message).to.be.equal('Invalid Product Id');
     });
 
     it('should return 400 Invalid productId if the productId is not an integer', async function () {
       const invalidProductId = -1;
       const url = `/v2/capacity/${invalidProductId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
-      expect(response.error).to.be.equal('Invalid productId: must be an integer');
+      expect(response.message).to.be.equal('Invalid productId: must be an integer');
     });
   });
 
@@ -73,7 +73,7 @@ describe('Capacity Routes', () => {
       const invalidPoolId = 0;
       const url = `/v2/capacity/pools/${invalidPoolId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
-      expect(response.error).to.be.equal('Invalid poolId: must be a positive integer');
+      expect(response.message).to.be.equal('Invalid poolId: must be a positive integer');
     });
 
     it('should return 400 Invalid period', async function () {
@@ -81,7 +81,7 @@ describe('Capacity Routes', () => {
       const poolId = 2;
       const url = `/v2/capacity/pools/${poolId}?period=${invalidPeriod}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
-      expect(response.error).to.be.equal('Invalid period: must be an integer between 28 and 365');
+      expect(response.message).to.be.equal('Invalid period: must be an integer between 28 and 365');
     });
 
     it('should return empty productsCapacity and zero utilizationRate for pool with no products', async function () {
@@ -119,7 +119,7 @@ describe('Capacity Routes', () => {
       const invalidProductId = -1;
       const url = `/v2/capacity/pools/${poolId}/products/${invalidProductId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
-      expect(response.error).to.be.equal('Invalid productId: must be an integer');
+      expect(response.message).to.be.equal('Invalid productId: must be an integer');
     });
 
     it('should return 400 Invalid poolId', async function () {
@@ -127,7 +127,7 @@ describe('Capacity Routes', () => {
       const productId = 0;
       const url = `/v2/capacity/pools/${invalidPoolId}/products/${productId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
-      expect(response.error).to.be.equal('Invalid poolId: must be a positive integer');
+      expect(response.message).to.be.equal('Invalid poolId: must be a positive integer');
     });
 
     it('should return 400 Invalid period', async function () {
@@ -136,7 +136,7 @@ describe('Capacity Routes', () => {
       const productId = 0;
       const url = `/v2/capacity/pools/${poolId}/products/${productId}?period=${invalidPeriod}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(400);
-      expect(response.error).to.be.equal('Invalid period: must be an integer between 28 and 365');
+      expect(response.message).to.be.equal('Invalid period: must be an integer between 28 and 365');
     });
 
     it('should return 404 Product not found in the specified pool', async function () {
@@ -144,7 +144,7 @@ describe('Capacity Routes', () => {
       const nonExistentProductId = 999;
       const url = `/v2/capacity/pools/${poolId}/products/${nonExistentProductId}`;
       const { body: response } = await server.get(url).expect('Content-Type', /json/).expect(404);
-      expect(response.error).to.be.equal('Product not found in the specified pool');
+      expect(response.message).to.be.equal('Product not found in the specified pool');
     });
   });
 });

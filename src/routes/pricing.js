@@ -1,7 +1,7 @@
-const { inspect } = require('node:util');
-
 const express = require('express');
 
+const { HTTP_STATUS } = require('../lib/constants');
+const { ApiError } = require('../lib/error');
 const { asyncRoute } = require('../lib/helpers');
 const { pricingEngine } = require('../lib/pricingEngine');
 
@@ -63,25 +63,15 @@ router.get(
     const productId = Number(req.params.productId);
 
     if (!Number.isInteger(productId) || productId < 0) {
-      return res.status(400).send({ error: 'Invalid productId: must be an integer', response: null });
+      throw new ApiError('Invalid productId: must be an integer', HTTP_STATUS.BAD_REQUEST);
     }
 
-    try {
-      const store = req.app.get('store');
-      const pricingResult = pricingEngine(store, productId);
+    const store = req.app.get('store');
+    const pricingResult = pricingEngine(store, productId);
 
-      if (!pricingResult) {
-        return res.status(404).send({ error: 'Product not found', response: null });
-      }
-
-      const response = formatPricingResult(pricingResult);
-      console.info('Response: ', inspect(response, { depth: null }));
-
-      res.json(response);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).send({ error: 'Internal Server Error', response: null });
-    }
+    return {
+      body: formatPricingResult(pricingResult),
+    };
   }),
 );
 

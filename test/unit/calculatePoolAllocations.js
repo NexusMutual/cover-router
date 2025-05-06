@@ -112,8 +112,6 @@ describe('calculateOptimalPoolAllocation', function () {
       { price: '210', capacity: '499' },
     ]);
 
-    const expectedAllocations = [];
-
-    expect(calculatePoolAllocations(coverAmount, pools)).to.deep.equal(expectedAllocations);
+    expect(() => calculatePoolAllocations(coverAmount, pools)).to.throw('Not enough capacity for the cover amount');
   });
 });

@@ -32,6 +32,7 @@ describe('GET /quote', () => {
       .expect('Content-Type', /json/)
       .expect(200);
     expect(response).to.be.deep.equal(getQuote(ETH_ASSET_ID));
+    console.log(response);
   });
 
   it('should successfully get a quote for coverAsset 1 - DAI', async function () {
@@ -66,7 +67,7 @@ describe('GET /quote', () => {
 
   it('should fail get a quote for cover over the capacity', async function () {
     const {
-      body: { error },
+      body: { message },
     } = await server
       .get('/v2/quote')
       .query({
@@ -78,12 +79,12 @@ describe('GET /quote', () => {
       })
       .expect('Content-Type', /json/)
       .expect(400);
-    expect(error).to.be.equal('Not enough capacity for the cover amount');
+    expect(message).to.be.equal('Not enough capacity for the cover amount');
   });
 
   it('should return 400 error for invalid productId', async function () {
     const {
-      body: { error },
+      body: { message },
     } = await server
       .get('/v2/quote')
       .query({
@@ -95,6 +96,6 @@ describe('GET /quote', () => {
       })
       .expect('Content-Type', /json/)
       .expect(400);
-    expect(error).to.be.equal('Invalid Product Id');
+    expect(message).to.be.equal('Invalid Product Id');
   });
 });

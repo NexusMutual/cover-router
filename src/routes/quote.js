@@ -1,5 +1,3 @@
-const { inspect } = require('node:util');
-
 const { BigNumber } = require('ethers');
 const express = require('express');
 
@@ -8,8 +6,6 @@ const { quoteEngine } = require('../lib/quoteEngine');
 const { selectAsset } = require('../store/selectors');
 
 const router = express.Router();
-
-// TODO: update openapi description
 
 /**
  * @openapi
@@ -43,6 +39,12 @@ const router = express.Router();
  *       schema:
  *         type: integer
  *         description: The cover asset assetId (e.g. 0 for ETH, 1 for DAI)
+ *     - in: query
+ *       name: editedCoverId
+ *       required: false
+ *       schema:
+ *         type: integer
+ *         description: The id of the cover that is being edited
  *     responses:
  *       200:
  *         description: Returns a quote object
@@ -141,6 +143,8 @@ const router = express.Router();
  *                                   type: integer
  *                                   description: The decimals of the asset
  *                                   example: 18
+ *       400:
+ *         description: Invalid Product Id, or Product is deprecated, or Not enough capacity, or Not original cover id
  */
 router.get(
   '/quote',
@@ -152,19 +156,7 @@ router.get(
     const editedCoverId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
 
     const store = req.app.get('store');
-    const route = await quoteEngine(store, productId, amount, period, coverAsset, editedCoverId);
-
-    if (!route) {
-      return res.status(400).send({ error: 'Invalid Product Id', response: null });
-    }
-
-    if (route.poolsWithPremium.length === 0) {
-      return res.status(400).send({ error: 'Not enough capacity for the cover amount', response: null });
-    }
-
-    if (route.error && route.error.isDeprecated) {
-      return res.status(400).send({ error: 'Product is deprecated', response: null });
-    }
+    const route = quoteEngine(store, productId, amount, period, coverAsset, editedCoverId);
 
     const poolAllocationRequests = route.poolsWithPremium.reduce((poolAllocationRequests, pool) => {
       return [
@@ -176,29 +168,28 @@ router.get(
       ];
     }, []);
 
-    const response = {
-      quote: {
-        totalCoverAmountInAsset: route.quoteTotals.coverAmountInAsset.toString(),
-        annualPrice: route.quoteTotals.annualPrice.toString(),
-        premiumInNXM: route.quoteTotals.premiumInNXM.toString(),
-        premiumInAsset: route.quoteTotals.premiumInAsset.toString(),
-        poolAllocationRequests,
-        asset: selectAsset(store, coverAsset),
-      },
-      capacities: route.capacities.map(({ poolId, capacity }) => ({
-        poolId: poolId.toString(),
-        // NOTE: capacity[n].assetId is currently a string (it should ideally a number - BREAKING CHANGE)
-        capacity: capacity.map(({ assetId, amount, asset }) => ({
-          assetId: assetId.toString(),
-          amount: amount.toString(),
-          asset,
+    return {
+      body: {
+        quote: {
+          totalCoverAmountInAsset: route.quoteTotals.coverAmountInAsset.toString(),
+          annualPrice: route.quoteTotals.annualPrice.toString(),
+          premiumInNXM: route.quoteTotals.premiumInNXM.toString(),
+          premiumInAsset: route.quoteTotals.premiumInAsset.toString(),
+          poolAllocationRequests,
+          asset: selectAsset(store, coverAsset),
+        },
+        capacities: route.capacities.map(({ poolId, capacity }) => ({
+          poolId: poolId.toString(),
+          // NOTE: capacity[n].assetId is currently a string (it should ideally a number - BREAKING CHANGE)
+          // TODO: Q: do we want to make this change now?
+          capacity: capacity.map(({ assetId, amount, asset }) => ({
+            assetId: assetId.toString(),
+            amount: amount.toString(),
+            asset,
+          })),
         })),
-      })),
+      },
     };
-
-    console.info('Response: ', inspect(response, { depth: null }));
-
-    res.json(response);
   }),
 );
 

@@ -1,3 +1,5 @@
+const { inspect } = require('node:util');
+
 const ethers = require('ethers');
 
 const {
@@ -10,7 +12,9 @@ const {
   CAPACITY_BUFFER_DENOMINATOR,
   CAPACITY_BUFFER_MINIMUM,
   MAX_ACTIVE_TRANCHES,
+  HTTP_STATUS,
 } = require('./constants');
+const { ApiError } = require('./error');
 
 const { BigNumber } = ethers;
 const { WeiPerEther, Zero } = ethers.constants;
@@ -23,11 +27,34 @@ const divCeil = (a, b) => a.div(b).add(a.mod(b).gt(0) ? 1 : 0);
 
 /* Express Server Utils */
 
-const asyncRoute = fn => (req, res, next) => {
-  fn(req, res, next).catch(err => {
-    console.error(err);
-    res.status(500).send({ error: 'Internal Server Error', response: null });
-  });
+const DEFAULT_ERROR = { message: 'Internal Server Error', statusCode: HTTP_STATUS.SERVER_ERROR };
+
+/**
+ * Creates an asynchronous route handler by wrapping the given function.
+ *
+ * In case of a successful Promise resolution, the response will be sent as a JSON object.
+ * In case of a Promise rejection, an error response will be sent with appropriate HTTP status.
+ *
+ * @param {Function} fn - async function that takes in the request object and returns a Promise.
+ * @returns route handler callback that takes in the request and response objects
+ */
+const asyncRoute = fn => (req, res) => {
+  console.debug(`Request.body: `, inspect(req.body, { depth: null }));
+  fn(req)
+    .then(response => {
+      console.debug(`Response:\n`, inspect(response, { depth: null }));
+
+      res.status(response.statusCode || HTTP_STATUS.OK).json(response.body);
+    })
+    .catch(err => {
+      console.error('Error caught: ', err);
+
+      const { message, statusCode, data } = err instanceof ApiError ? err : DEFAULT_ERROR;
+      const body = data ?? { message };
+
+      console.debug(`Response:\n`, inspect({ statusCode, body }, { depth: null }));
+      res.status(statusCode).send(body);
+    });
 };
 
 const promiseAllInBatches = async (task, items, concurrency) => {

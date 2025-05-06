@@ -96,14 +96,14 @@ describe('pricingEngine', () => {
   });
 
   describe('input validation', () => {
-    it('should return null if productPools is empty', () => {
+    it('should return error if productPools is empty', () => {
       const store = createMockStore({});
-      expect(pricingEngine(store, 1)).to.equal(null);
+      expect(() => pricingEngine(store, 1)).to.throw('Product not found');
     });
 
-    it('should return null if no pools found for the product', () => {
+    it('should return error if no pools found for the product', () => {
       const store = createMockStore({ '2_1': mockStore.poolProducts['2_1'] });
-      expect(pricingEngine(store, 1)).to.equal(null);
+      expect(() => pricingEngine(store, 1)).to.throw('Product not found');
     });
   });
 
