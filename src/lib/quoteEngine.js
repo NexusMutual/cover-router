@@ -1,6 +1,7 @@
 const { BigNumber, ethers } = require('ethers');
 
-const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR, TARGET_PRICE_DENOMINATOR } = require('./constants');
+const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR, TARGET_PRICE_DENOMINATOR, HTTP_STATUS } = require('./constants');
+const { ApiError } = require('./error');
 const {
   calculateFirstUsableTrancheIndex,
   calculateBasePrice,
@@ -55,7 +56,7 @@ const calculatePoolAllocations = (coverAmount, pools) => {
 
   if (coverAmountLeft.gt(0)) {
     // not enough total capacity available
-    return [];
+    throw new ApiError('Not enough capacity for the cover amount', HTTP_STATUS.BAD_REQUEST);
   }
 
   return allocations;
@@ -81,6 +82,12 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
 
 function getLatestCover(store, originalCoverId) {
   const originalCover = selectCover(store, originalCoverId);
+
+  // TODO: add test
+  if (originalCover.originalCoverId !== originalCoverId) {
+    throw new ApiError('Not original cover id', HTTP_STATUS.BAD_REQUEST);
+  }
+
   return originalCover.latestCoverId === originalCoverId
     ? originalCover
     : selectCover(store, originalCover.latestCoverId);
@@ -109,15 +116,11 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
   const product = selectProduct(store, productId);
 
   if (!product) {
-    return null;
+    throw new ApiError('Invalid Product Id', HTTP_STATUS.BAD_REQUEST);
   }
 
   if (product.isDeprecated) {
-    return {
-      error: {
-        isDeprecated: true,
-      },
-    };
+    throw new ApiError('Product is deprecated', HTTP_STATUS.BAD_REQUEST);
   }
 
   const productPools = selectProductPools(store, productId);

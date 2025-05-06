@@ -131,18 +131,16 @@ describe('Quote Engine tests', () => {
     const productId = 1;
     const amount = parseEther('300000');
 
-    const quotes = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
-
-    expect(quotes.poolsWithPremium.length).to.be.equal(0);
+    expect(() => quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1)).to.throw(
+      'Not enough capacity for the cover amount',
+    );
   });
 
   it('should return null non existing product', () => {
     const productId = 999;
     const amount = BigNumber.from(30);
 
-    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
-
-    expect(quote).to.be.equal(null);
+    expect(() => quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1)).to.throw('Invalid Product Id');
   });
 
   it('should account for capacity deallocation when editing a cover which started in an active tranche', () => {
