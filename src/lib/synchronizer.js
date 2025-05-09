@@ -108,8 +108,6 @@ module.exports = async (store, chainApi, eventsApi) => {
     store.dispatch({ type: SET_COVER, payload: { coverId, cover } });
     console.info(`Update: Cover data for cover id ${coverId}`);
 
-    // todo: Q: should we fetch if we know it must be latestCoverId == coverId (id of currently edited cover)
-
     // fetching new reference for original cover id if this is edited cover
     if (cover.originalCoverId !== coverId) {
       const { latestCoverId } = await chainApi.fetchCoverReference(cover.originalCoverId);
