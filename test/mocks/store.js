@@ -1,4 +1,5 @@
-const { BigNumber } = require('ethers');
+const { BigNumber, ethers } = require('ethers');
+const { parseEther } = ethers.utils;
 
 process.env.PRIORITY_POOLS_ORDER_186 = '18,22,1';
 process.env.PRIORITY_POOLS_ORDER_195 = '1,23,22,2,5';
@@ -488,6 +489,50 @@ const store = {
     },
   },
   trancheId: 213,
+  covers: {
+    1: {
+      start: 0,
+      coverAsset: 1,
+      period: 30 * 24 * 3600,
+      originalCoverId: 1,
+      latestCoverId: 1,
+      poolAllocations: [
+        {
+          poolId: 1,
+          premiumInNXM: parseEther('10'),
+          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [0, 10000, 1000, 0, ..., 0]
+        },
+        {
+          poolId: 18,
+          premiumInNXM: parseEther('20'),
+          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [0, 10000, 1000, 0, ..., 0]
+        },
+        {
+          poolId: 22,
+          premiumInNXM: parseEther('25'),
+          packedTrancheAllocations: BigNumber.from('0x3E80000271000000000'), // [0, 10000, 1000, 0, ..., 0]
+        },
+      ],
+      newCoverReference: {
+        originalCoverId: 1,
+        latestCoverId: 2,
+      },
+    },
+    2: {
+      start: 0,
+      coverAsset: 1,
+      period: 30 * 24 * 3600,
+      originalCoverId: 1, // coverId != originalCoverId
+      latestCoverId: 2,
+      poolAllocations: [
+        {
+          poolId: 1,
+          premiumInNXM: parseEther('1'),
+          packedTrancheAllocations: BigNumber.from('0x0'),
+        },
+      ],
+    },
+  },
 };
 
 module.exports = store;

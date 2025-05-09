@@ -1,3 +1,5 @@
+const { inspect } = require('node:util');
+
 const ethers = require('ethers');
 
 const {
@@ -9,7 +11,10 @@ const {
   CAPACITY_BUFFER_RATIO,
   CAPACITY_BUFFER_DENOMINATOR,
   CAPACITY_BUFFER_MINIMUM,
+  MAX_ACTIVE_TRANCHES,
+  HTTP_STATUS,
 } = require('./constants');
+const { ApiError } = require('./error');
 
 const { BigNumber } = ethers;
 const { WeiPerEther, Zero } = ethers.constants;
@@ -22,11 +27,34 @@ const divCeil = (a, b) => a.div(b).add(a.mod(b).gt(0) ? 1 : 0);
 
 /* Express Server Utils */
 
-const asyncRoute = fn => (req, res, next) => {
-  fn(req, res, next).catch(err => {
-    console.error(err);
-    res.status(500).send({ error: 'Internal Server Error', response: null });
-  });
+const DEFAULT_ERROR = { message: 'Internal Server Error', statusCode: HTTP_STATUS.SERVER_ERROR };
+
+/**
+ * Creates an asynchronous route handler by wrapping the given function.
+ *
+ * In case of a successful Promise resolution, the response will be sent as a JSON object.
+ * In case of a Promise rejection, an error response will be sent with appropriate HTTP status.
+ *
+ * @param {Function} fn - async function that takes in the request object and returns a Promise.
+ * @returns route handler callback that takes in the request and response objects
+ */
+const asyncRoute = fn => (req, res) => {
+  console.debug(`Request.body: `, inspect(req.body, { depth: null }));
+  fn(req)
+    .then(response => {
+      console.debug(`Response:\n`, inspect(response, { depth: null }));
+
+      res.status(response.statusCode || HTTP_STATUS.OK).json(response.body);
+    })
+    .catch(err => {
+      console.error('Error caught: ', err);
+
+      const { message, statusCode, data } = err instanceof ApiError ? err : DEFAULT_ERROR;
+      const body = data ?? { message };
+
+      console.debug(`Response:\n`, inspect({ statusCode, body }, { depth: null }));
+      res.status(statusCode).send(body);
+    });
 };
 
 const promiseAllInBatches = async (task, items, concurrency) => {
@@ -86,11 +114,20 @@ const bufferedCapacity = capacityInNxm => {
  * @param {Array<BigNumber>} trancheCapacities - An array of tranche capacities
  * @param {Array<BigNumber>} allocations - An array of allocated amounts corresponding to each tranche
  * @param {number} firstUsableTrancheIndex - The index of the first usable tranche
+ * @param {Array<BigNumber>} coverAllocations - An array of allocated amounts in each tranche for edited cover
  * @returns {BigNumber} The available capacity in NXM, adjusted with buffering
  */
-function calculateAvailableCapacityInNXM(trancheCapacities, allocations, firstUsableTrancheIndex) {
+function calculateAvailableCapacityInNXM(
+  trancheCapacities,
+  allocations,
+  firstUsableTrancheIndex,
+  coverAllocations = [],
+) {
   const unused = trancheCapacities.reduce((available, capacity, index) => {
-    const allocationDifference = capacity.sub(allocations[index]);
+    const allocationDifference = capacity
+      .sub(allocations[index])
+      .add(index < coverAllocations.length ? coverAllocations[index] : 0); // add amount that will be deallocated
+
     const allocationToAdd =
       index < firstUsableTrancheIndex
         ? bnMin(allocationDifference, Zero) // only carry over the negative
@@ -209,6 +246,34 @@ const calculatePremiumPerYear = (coverAmount, basePrice) => {
   return coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
 };
 
+/* Cover Calculations */
+
+const getCoverTrancheAllocations = (cover, poolId, now) => {
+  const packedTrancheAllocations = cover.poolAllocations.find(p => p.poolId === poolId)?.packedTrancheAllocations;
+  if (!packedTrancheAllocations) {
+    return [];
+  }
+
+  const bitmask32 = ethers.BigNumber.from('0xFFFFFFFF');
+  const firstActiveTrancheId = calculateTrancheId(now);
+  const offset = firstActiveTrancheId - Math.floor(cover.start / TRANCHE_DURATION);
+
+  const coverTrancheAllocations = [];
+  for (let i = offset; i < MAX_ACTIVE_TRANCHES; i++) {
+    const allocation = packedTrancheAllocations.shr(i * 32).and(bitmask32);
+    coverTrancheAllocations.push(allocation);
+  }
+
+  return coverTrancheAllocations;
+};
+
+const calculateCoverRefundInNXM = (cover, now) => {
+  const totalPremiumInNXM = cover.poolAllocations.reduce((total, allocation) => {
+    return total.add(allocation.premiumInNXM);
+  }, Zero);
+  return totalPremiumInNXM.mul(cover.start + cover.period - now.toNumber()).div(cover.period);
+};
+
 module.exports = {
   bnMax,
   bnMin,
@@ -224,4 +289,6 @@ module.exports = {
   calculateProductDataForTranche,
   calculateBasePrice,
   calculatePremiumPerYear,
+  getCoverTrancheAllocations,
+  calculateCoverRefundInNXM,
 };

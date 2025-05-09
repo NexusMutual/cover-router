@@ -1,23 +1,27 @@
 const { BigNumber, ethers } = require('ethers');
 
-const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR } = require('./constants');
+const { NXM_PER_ALLOCATION_UNIT, ONE_YEAR, TARGET_PRICE_DENOMINATOR, HTTP_STATUS } = require('./constants');
+const { ApiError } = require('./error');
 const {
   calculateFirstUsableTrancheIndex,
   calculateBasePrice,
   calculatePremiumPerYear,
   calculateAvailableCapacityInNXM,
   getCapacitiesInAssets,
+  getCoverTrancheAllocations,
+  calculateCoverRefundInNXM,
   divCeil,
   bnMin,
 } = require('./helpers');
 const {
   selectAssetRate,
+  selectCover,
   selectProductPools,
   selectProduct,
   selectProductPriorityPoolsFixedPrice,
 } = require('../store/selectors');
 
-const { WeiPerEther } = ethers.constants;
+const { WeiPerEther, Zero } = ethers.constants;
 const { formatEther } = ethers.utils;
 
 /**
@@ -52,7 +56,7 @@ const calculatePoolAllocations = (coverAmount, pools) => {
 
   if (coverAmountLeft.gt(0)) {
     // not enough total capacity available
-    return [];
+    throw new ApiError('Not enough capacity for the cover amount', HTTP_STATUS.BAD_REQUEST);
   }
 
   return allocations;
@@ -76,6 +80,26 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
   return orderedPoolIds.map(id => poolsData.find(p => p.poolId === id));
 }
 
+function getLatestCover(store, originalCoverId) {
+  const originalCover = selectCover(store, originalCoverId);
+
+  if (originalCover.originalCoverId !== originalCoverId) {
+    throw new ApiError('Not original cover id', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  return originalCover.latestCoverId === originalCoverId
+    ? originalCover
+    : selectCover(store, originalCover.latestCoverId);
+}
+
+function calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) {
+  return premiumInAsset
+    .mul(365 * 24 * 3600)
+    .mul(TARGET_PRICE_DENOMINATOR)
+    .div(period)
+    .div(coverAmountInAsset);
+}
+
 /**
  * Calculates the premium and allocations for a given insurance product based on the specified parameters.
  *
@@ -84,21 +108,18 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
  * @param {BigNumber} amount - The amount of coverage requested.
  * @param {number} period - The cover period in seconds.
  * @param {string} coverAsset - The assetId of the asset to be covered.
+ * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting quote for new cover.
  * @returns {Array<object>} - An array of objects containing pool allocations and premiums.
  */
-const quoteEngine = (store, productId, amount, period, coverAsset) => {
+const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId = 0) => {
   const product = selectProduct(store, productId);
 
   if (!product) {
-    return null;
+    throw new ApiError('Invalid Product Id', HTTP_STATUS.BAD_REQUEST);
   }
 
   if (product.isDeprecated) {
-    return {
-      error: {
-        isDeprecated: true,
-      },
-    };
+    throw new ApiError('Product is deprecated', HTTP_STATUS.BAD_REQUEST);
   }
 
   const productPools = selectProductPools(store, productId);
@@ -113,6 +134,8 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
   const amountToAllocate = divCeil(coverAmountInNxm, NXM_PER_ALLOCATION_UNIT).mul(NXM_PER_ALLOCATION_UNIT);
   console.info(`Amount to allocate: ${formatEther(amountToAllocate)} nxm`);
 
+  const cover = editedCoverId !== 0 ? getLatestCover(store, editedCoverId) : undefined;
+
   const poolsData = productPools.map(pool => {
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;
 
@@ -120,6 +143,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       trancheCapacities,
       allocations,
       firstUsableTrancheIndex,
+      cover ? getCoverTrancheAllocations(cover, poolId, now) : [],
     );
 
     const basePrice = product.useFixedPrice
@@ -144,12 +168,15 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
     const premiumInNxm = premiumPerYear.mul(period).div(ONE_YEAR);
     const premiumInAsset = premiumInNxm.mul(assetRate).div(WeiPerEther);
 
-    const capacity = getCapacitiesInAssets(pool.availableCapacityInNXM, assets, assetRates);
+    const coverAmountInAsset = allocation.amount.mul(assetRate).div(WeiPerEther);
+
+    const capacities = {
+      poolId: pool.poolId,
+      capacity: getCapacitiesInAssets(pool.availableCapacityInNXM, assets, assetRates),
+    };
 
     console.info('Pool:', pool.poolId);
     console.info('Available pool capacity:', formatEther(pool.availableCapacityInNXM), 'nxm');
-
-    const coverAmountInAsset = allocation.amount.mul(assetRate).div(WeiPerEther);
 
     return {
       poolId: pool.poolId,
@@ -157,11 +184,46 @@ const quoteEngine = (store, productId, amount, period, coverAsset) => {
       premiumInAsset,
       coverAmountInNxm: allocation.amount,
       coverAmountInAsset,
-      capacities: { poolId: pool.poolId, capacity },
+      capacities,
     };
   });
 
-  return poolsWithPremium;
+  const totals = poolsWithPremium.reduce(
+    (totals, pool) => {
+      return {
+        coverAmountInAsset: totals.coverAmountInAsset.add(pool.coverAmountInAsset),
+        premiumInNXM: totals.premiumInNXM.add(pool.premiumInNxm),
+        premiumInAsset: totals.premiumInAsset.add(pool.premiumInAsset),
+      };
+    },
+    {
+      premiumInNXM: Zero,
+      premiumInAsset: Zero,
+      coverAmountInAsset: Zero,
+    },
+  );
+
+  const capacities = poolsWithPremium.reduce((capacities, pool) => {
+    return [...capacities, pool.capacities];
+  }, []);
+
+  // calculate refund for the edited cover
+  const refundInNXM = editedCoverId !== 0 ? calculateCoverRefundInNXM(cover, now) : Zero;
+  const refundInAsset = refundInNXM.mul(assetRate).div(WeiPerEther);
+
+  const totalPremiumInNXMWithRefund = totals.premiumInNXM.sub(refundInNXM);
+  const totalPremiumInAssetWithRefund = totals.premiumInAsset.sub(refundInAsset);
+
+  const quoteTotals = {
+    ...totals,
+    premiumInNXM: totalPremiumInNXMWithRefund.gt(0) ? totalPremiumInNXMWithRefund : Zero,
+    premiumInAsset: totalPremiumInAssetWithRefund.gt(0) ? totalPremiumInAssetWithRefund : Zero,
+    annualPrice: totalPremiumInAssetWithRefund.gt(0)
+      ? calculateAnualPrice(totalPremiumInAssetWithRefund, period, totals.coverAmountInAsset)
+      : Zero,
+  };
+
+  return { poolsWithPremium, capacities, refundInNXM, refundInAsset, quoteTotals };
 };
 
 module.exports = {

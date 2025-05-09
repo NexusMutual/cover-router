@@ -1,3 +1,4 @@
+const { FETCH_COVER_DATA_FROM_ID } = require('./constants');
 const { calculateTrancheId, promiseAllInBatches } = require('./helpers');
 const config = require('../config');
 const {
@@ -6,6 +7,7 @@ const {
   SET_PRODUCT,
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
+  SET_COVER,
   RESET_PRODUCT_POOLS,
 } = require('../store/actions');
 
@@ -70,6 +72,14 @@ module.exports = async (store, chainApi, eventsApi) => {
     const concurrency = config.get('concurrency');
 
     await promiseAllInBatches(productId => updateProduct(productId), productIds, concurrency);
+
+    const coverCount = await chainApi.fetchCoverCount();
+    const coverIds = Array.from(
+      { length: coverCount - FETCH_COVER_DATA_FROM_ID + 1 },
+      (_, i) => FETCH_COVER_DATA_FROM_ID + i,
+    );
+
+    await promiseAllInBatches(coverId => updateCover(coverId), coverIds, concurrency);
   };
 
   const updateAssetRates = async () => {
@@ -82,7 +92,37 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.info('Update: Asset rates');
   };
 
+  const updateCover = async coverId => {
+    const cover = await chainApi.fetchCover(coverId);
+    cover.poolAllocations = await Promise.all(
+      cover.poolAllocations.map(async allocationInfo => ({
+        ...allocationInfo,
+        packedTrancheAllocations: await chainApi.fetchCoverPoolTrancheAllocations(
+          coverId,
+          allocationInfo.poolId,
+          allocationInfo.allocationId,
+        ),
+      })),
+    );
+
+    store.dispatch({ type: SET_COVER, payload: { coverId, cover } });
+    console.info(`Update: Cover data for cover id ${coverId}`);
+
+    // fetching new reference for original cover id if this is edited cover
+    if (cover.originalCoverId !== coverId) {
+      const { latestCoverId } = await chainApi.fetchCoverReference(cover.originalCoverId);
+      const { covers } = store.getState();
+      const changedOriginalCover = {
+        ...covers[cover.originalCoverId],
+        latestCoverId,
+      };
+      store.dispatch({ type: SET_COVER, payload: { coverId: cover.originalCoverId, cover: changedOriginalCover } });
+      console.info(`Update: Cover reference for original cover id ${cover.originalCoverId}`);
+    }
+  };
+
   eventsApi.on('pool:change', updatePool);
+  eventsApi.on('cover:change', updateCover);
   eventsApi.on('product:change', updateProduct);
   eventsApi.on('tranche:change', updateAll);
   eventsApi.on('bucket:change', updateAll);
@@ -91,5 +131,6 @@ module.exports = async (store, chainApi, eventsApi) => {
   return {
     updateAll,
     updateAssetRates,
+    updateCover,
   };
 };

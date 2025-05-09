@@ -41,8 +41,7 @@ describe('Pricing Routes', () => {
       const response = await server.get('/v2/pricing/products/-1').expect('Content-Type', /json/).expect(400);
 
       expect(response.body).to.deep.equal({
-        error: 'Invalid productId: must be an integer',
-        response: null,
+        message: 'Invalid productId: must be an integer',
       });
     });
 
@@ -50,8 +49,7 @@ describe('Pricing Routes', () => {
       const response = await server.get('/v2/pricing/products/999').expect('Content-Type', /json/).expect(404);
 
       expect(response.body).to.deep.equal({
-        error: 'Product not found',
-        response: null,
+        message: 'Product not found',
       });
     });
 
@@ -84,8 +82,7 @@ describe('Pricing Routes', () => {
         .expect(404);
 
       expect(response.body).to.deep.equal({
-        error: 'Product not found',
-        response: null,
+        message: 'Product not found',
       });
     });
 
@@ -158,8 +155,7 @@ describe('Pricing Routes', () => {
         .expect(500);
 
       expect(response.body).to.deep.equal({
-        error: 'Internal Server Error',
-        response: null,
+        message: 'Internal Server Error',
       });
     });
   });
