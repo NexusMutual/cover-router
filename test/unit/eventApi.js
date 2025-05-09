@@ -6,7 +6,7 @@ const contractFactory = require('../../src/lib/contracts');
 const eventsApiConstructor = require('../../src/lib/eventsApi');
 
 const stakingPoolEvents = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
-const coverEvents = ['CoverEdited'];
+const coverEvents = ['CoverBought'];
 const coverProductsEvents = ['ProductSet'];
 const stakingProductsEvents = ['ProductUpdated'];
 const stakingPoolFactoryEvents = ['StakingPoolCreated'];
