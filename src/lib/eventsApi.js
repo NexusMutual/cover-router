@@ -94,7 +94,10 @@ module.exports = async (provider, contracts) => {
   cover.on('CoverBought', (coverId, originalCoverId, productId) => {
     console.info(`Event: Cover ${coverId} for product ${productId} bought`);
     emitter.emit('product:change', productId);
-    emitter.emit('cover:change', coverId);
+    emitter.emit('cover:bought', coverId);
+    if (coverId !== originalCoverId) {
+      emitter.emit('cover:edit', originalCoverId);
+    }
   });
   individualClaims.on('ClaimPayoutRedeemed', (user, amount, claimId, coverId) => {
     console.info(`Event: Claim payout redeemed for cover id ${coverId}`);
