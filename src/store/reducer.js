@@ -5,6 +5,7 @@ const {
   SET_POOL_PRODUCT,
   SET_TRANCHE_ID,
   SET_COVER,
+  SET_COVER_REFERENCE,
   RESET_PRODUCT_POOLS,
 } = require('./actions');
 const config = require('../config');
@@ -71,6 +72,12 @@ function reducer(state = initialState, { type, payload }) {
   if (type === SET_COVER) {
     const { coverId, cover } = payload;
     const covers = { ...state.covers, [coverId]: cover };
+    return { ...state, covers };
+  }
+
+  if (type === SET_COVER_REFERENCE) {
+    const { coverId, originalCoverId, latestCoverId } = payload;
+    const covers = { ...state.covers, [coverId]: { ...[coverId], originalCoverId, latestCoverId } };
     return { ...state, covers };
   }
 

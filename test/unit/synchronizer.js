@@ -74,16 +74,23 @@ describe('synchronizer', () => {
     expect(state.poolProducts).to.be.deep.equal(mockStore.poolProducts);
   });
 
-  it('should update cover reference of original cover after editing', async () => {
+  it('should update cover reference on updateCover and updateCoverReference', async () => {
     const store = createStore(initialState);
     const synchronizer = await createSynchronizer(store, mockChainApi, eventApi);
 
     await synchronizer.updateCover(1);
-    const { covers: coversBefore } = store.getState();
-    expect(coversBefore['1'].latestCoverId).to.be.equal(1);
+    const cover1BeforeEdit = store.getState().covers['1'];
+    expect(cover1BeforeEdit.originalCoverId).to.be.equal(1);
+    expect(cover1BeforeEdit.latestCoverId).to.be.equal(1);
 
     await synchronizer.updateCover(2);
-    const { covers: coversAfter } = store.getState();
-    expect(coversAfter['1'].latestCoverId).to.be.equal(2);
+    const cover2 = store.getState().covers['2'];
+    expect(cover2.originalCoverId).to.be.equal(1);
+    expect(cover2.latestCoverId).to.be.equal(2);
+
+    await synchronizer.updateCoverReference(1);
+    const cover1AfterEdit = store.getState().covers['1'];
+    expect(cover1AfterEdit.originalCoverId).to.be.equal(1);
+    expect(cover1AfterEdit.latestCoverId).to.be.equal(2);
   });
 });
