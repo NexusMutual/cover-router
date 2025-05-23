@@ -173,7 +173,8 @@ describe('Quote Engine tests', () => {
     const amount = parseEther('102000');
 
     const now = BigNumber.from(Date.now()).div(1000);
-    mockStore.covers[1].start = now.sub(2 * TRANCHE_DURATION).toNumber(); // 2 tranches passed since start
+
+    mockStore.covers[1].start = now.sub(TRANCHE_DURATION).toNumber();
 
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
     const [quote1, quote2, quote3] = quote.poolsWithPremium;
