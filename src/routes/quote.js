@@ -180,8 +180,6 @@ router.get(
         },
         capacities: route.capacities.map(({ poolId, capacity }) => ({
           poolId: poolId.toString(),
-          // NOTE: capacity[n].assetId is currently a string (it should ideally a number - BREAKING CHANGE)
-          // TODO: Q: do we want to make this change now?
           capacity: capacity.map(({ assetId, amount, asset }) => ({
             assetId: assetId.toString(),
             amount: amount.toString(),
