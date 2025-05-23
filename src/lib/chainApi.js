@@ -81,6 +81,33 @@ const createChainApi = async contracts => {
     };
   };
 
+  const fetchCoverCount = async () => cover.getCoverDataCount();
+
+  const fetchCover = async coverId => {
+    const [{ productId, coverAsset, amount, start, period }, { originalCoverId, latestCoverId }] =
+      await cover.getCoverDataWithReference(coverId);
+
+    const poolAllocations = (await cover.getPoolAllocations(coverId)).map(poolAllocation => {
+      const { poolId, coverAmountInNXM, premiumInNXM, allocationId } = poolAllocation;
+      return { poolId, coverAmountInNXM, premiumInNXM, allocationId };
+    });
+
+    return { productId, coverAsset, amount, start, period, originalCoverId, latestCoverId, poolAllocations };
+  };
+
+  const fetchCoverReference = async coverId => {
+    const { originalCoverId, latestCoverId } = cover.getCoverReference(coverId);
+    return { originalCoverId, latestCoverId };
+  };
+
+  const fetchCoverPoolTrancheAllocations = async (coverId, poolId, allocationId) => {
+    const stakingPool = contracts('StakingPool', poolId);
+    console.info(`Fetching allocations for cover ${coverId} in pool ${poolId} at address ${stakingPool.address}`);
+
+    const packedTrancheAllocation = await stakingPool.coverTrancheAllocations(allocationId);
+    return packedTrancheAllocation;
+  };
+
   return {
     fetchProducts,
     fetchProduct,
@@ -91,6 +118,10 @@ const createChainApi = async contracts => {
     fetchProductCount,
     fetchPoolProduct,
     fetchTokenPriceInAsset,
+    fetchCoverCount,
+    fetchCover,
+    fetchCoverPoolTrancheAllocations,
+    fetchCoverReference,
   };
 };
 

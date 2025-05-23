@@ -15,6 +15,7 @@ module.exports = async (provider, contracts) => {
   const cover = contracts('Cover');
   const coverProducts = contracts('CoverProducts');
   const stakingProducts = contracts('StakingProducts');
+  const individualClaims = contracts('IndividualClaims');
 
   // tranche id checker
   const now = Math.floor(Date.now() / 1000);
@@ -93,6 +94,14 @@ module.exports = async (provider, contracts) => {
   cover.on('CoverBought', (coverId, originalCoverId, productId) => {
     console.info(`Event: Cover ${coverId} for product ${productId} bought`);
     emitter.emit('product:change', productId);
+    emitter.emit('cover:bought', coverId);
+    if (coverId !== originalCoverId) {
+      emitter.emit('cover:edit', originalCoverId);
+    }
+  });
+  individualClaims.on('ClaimPayoutRedeemed', (user, amount, claimId, coverId) => {
+    console.info(`Event: Claim payout redeemed for cover id ${coverId}`);
+    emitter.emit('cover:change', coverId);
   });
 
   return {

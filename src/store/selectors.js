@@ -3,6 +3,16 @@ const selectAssetRate = (store, assetId) => {
   return assetRates[assetId];
 };
 
+const selectAsset = (store, assetId) => {
+  const { assets } = store.getState();
+  return assets[assetId];
+};
+
+const selectCover = (store, coverId) => {
+  const { covers } = store.getState();
+  return covers[coverId];
+};
+
 const selectProduct = (store, productId) => {
   const { products } = store.getState();
   return products[productId];
@@ -30,11 +40,6 @@ const selectProductPools = (store, productId, poolId = null) => {
   return poolIds.map(id => poolProducts[`${productId}_${id}`]);
 };
 
-const selectAsset = (store, assetId) => {
-  const { assets } = store.getState();
-  return assets[assetId];
-};
-
 const selectProductPriorityPoolsFixedPrice = (store, productId) => {
   const { productPriorityPoolsFixedPrice } = store.getState();
   return productPriorityPoolsFixedPrice[productId];
@@ -58,6 +63,7 @@ function selectProductsInPool(store, poolId) {
 module.exports = {
   selectAssetRate,
   selectAsset,
+  selectCover,
   selectProduct,
   selectProductPools,
   selectProductPriorityPoolsFixedPrice,

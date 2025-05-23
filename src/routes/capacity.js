@@ -1,5 +1,3 @@
-const { inspect } = require('node:util');
-
 const { ethers, BigNumber } = require('ethers');
 const express = require('express');
 
@@ -9,7 +7,8 @@ const {
   getPoolCapacity,
   getProductCapacityInPool,
 } = require('../lib/capacityEngine');
-const { SECONDS_PER_DAY } = require('../lib/constants');
+const { SECONDS_PER_DAY, HTTP_STATUS } = require('../lib/constants');
+const { ApiError } = require('../lib/error');
 const { asyncRoute } = require('../lib/helpers');
 
 const router = express.Router();
@@ -74,22 +73,16 @@ router.get(
     const periodQuery = Number(req.query.period) || 30;
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
-      return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
+      throw new ApiError('Invalid period: must be an integer between 28 and 365', HTTP_STATUS.BAD_REQUEST);
     }
 
-    try {
-      const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
-      const store = req.app.get('store');
-      const capacities = getAllProductCapacities(store, period);
+    const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+    const store = req.app.get('store');
+    const capacities = getAllProductCapacities(store, period);
 
-      const response = capacities.map(capacity => formatCapacityResult(capacity));
-      console.debug('Response: ', inspect(response, { depth: null }));
-
-      res.json(response);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).send({ error: 'Internal Server Error', response: null });
-    }
+    return {
+      body: capacities.map(capacity => formatCapacityResult(capacity)),
+    };
   }),
 );
 
@@ -170,29 +163,23 @@ router.get(
     const periodQuery = Number(req.query.period) || 30;
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
-      return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
+      throw new ApiError('Invalid period: must be an integer between 28 and 365', HTTP_STATUS.BAD_REQUEST);
     }
     if (!Number.isInteger(productId) || productId < 0) {
-      return res.status(400).send({ error: 'Invalid productId: must be an integer', response: null });
+      throw new ApiError('Invalid productId: must be an integer', HTTP_STATUS.BAD_REQUEST);
     }
 
-    try {
-      const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
-      const store = req.app.get('store');
-      const capacity = getProductCapacity(store, productId, period);
+    const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+    const store = req.app.get('store');
+    const capacity = getProductCapacity(store, productId, period);
 
-      if (!capacity) {
-        return res.status(400).send({ error: 'Invalid Product Id', response: null });
-      }
-
-      const response = formatCapacityResult(capacity);
-      console.info('Response: ', inspect(response, { depth: null }));
-
-      res.json(response);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).send({ error: 'Internal Server Error', response: null });
+    if (!capacity) {
+      throw new ApiError('Invalid Product Id', HTTP_STATUS.BAD_REQUEST);
     }
+
+    return {
+      body: formatCapacityResult(capacity),
+    };
   }),
 );
 
@@ -270,29 +257,23 @@ router.get(
     const periodQuery = Number(req.query.period) || 30;
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
-      return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
+      throw new ApiError('Invalid period: must be an integer between 28 and 365', HTTP_STATUS.BAD_REQUEST);
     }
     if (!Number.isInteger(poolId) || poolId <= 0) {
-      return res.status(400).send({ error: 'Invalid poolId: must be a positive integer', response: null });
+      throw new ApiError('Invalid poolId: must be a positive integer', HTTP_STATUS.BAD_REQUEST);
     }
 
-    try {
-      const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
-      const store = req.app.get('store');
-      const poolCapacity = getPoolCapacity(store, poolId, period);
+    const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+    const store = req.app.get('store');
+    const poolCapacity = getPoolCapacity(store, poolId, period);
 
-      const response = {
+    return {
+      body: {
         poolId: poolCapacity.poolId,
         utilizationRate: poolCapacity.utilizationRate.toNumber(),
         productsCapacity: poolCapacity.productsCapacity.map(productCapacity => formatCapacityResult(productCapacity)),
-      };
-      console.debug('Response: ', inspect(response, { depth: null }));
-
-      res.json(response);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).send({ error: 'Internal Server Error', response: null });
-    }
+      },
+    };
   }),
 );
 
@@ -346,31 +327,26 @@ router.get(
     const periodQuery = Number(req.query.period) || 30;
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
-      return res.status(400).send({ error: 'Invalid period: must be an integer between 28 and 365', response: null });
+      throw new ApiError('Invalid period: must be an integer between 28 and 365', HTTP_STATUS.BAD_REQUEST);
     }
     if (!Number.isInteger(poolId) || poolId <= 0) {
-      return res.status(400).send({ error: 'Invalid poolId: must be a positive integer', response: null });
+      throw new ApiError('Invalid poolId: must be a positive integer', HTTP_STATUS.BAD_REQUEST);
     }
     if (!Number.isInteger(productId) || productId < 0) {
-      return res.status(400).send({ error: 'Invalid productId: must be an integer', response: null });
+      throw new ApiError('Invalid productId: must be an integer', HTTP_STATUS.BAD_REQUEST);
     }
-    try {
-      const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
-      const store = req.app.get('store');
-      const capacity = getProductCapacityInPool(store, poolId, productId, period);
 
-      if (!capacity) {
-        return res.status(404).send({ error: 'Product not found in the specified pool', response: null });
-      }
+    const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+    const store = req.app.get('store');
+    const capacity = getProductCapacityInPool(store, poolId, productId, period);
 
-      const response = formatCapacityResult(capacity);
-      console.info('Response: ', inspect(response, { depth: null }));
-
-      res.json(response);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).send({ error: 'Internal Server Error', response: null });
+    if (!capacity) {
+      throw new ApiError('Product not found in the specified pool', HTTP_STATUS.NOT_FOUND);
     }
+
+    return {
+      body: formatCapacityResult(capacity),
+    };
   }),
 );
 
