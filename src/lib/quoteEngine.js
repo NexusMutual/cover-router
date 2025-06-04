@@ -97,7 +97,8 @@ function calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) {
     .mul(365 * 24 * 3600)
     .mul(TARGET_PRICE_DENOMINATOR)
     .div(period)
-    .div(coverAmountInAsset);
+    .div(coverAmountInAsset)
+    .add(1); // add one as a round up to the second decimal for better precision
 }
 
 /**
