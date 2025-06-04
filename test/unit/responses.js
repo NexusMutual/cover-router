@@ -406,7 +406,7 @@ const poolProductCapacities = {
 };
 
 const ethQuote = {
-  annualPrice: '199',
+  annualPrice: '200',
   premiumInNXM: '194600000000000000',
   premiumInAsset: '2000495843260837',
   totalCoverAmountInAsset: '100024792163041872',
@@ -419,7 +419,7 @@ const ethQuote = {
 };
 
 const daiQuote = {
-  annualPrice: '199',
+  annualPrice: '200',
   premiumInNXM: '800000000000000',
   premiumInAsset: '22979551211055938',
   totalCoverAmountInAsset: '1148977560552796946',
@@ -432,7 +432,7 @@ const daiQuote = {
 };
 
 const usdcQuote = {
-  annualPrice: '199',
+  annualPrice: '200',
   premiumInNXM: '7000000000000000',
   premiumInAsset: '201071',
   totalCoverAmountInAsset: '10053553',
