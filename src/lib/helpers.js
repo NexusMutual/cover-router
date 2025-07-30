@@ -15,6 +15,7 @@ const {
   HTTP_STATUS,
 } = require('./constants');
 const { ApiError } = require('./error');
+const { selectCover } = require('../store/selectors');
 
 const { BigNumber } = ethers;
 const { WeiPerEther, Zero } = ethers.constants;
@@ -146,7 +147,15 @@ function getCapacitiesInAssets(capacityInNXM, assets, assetRates) {
   }));
 }
 
-function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, useFixedPrice, now, assets, assetRates) {
+function calculateProductDataForTranche(
+  productPools,
+  firstUsableTrancheIndex,
+  useFixedPrice,
+  now,
+  assets,
+  assetRates,
+  editedCover = null,
+) {
   const aggregatedData = {
     capacityUsedNXM: Zero,
     capacityAvailableNXM: Zero,
@@ -173,6 +182,7 @@ function calculateProductDataForTranche(productPools, firstUsableTrancheIndex, u
       trancheCapacities,
       allocations,
       firstUsableTrancheIndex,
+      editedCover ? getCoverTrancheAllocations(editedCover, poolId, now) : [],
     );
 
     // convert to nxm
@@ -274,6 +284,22 @@ const calculateCoverRefundInNXM = (cover, now) => {
   return totalPremiumInNXM.mul(cover.start + cover.period - now.toNumber()).div(cover.period);
 };
 
+function getLatestCover(store, originalCoverId) {
+  if (originalCoverId === 0) {
+    return undefined;
+  }
+
+  const originalCover = selectCover(store, originalCoverId);
+
+  if (originalCover.originalCoverId !== originalCoverId) {
+    throw new ApiError('Not original cover id', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  return originalCover.latestCoverId === originalCoverId
+    ? originalCover
+    : selectCover(store, originalCover.latestCoverId);
+}
+
 module.exports = {
   bnMax,
   bnMin,
@@ -291,4 +317,5 @@ module.exports = {
   calculatePremiumPerYear,
   getCoverTrancheAllocations,
   calculateCoverRefundInNXM,
+  getLatestCover,
 };

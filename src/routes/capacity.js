@@ -86,6 +86,7 @@ router.get(
   }),
 );
 
+// TODO: update openapi
 /**
  * @openapi
  * /v2/capacity/{productId}:
@@ -161,6 +162,7 @@ router.get(
   asyncRoute(async (req, res) => {
     const productId = Number(req.params.productId);
     const periodQuery = Number(req.query.period) || 30;
+    const editedCoverId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
 
     if (!Number.isInteger(periodQuery) || periodQuery < 28 || periodQuery > 365) {
       throw new ApiError('Invalid period: must be an integer between 28 and 365', HTTP_STATUS.BAD_REQUEST);
@@ -171,7 +173,7 @@ router.get(
 
     const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
     const store = req.app.get('store');
-    const capacity = getProductCapacity(store, productId, period);
+    const capacity = getProductCapacity(store, productId, period, editedCoverId);
 
     if (!capacity) {
       throw new ApiError('Invalid Product Id', HTTP_STATUS.BAD_REQUEST);
