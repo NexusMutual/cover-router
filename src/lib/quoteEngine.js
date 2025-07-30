@@ -147,6 +147,9 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
       cover ? getCoverTrancheAllocations(cover, poolId, now) : [],
     );
 
+    console.info('Pool:', pool.poolId);
+    console.info('Available pool capacity:', formatEther(availableCapacityInNXM), 'nxm');
+
     const basePrice = product.useFixedPrice
       ? targetPrice
       : calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
@@ -171,25 +174,37 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
 
     const coverAmountInAsset = allocation.amount.mul(assetRate).div(WeiPerEther);
 
-    const capacities = {
-      poolId: pool.poolId,
-      capacity: getCapacitiesInAssets(pool.availableCapacityInNXM, assets, assetRates),
-    };
-
-    console.info('Pool:', pool.poolId);
-    console.info('Available pool capacity:', formatEther(pool.availableCapacityInNXM), 'nxm');
-
     return {
       poolId: pool.poolId,
       premiumInNxm,
       premiumInAsset,
       coverAmountInNxm: allocation.amount,
       coverAmountInAsset,
-      capacities,
+      availableCapacityInNXM: pool.availableCapacityInNXM,
     };
   });
 
-  const totals = poolsWithPremium.reduce(
+  const { availableCapacityInNXM, perPool: capacitiesPerPool } = poolsWithPremium.reduce(
+    (totals, pool) => {
+      return {
+        availableCapacityInNXM: totals.availableCapacityInNXM.add(pool.availableCapacityInNXM),
+        perPool: [
+          ...totals.perPool,
+          {
+            poolId: pool.poolId,
+            capacity: getCapacitiesInAssets(pool.availableCapacityInNXM, assets, assetRates),
+          },
+        ],
+      };
+    },
+    {
+      availableCapacityInNXM: Zero,
+      perPool: [],
+    },
+  );
+  const availableCapacity = getCapacitiesInAssets(availableCapacityInNXM, assets, assetRates);
+
+  const { premiumInNXM, premiumInAsset, coverAmountInAsset } = poolsWithPremium.reduce(
     (totals, pool) => {
       return {
         coverAmountInAsset: totals.coverAmountInAsset.add(pool.coverAmountInAsset),
@@ -204,27 +219,28 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
     },
   );
 
-  const capacities = poolsWithPremium.reduce((capacities, pool) => {
-    return [...capacities, pool.capacities];
-  }, []);
-
   // calculate refund for the edited cover
   const refundInNXM = editedCoverId !== 0 ? calculateCoverRefundInNXM(cover, now) : Zero;
   const refundInAsset = refundInNXM.mul(assetRate).div(WeiPerEther);
 
-  const totalPremiumInNXMWithRefund = totals.premiumInNXM.sub(refundInNXM);
-  const totalPremiumInAssetWithRefund = totals.premiumInAsset.sub(refundInAsset);
+  const premiumInNXMWithRefund = premiumInNXM.sub(refundInNXM).gt(0) ? premiumInNXM.sub(refundInNXM) : Zero;
+  const premiumInAssetWithRefund = premiumInAsset.sub(refundInAsset).gt(0) ? premiumInAsset.sub(refundInAsset) : Zero;
 
-  const quoteTotals = {
-    ...totals,
-    premiumInNXM: totalPremiumInNXMWithRefund.gt(0) ? totalPremiumInNXMWithRefund : Zero,
-    premiumInAsset: totalPremiumInAssetWithRefund.gt(0) ? totalPremiumInAssetWithRefund : Zero,
-    annualPrice: totalPremiumInAssetWithRefund.gt(0)
-      ? calculateAnualPrice(totalPremiumInAssetWithRefund, period, totals.coverAmountInAsset)
-      : Zero,
+  const annualPrice = premiumInAsset.gt(0) ? calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) : Zero;
+
+  return {
+    poolsWithPremium,
+    availableCapacity,
+    capacitiesPerPool,
+    premiumInNXM,
+    premiumInAsset,
+    refundInNXM,
+    refundInAsset,
+    premiumInNXMWithRefund,
+    premiumInAssetWithRefund,
+    annualPrice,
+    coverAmountInAsset,
   };
-
-  return { poolsWithPremium, capacities, refundInNXM, refundInAsset, quoteTotals };
 };
 
 module.exports = {

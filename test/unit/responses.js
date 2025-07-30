@@ -406,10 +406,14 @@ const poolProductCapacities = {
 };
 
 const ethQuote = {
+  totalCoverAmountInAsset: '100024792163041872',
   annualPrice: '200',
   premiumInNXM: '194600000000000000',
   premiumInAsset: '2000495843260837',
-  totalCoverAmountInAsset: '100024792163041872',
+  refundInNXM: '0',
+  refundInAsset: '0',
+  premiumInNXMWithRefund: '194600000000000000',
+  premiumInAssetWithRefund: '2000495843260837',
   poolAllocationRequests: [
     {
       poolId: '1',
@@ -419,10 +423,14 @@ const ethQuote = {
 };
 
 const daiQuote = {
+  totalCoverAmountInAsset: '1148977560552796946',
   annualPrice: '200',
   premiumInNXM: '800000000000000',
   premiumInAsset: '22979551211055938',
-  totalCoverAmountInAsset: '1148977560552796946',
+  refundInNXM: '0',
+  refundInAsset: '0',
+  premiumInNXMWithRefund: '800000000000000',
+  premiumInAssetWithRefund: '22979551211055938',
   poolAllocationRequests: [
     {
       poolId: '1',
@@ -432,10 +440,14 @@ const daiQuote = {
 };
 
 const usdcQuote = {
+  totalCoverAmountInAsset: '10053553',
   annualPrice: '200',
   premiumInNXM: '7000000000000000',
   premiumInAsset: '201071',
-  totalCoverAmountInAsset: '10053553',
+  refundInNXM: '0',
+  refundInAsset: '0',
+  premiumInNXMWithRefund: '7000000000000000',
+  premiumInAssetWithRefund: '201071',
   poolAllocationRequests: [
     {
       poolId: '1',
@@ -455,7 +467,34 @@ const getQuote = assetId => ({
     ...quoteMapping[assetId],
     asset: assets[assetId],
   },
-  capacities: [
+  availableCapacity: [
+    {
+      assetId: '0',
+      amount: '1010527961934945120',
+      asset: assets[0],
+    },
+    {
+      assetId: '1',
+      amount: '2823612355058498495188',
+      asset: assets[1],
+    },
+    {
+      assetId: '6',
+      amount: '2823612353',
+      asset: assets[6],
+    },
+    {
+      assetId: '7',
+      amount: '8087534',
+      asset: assets[7],
+    },
+    {
+      assetId: '255',
+      amount: '98300000000000000000',
+      asset: assets[255],
+    },
+  ],
+  capacitiesPerPool: [
     {
       poolId: '1',
       capacity: [

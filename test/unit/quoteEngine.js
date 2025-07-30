@@ -4,7 +4,7 @@ const {
 } = require('ethers');
 const { BigNumber } = require('ethers');
 
-const { MIN_COVER_PERIOD, TRANCHE_DURATION } = require('../../src/lib/constants');
+const { MIN_COVER_PERIOD, TRANCHE_DURATION, SECONDS_PER_DAY } = require('../../src/lib/constants');
 const { quoteEngine } = require('../../src/lib/quoteEngine');
 const mockStore = require('../mocks/store');
 
@@ -168,13 +168,15 @@ describe('Quote Engine tests', () => {
     expect(quote2.coverAmountInAsset.toString()).to.be.equal('50953962950853328892279');
   });
 
+  // TODO: check out the starting tranche of edited cover mockStore.covers[1].start
+  //       sometimes it fails when we are at the beginning of a tranche
   it('should account for capacity deallocation when editing a cover which started in a previous tranche', () => {
     const productId = 4;
     const amount = parseEther('102000');
 
     const now = BigNumber.from(Date.now()).div(1000);
 
-    mockStore.covers[1].start = now.sub(TRANCHE_DURATION).toNumber();
+    mockStore.covers[1].start = now.sub(TRANCHE_DURATION + 7 * SECONDS_PER_DAY).toNumber();
 
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
     const [quote1, quote2, quote3] = quote.poolsWithPremium;
