@@ -7,6 +7,7 @@ const { selectAsset } = require('../store/selectors');
 
 const router = express.Router();
 
+// TODO: change openapi desc
 /**
  * @openapi
  * /v2/quote:
@@ -171,14 +172,23 @@ router.get(
     return {
       body: {
         quote: {
-          totalCoverAmountInAsset: route.quoteTotals.coverAmountInAsset.toString(),
-          annualPrice: route.quoteTotals.annualPrice.toString(),
-          premiumInNXM: route.quoteTotals.premiumInNXM.toString(),
-          premiumInAsset: route.quoteTotals.premiumInAsset.toString(),
+          totalCoverAmountInAsset: route.coverAmountInAsset.toString(),
+          annualPrice: route.annualPrice.toString(),
+          premiumInNXM: route.premiumInNXM.toString(),
+          premiumInAsset: route.premiumInAsset.toString(),
+          refundInNXM: route.refundInNXM.toString(),
+          refundInAsset: route.refundInAsset.toString(),
+          premiumInNXMWithRefund: route.premiumInNXMWithRefund.toString(),
+          premiumInAssetWithRefund: route.premiumInAssetWithRefund.toString(),
           poolAllocationRequests,
           asset: selectAsset(store, coverAsset),
         },
-        capacities: route.capacities.map(({ poolId, capacity }) => ({
+        availableCapacity: route.availableCapacity.map(({ assetId, amount, asset }) => ({
+          assetId: assetId.toString(),
+          amount: amount.toString(),
+          asset,
+        })),
+        capacitiesPerPool: route.capacitiesPerPool.map(({ poolId, capacity }) => ({
           poolId: poolId.toString(),
           capacity: capacity.map(({ assetId, amount, asset }) => ({
             assetId: assetId.toString(),

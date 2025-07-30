@@ -32,7 +32,6 @@ describe('GET /quote', () => {
       .expect('Content-Type', /json/)
       .expect(200);
     expect(response).to.be.deep.equal(getQuote(ETH_ASSET_ID));
-    console.log(response);
   });
 
   it('should successfully get a quote for coverAsset 1 - DAI', async function () {
