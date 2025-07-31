@@ -99,12 +99,13 @@ const calculateFirstUsableTrancheIndex = (now, gracePeriod, period) => {
 
 /* Capacity Calculations */
 
-const bufferedCapacity = capacityInNxm => {
+const bufferedCapacityInNxm = capacity => {
   const capacityBuffer = bnMax(
-    capacityInNxm.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
+    capacity.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
     CAPACITY_BUFFER_MINIMUM,
   );
-  return bnMax(capacityInNxm.sub(capacityBuffer), Zero);
+
+  return bnMax(capacity.sub(capacityBuffer).mul(NXM_PER_ALLOCATION_UNIT), Zero);
 };
 
 /**
@@ -136,7 +137,7 @@ function calculateAvailableCapacityInNXM(
     return available.add(allocationToAdd);
   }, Zero);
 
-  return bufferedCapacity(unused.mul(NXM_PER_ALLOCATION_UNIT));
+  return bufferedCapacityInNxm(unused);
 }
 
 function getCapacitiesInAssets(capacityInNXM, assets, assetRates) {
@@ -309,7 +310,7 @@ module.exports = {
   calculateTrancheId,
   calculateBucketId,
   calculateFirstUsableTrancheIndex,
-  bufferedCapacity,
+  bufferedCapacityInNxm,
   calculateAvailableCapacityInNXM,
   getCapacitiesInAssets,
   calculateProductDataForTranche,
