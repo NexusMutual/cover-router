@@ -7,6 +7,7 @@ const {
   calculateFirstUsableTrancheIndex,
   calculateProductDataForTranche,
   getCapacitiesInAssets,
+  getLatestCover,
 } = require('./helpers');
 const { selectProduct, selectProductPools, selectProductsInPool } = require('../store/selectors');
 
@@ -59,7 +60,7 @@ function calculatePoolUtilizationRate(products) {
 function calculateProductCapacity(
   store,
   productId,
-  { poolId = null, period, now, assets, assetRates, withPools = true },
+  { poolId = null, period, now, assets, assetRates, withPools = true, editedCover = null },
 ) {
   const product = selectProduct(store, productId);
   if (!product) {
@@ -85,6 +86,7 @@ function calculateProductCapacity(
       now,
       assets,
       assetRates,
+      editedCover,
     ));
 
     const { capacityAvailableNXM, totalPremium } = aggregatedData;
@@ -100,6 +102,7 @@ function calculateProductCapacity(
         now,
         assets,
         assetRates,
+        editedCover,
       );
 
       if (i === firstUsableTrancheIndex) {
@@ -163,17 +166,21 @@ function getAllProductCapacities(store, period) {
  * @param {Object} store - The Redux store containing application state.
  * @param {string|number} productId - The product ID.
  * @param {number} period - The coverage period in seconds.
+ * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting capacity for a new cover.
  * @returns {Object|null} Product capacity data or null if product not found.
  */
-function getProductCapacity(store, productId, period) {
+function getProductCapacity(store, productId, period, editedCoverId = 0) {
   const { assets, assetRates } = store.getState();
   const now = BigNumber.from(Date.now()).div(1000);
+
+  const editedCover = getLatestCover(store, editedCoverId);
 
   return calculateProductCapacity(store, productId, {
     period,
     now,
     assets,
     assetRates,
+    editedCover,
   });
 }
 
@@ -219,11 +226,14 @@ function getPoolCapacity(store, poolId, period) {
  * @param {string|number} poolId - The pool ID.
  * @param {string|number} productId - The product ID.
  * @param {number} period - The coverage period in seconds.
+ * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting capacity for a new cover.
  * @returns {Object|null} Product capacity data for the specific pool or null if not found.
  */
-function getProductCapacityInPool(store, poolId, productId, period) {
+function getProductCapacityInPool(store, poolId, productId, period, editedCoverId = 0) {
   const { assets, assetRates } = store.getState();
   const now = BigNumber.from(Math.floor(Date.now() / 1000));
+
+  const editedCover = getLatestCover(store, editedCoverId);
 
   const poolProductCapacity = calculateProductCapacity(store, productId, {
     poolId,
@@ -232,6 +242,7 @@ function getProductCapacityInPool(store, poolId, productId, period) {
     assets,
     assetRates,
     withPools: false,
+    editedCover,
   });
 
   return poolProductCapacity;

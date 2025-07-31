@@ -12,10 +12,10 @@ const {
   calculateCoverRefundInNXM,
   divCeil,
   bnMin,
+  getLatestCover,
 } = require('./helpers');
 const {
   selectAssetRate,
-  selectCover,
   selectProductPools,
   selectProduct,
   selectProductPriorityPoolsFixedPrice,
@@ -80,18 +80,6 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
   return orderedPoolIds.map(id => poolsData.find(p => p.poolId === id));
 }
 
-function getLatestCover(store, originalCoverId) {
-  const originalCover = selectCover(store, originalCoverId);
-
-  if (originalCover.originalCoverId !== originalCoverId) {
-    throw new ApiError('Not original cover id', HTTP_STATUS.BAD_REQUEST);
-  }
-
-  return originalCover.latestCoverId === originalCoverId
-    ? originalCover
-    : selectCover(store, originalCover.latestCoverId);
-}
-
 function calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) {
   return premiumInAsset
     .mul(365 * 24 * 3600)
@@ -135,7 +123,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
   const amountToAllocate = divCeil(coverAmountInNxm, NXM_PER_ALLOCATION_UNIT).mul(NXM_PER_ALLOCATION_UNIT);
   console.info(`Amount to allocate: ${formatEther(amountToAllocate)} nxm`);
 
-  const cover = editedCoverId !== 0 ? getLatestCover(store, editedCoverId) : undefined;
+  const cover = getLatestCover(store, editedCoverId);
 
   const poolsData = productPools.map(pool => {
     const { poolId, targetPrice, bumpedPrice, bumpedPriceUpdateTime, allocations, trancheCapacities } = pool;
