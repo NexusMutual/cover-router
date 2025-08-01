@@ -20,7 +20,7 @@ const {
   calculatePremiumPerYear,
   calculateProductDataForTranche,
   calculateTrancheId,
-  bufferedCapacity,
+  bufferedCapacityInNxm,
 } = require('../../src/lib/helpers');
 const mockStore = require('../mocks/store');
 
@@ -140,7 +140,7 @@ describe('capacityEngine', function () {
       // Calculate expected fixed price
       const used = allocations[lastIndex].mul(NXM_PER_ALLOCATION_UNIT);
       const availableCapacity = trancheCapacities[lastIndex].sub(allocations[lastIndex]);
-      const availableInNXM = bufferedCapacity(availableCapacity.mul(NXM_PER_ALLOCATION_UNIT));
+      const availableInNXM = bufferedCapacityInNxm(availableCapacity);
       const expectedFixedPrice = WeiPerEther.mul(calculatePremiumPerYear(NXM_PER_ALLOCATION_UNIT, targetPrice)).div(
         NXM_PER_ALLOCATION_UNIT,
       );

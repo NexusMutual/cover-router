@@ -39,7 +39,7 @@ module.exports = {
   MIN_COVER_PERIOD: 30 * 24 * 3600, // seconds
   MAX_COVER_PERIOD: 365 * 24 * 3600, // seconds
 
-  CAPACITY_BUFFER_MINIMUM: parseEther('0.1'), // = 0.1 nxm = 10 allocation units
+  CAPACITY_BUFFER_MINIMUM: 10, // 10 allocation units = 0.1 nxm
   CAPACITY_BUFFER_RATIO: 10, // 0.1%
   CAPACITY_BUFFER_DENOMINATOR: 100_00,
 
