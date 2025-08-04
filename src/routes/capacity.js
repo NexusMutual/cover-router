@@ -86,7 +86,6 @@ router.get(
   }),
 );
 
-// TODO: update openapi
 /**
  * @openapi
  * /v2/capacity/{productId}:
@@ -109,6 +108,12 @@ router.get(
  *           maximum: 365
  *           default: 30
  *         description: Coverage period in days
+ *       - in: query
+ *         name: coverEditId
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           description: The id of the cover that is being edited
  *     responses:
  *       200:
  *         description: Returns capacity data for a product, including capacityPerPool data.
