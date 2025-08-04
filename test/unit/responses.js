@@ -467,65 +467,6 @@ const getQuote = assetId => ({
     ...quoteMapping[assetId],
     asset: assets[assetId],
   },
-  availableCapacity: [
-    {
-      assetId: '0',
-      amount: '1010527961934945120',
-      asset: assets[0],
-    },
-    {
-      assetId: '1',
-      amount: '2823612355058498495188',
-      asset: assets[1],
-    },
-    {
-      assetId: '6',
-      amount: '2823612353',
-      asset: assets[6],
-    },
-    {
-      assetId: '7',
-      amount: '8087534',
-      asset: assets[7],
-    },
-    {
-      assetId: '255',
-      amount: '98300000000000000000',
-      asset: assets[255],
-    },
-  ],
-  capacitiesPerPool: [
-    {
-      poolId: '1',
-      capacity: [
-        {
-          assetId: '0',
-          amount: '1010527961934945120',
-          asset: assets[0],
-        },
-        {
-          assetId: '1',
-          amount: '2823612355058498495188',
-          asset: assets[1],
-        },
-        {
-          assetId: '6',
-          amount: '2823612353',
-          asset: assets[6],
-        },
-        {
-          assetId: '7',
-          amount: '8087534',
-          asset: assets[7],
-        },
-        {
-          assetId: '255',
-          amount: '98300000000000000000',
-          asset: assets[255],
-        },
-      ],
-    },
-  ],
 });
 
 module.exports = {

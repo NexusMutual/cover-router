@@ -7,7 +7,6 @@ const {
   calculateBasePrice,
   calculatePremiumPerYear,
   calculateAvailableCapacityInNXM,
-  getCapacitiesInAssets,
   getCoverTrancheAllocations,
   calculateCoverRefundInNXM,
   divCeil,
@@ -113,7 +112,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
 
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
-  const { assets, assetRates } = store.getState();
 
   const now = BigNumber.from(Date.now()).div(1000);
   const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, period);
@@ -172,26 +170,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
     };
   });
 
-  const { availableCapacityInNXM, perPool: capacitiesPerPool } = poolsWithPremium.reduce(
-    (totals, pool) => {
-      return {
-        availableCapacityInNXM: totals.availableCapacityInNXM.add(pool.availableCapacityInNXM),
-        perPool: [
-          ...totals.perPool,
-          {
-            poolId: pool.poolId,
-            capacity: getCapacitiesInAssets(pool.availableCapacityInNXM, assets, assetRates),
-          },
-        ],
-      };
-    },
-    {
-      availableCapacityInNXM: Zero,
-      perPool: [],
-    },
-  );
-  const availableCapacity = getCapacitiesInAssets(availableCapacityInNXM, assets, assetRates);
-
   const { premiumInNXM, premiumInAsset, coverAmountInAsset } = poolsWithPremium.reduce(
     (totals, pool) => {
       return {
@@ -218,8 +196,6 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
 
   return {
     poolsWithPremium,
-    availableCapacity,
-    capacitiesPerPool,
     premiumInNXM,
     premiumInAsset,
     refundInNXM,

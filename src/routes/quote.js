@@ -7,7 +7,6 @@ const { selectAsset } = require('../store/selectors');
 
 const router = express.Router();
 
-// TODO: change openapi desc
 /**
  * @openapi
  * /v2/quote:
@@ -41,7 +40,7 @@ const router = express.Router();
  *         type: integer
  *         description: The cover asset assetId (e.g. 0 for ETH, 1 for DAI)
  *     - in: query
- *       name: editedCoverId
+ *       name: coverEditId
  *       required: false
  *       schema:
  *         type: integer
@@ -108,42 +107,6 @@ const router = express.Router();
  *                           type: integer
  *                           description: The decimals of the cover asset
  *                           example: 18
- *                 capacities:
- *                   type: array
- *                   description: Show the pools with sufficient (and cheapest) capacity for the requested cover.
- *                   items:
- *                     type: object
- *                     properties:
- *                       poolId:
- *                         type: string
- *                         description: The pool id
- *                       capacity:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             assetId:
- *                               type: string
- *                               format: integer
- *                               description: The id of the asset
- *                             amount:
- *                               type: string
- *                               format: integer
- *                               description: The total capacity amount of the pool expressed in the asset.
- *                             asset:
- *                               type: object
- *                               description: An object containing asset info
- *                               properties:
- *                                 id:
- *                                   type: integer
- *                                   description: The id of the asset
- *                                 symbol:
- *                                   type: string
- *                                   description: The symbol of the asset
- *                                 decimals:
- *                                   type: integer
- *                                   description: The decimals of the asset
- *                                   example: 18
  *       400:
  *         description: Invalid Product Id, or Product is deprecated, or Not enough capacity, or Not original cover id
  */
@@ -183,19 +146,6 @@ router.get(
           poolAllocationRequests,
           asset: selectAsset(store, coverAsset),
         },
-        availableCapacity: route.availableCapacity.map(({ assetId, amount, asset }) => ({
-          assetId: assetId.toString(),
-          amount: amount.toString(),
-          asset,
-        })),
-        capacitiesPerPool: route.capacitiesPerPool.map(({ poolId, capacity }) => ({
-          poolId: poolId.toString(),
-          capacity: capacity.map(({ assetId, amount, asset }) => ({
-            assetId: assetId.toString(),
-            amount: amount.toString(),
-            asset,
-          })),
-        })),
       },
     };
   }),
