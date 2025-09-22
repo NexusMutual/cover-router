@@ -96,7 +96,7 @@ const createChainApi = async contracts => {
   };
 
   const fetchCoverReference = async coverId => {
-    const { originalCoverId, latestCoverId } = cover.getCoverReference(coverId);
+    const { originalCoverId, latestCoverId } = await cover.getCoverReference(coverId);
     return { originalCoverId, latestCoverId };
   };
 

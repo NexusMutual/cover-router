@@ -77,7 +77,7 @@ function reducer(state = initialState, { type, payload }) {
 
   if (type === SET_COVER_REFERENCE) {
     const { coverId, originalCoverId, latestCoverId } = payload;
-    const covers = { ...state.covers, [coverId]: { ...[coverId], originalCoverId, latestCoverId } };
+    const covers = { ...state.covers, [coverId]: { ...state.covers[coverId], originalCoverId, latestCoverId } };
     return { ...state, covers };
   }
 
