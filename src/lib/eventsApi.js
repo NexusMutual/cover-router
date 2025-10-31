@@ -91,7 +91,7 @@ module.exports = async (provider, contracts) => {
     console.info(`Event: Product ${productId} set`);
     emitter.emit('product:change', productId);
   });
-  cover.on('CoverBought', (coverId, originalCoverId, productId) => {
+  cover.on('CoverBought', (coverId, originalCoverId, memberId, productId) => {
     console.info(`Event: Cover ${coverId} for product ${productId} bought`);
     emitter.emit('product:change', productId);
     emitter.emit('cover:bought', coverId);
