@@ -20,7 +20,7 @@ module.exports = async (store, chainApi, eventsApi) => {
     store.dispatch({ type: SET_PRODUCT, payload: { ...product, id: productId } });
 
     const { capacityReductionRatio } = product;
-    const poolIds = await chainApi.fetchProductPoolsIds(productId);
+    const poolIds = productId === 353 ? [1, 2, 5] : await chainApi.fetchProductPoolsIds(productId);
 
     store.dispatch({
       type: RESET_PRODUCT_POOLS,
