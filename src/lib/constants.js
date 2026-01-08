@@ -46,7 +46,21 @@ module.exports = {
   SECONDS_PER_DAY: BigNumber.from(24 * 60 * 60),
 
   // set to minimal cover id which is not expired
-  FETCH_COVER_DATA_FROM_ID: 992,
+  FETCH_COVER_DATA_FROM_ID: 3710,
 
+  // Ri constants
+  SYMBIOTIC_PROVIDER_ID: 1,
+  RI_FETCH_COVER_DATA_FROM_BLOCK: 24219565,
+  RI_WEIGHT: 25,
+  RI_WEIGHT_DENOMINATOR: 100,
+  RI_THRESHOLD: 20_000_000 * 1_000_000, // in USDC
+  RI_MIN_COVER_AMOUNT: 100_000 * 1_000_000, // in USDC
+  RI_COVER_AMOUNT_PERCENTAGE: 80,
+  RI_COVER_AMOUNT_DENOMINATOR: 100,
+  RI_EPOCH_DURATION: 70, // days
+
+  RI_DATA_FORMATS: {
+    1: 'tuple(uint256 amount,uint256 vaultId, uint256 subnetworkId,uint256 providerId)[]',
+  },
   HTTP_STATUS,
 };

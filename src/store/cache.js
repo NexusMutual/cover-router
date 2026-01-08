@@ -42,6 +42,7 @@ const load = defaultState => {
 
   // refresh constants values
   parsedData.assets = { ...defaultState.assets };
+  parsedData.riSubnetworks = { ...defaultState.riSubnetworks };
 
   return parsedData;
 };
