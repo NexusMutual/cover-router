@@ -1,3 +1,5 @@
+const { BigNumber } = require('ethers');
+
 const data = require('./store');
 
 const chainApiMock = {
@@ -61,6 +63,14 @@ const chainApiMock = {
 
   fetchCoverPoolTrancheAllocations: async (coverId, poolId, allocationId) => {
     return data.covers[coverId].poolAllocations.find(p => p.poolId === poolId).packedTrancheAllocations;
+  },
+
+  fetchRiAssetRate: async assetId => {
+    const rate = data.riAssetRates[assetId];
+    return {
+      assetRate: BigNumber.from(rate),
+      protocolAssetCorrelationId: 0,
+    };
   },
 };
 

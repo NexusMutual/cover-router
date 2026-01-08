@@ -7,7 +7,14 @@ const {
   SET_COVER,
   SET_COVER_REFERENCE,
   RESET_PRODUCT_POOLS,
+  SET_RI_ASSET_RATE,
+  SET_RI_VAULT_PRODUCT,
+  SET_RI_VAULT_PRODUCTS,
+  SET_RI_EPOCH_EXPIRIES,
+  SET_VAULT_STAKE,
+  SET_RI_NONCE,
 } = require('./actions');
+const riSubnetworks = require('./riSubnetworks.json');
 const config = require('../config');
 
 // Automatically populate productPriorityPoolsFixedPrice
@@ -19,6 +26,7 @@ for (const [productId, orderArray] of Object.entries(customPriorityPoolsOrder)) 
 }
 
 const initialState = {
+  riSubnetworks,
   assetRates: {}, // assetId -> rate
   assets: {
     0: { id: 0, symbol: 'ETH', decimals: 18 },
@@ -27,6 +35,10 @@ const initialState = {
     7: { id: 7, symbol: 'cbBTC', decimals: 8 },
     255: { id: 255, symbol: 'NXM', decimals: 18 },
   },
+  riAssetRates: {}, // assetId -> rate
+  riAssets: {
+    0: { id: 0, symbol: 'wstETH', decimals: 18 },
+  },
   globalCapacityRatio: 0,
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
@@ -34,6 +46,9 @@ const initialState = {
   covers: {}, // coverId -> { cover }
   productPriorityPoolsFixedPrice,
   trancheId: 0,
+  vaultProducts: {}, // {productId}_{vaultId} -> { allocations, activeStake, withdrawalAmount, price }
+  epochExpires: {}, // vaultId -> timestamp
+  riNonces: {},
 };
 
 function reducer(state = initialState, { type, payload }) {
@@ -95,6 +110,51 @@ function reducer(state = initialState, { type, payload }) {
 
     const productPoolIds = { ...state.productPoolIds, [productId]: poolIds };
     return { ...state, productPoolIds, poolProducts };
+  }
+
+  if (type === SET_RI_ASSET_RATE) {
+    const { assetId, rate } = payload;
+    const riAssetRates = { ...state.riAssetRates, [assetId]: rate };
+    return { ...state, riAssetRates };
+  }
+
+  if (type === SET_RI_VAULT_PRODUCT) {
+    const { vaultId, productId, vaultProduct } = payload;
+    const key = `${productId}_${vaultId}`;
+    const newVaultProduct = { productId, vaultId, ...vaultProduct };
+    const vaultProducts = { ...state.vaultProducts, [key]: newVaultProduct };
+    return { ...state, vaultProducts };
+  }
+
+  if (type === SET_VAULT_STAKE) {
+    const { vaultId, productIds, productStakes, withdrawalAmount } = payload;
+    const newVaultProducts = {};
+    for (const productId of productIds) {
+      const key = `${productId}_${vaultId}`;
+      newVaultProducts[key] = {
+        ...state.vaultProducts[key],
+        activeStake: productStakes[productId],
+        withdrawalAmount,
+      };
+    }
+    const vaultProducts = { ...state.vaultProducts, ...newVaultProducts };
+    return { ...state, vaultProducts };
+  }
+
+  if (type === SET_RI_EPOCH_EXPIRIES) {
+    const { expiries } = payload;
+
+    return { ...state, epochExpires: { ...state.epochExpires, ...expiries } };
+  }
+
+  if (type === SET_RI_VAULT_PRODUCTS) {
+    const { vaultProducts } = payload;
+    return { ...state, vaultProducts: { ...state.vaultProducts, ...vaultProducts } };
+  }
+
+  if (type === SET_RI_NONCE) {
+    const { providerId, nonce } = payload;
+    return { ...state, riNonces: { ...state.riNonces, [providerId]: nonce } };
   }
 
   return state;

@@ -3,6 +3,7 @@ const express = require('express');
 
 const { asyncRoute } = require('../lib/helpers');
 const { quoteEngine } = require('../lib/quoteEngine');
+const { signRiQuote } = require('../lib/signQuote');
 const { selectAsset } = require('../store/selectors');
 
 const router = express.Router();
@@ -117,10 +118,13 @@ router.get(
     const amount = BigNumber.from(req.query.amount);
     const period = BigNumber.from(req.query.period).mul(24 * 3600);
     const coverAsset = Number(req.query.coverAsset);
+    const paymentAsset = Number(req.query.paymentAsset);
     const editedCoverId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
+    // make default true and use falsy values
+    const useRiQuote = req.query.useRiQuote;
 
     const store = req.app.get('store');
-    const route = quoteEngine(store, productId, amount, period, coverAsset, editedCoverId);
+    const route = quoteEngine(store, productId, amount, period, coverAsset, editedCoverId, paymentAsset, useRiQuote);
 
     const poolAllocationRequests = route.poolsWithPremium.reduce((poolAllocationRequests, pool) => {
       return [
@@ -131,6 +135,8 @@ router.get(
         },
       ];
     }, []);
+
+    const signature = route.riQuote ? await signRiQuote(route.riQuote) : null;
 
     return {
       body: {
@@ -145,6 +151,7 @@ router.get(
           premiumInAssetWithRefund: route.premiumInAssetWithRefund.toString(),
           poolAllocationRequests,
           asset: selectAsset(store, coverAsset),
+          riRequest: route.riQuote ? { ...route.riQuote, signature } : null,
         },
       },
     };

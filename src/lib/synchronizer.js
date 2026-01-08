@@ -1,5 +1,7 @@
-const { FETCH_COVER_DATA_FROM_ID } = require('./constants');
-const { calculateTrancheId, promiseAllInBatches } = require('./helpers');
+const { ethers } = require('ethers');
+
+const { FETCH_COVER_DATA_FROM_ID, RI_FETCH_COVER_DATA_FROM_BLOCK } = require('./constants');
+const { calculateTrancheId, promiseAllInBatches, decodeRiData } = require('./helpers');
 const config = require('../config');
 const {
   SET_ASSET_RATE,
@@ -10,7 +12,15 @@ const {
   SET_COVER,
   SET_COVER_REFERENCE,
   RESET_PRODUCT_POOLS,
+  SET_RI_ASSET_RATE,
+  SET_RI_VAULT_PRODUCT,
+  SET_RI_VAULT_PRODUCTS,
+  SET_RI_EPOCH_EXPIRIES,
+  SET_VAULT_STAKE,
+  SET_RI_NONCE,
 } = require('../store/actions');
+
+const { WeiPerEther } = ethers.constants;
 
 module.exports = async (store, chainApi, eventsApi) => {
   const updateProduct = async productId => {
@@ -90,6 +100,8 @@ module.exports = async (store, chainApi, eventsApi) => {
       const rate = await chainApi.fetchTokenPriceInAsset(assetId);
       store.dispatch({ type: SET_ASSET_RATE, payload: { assetId, rate } });
     }
+
+    await updateRiAssetNXMRates();
     console.info('Update: Asset rates');
   };
 
@@ -116,18 +128,155 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.info(`Update: Cover reference for cover id ${coverId}`);
   };
 
+  const updateRiVaultProductAllocations = async (coverId, data, dataFormat) => {
+    const allocations = decodeRiData(data, dataFormat);
+    const { vaultProducts } = store.getState();
+    const { productId, originalCoverId, start, period } = await chainApi.fetchCover(coverId);
+    const now = Math.floor(Date.now() / 1000);
+    for (const allocation of allocations) {
+      const { amount, vaultId } = allocation;
+      const vaultProductId = `${productId}_${vaultId}`;
+      const { allocations } = vaultProducts[vaultProductId];
+
+      const newAllocations = allocations.filter(
+        allocation => allocation.originalCoverId !== originalCoverId && allocation.expiryTimestamp > now,
+      );
+
+      store.dispatch({
+        type: SET_RI_VAULT_PRODUCT,
+        payload: {
+          vaultProductId,
+          allocations: [...newAllocations, { amount, coverId, expiryTimestamp: start + period, originalCoverId }],
+        },
+      });
+    }
+    console.info('Update: RI vault products');
+  };
+
+  const updateRiAssetNXMRates = async () => {
+    const { riAssets, assetRates } = store.getState();
+    const assetIds = Object.keys(riAssets);
+
+    for (const assetId of assetIds) {
+      const { assetRate, protocolAssetCorrelationId } = await chainApi.fetchRiAssetRate(assetId);
+      const internalAssetRate = assetRates[protocolAssetCorrelationId];
+      const rate = assetRate.mul(internalAssetRate).div(WeiPerEther);
+      store.dispatch({ type: SET_RI_ASSET_RATE, payload: { assetId, rate } });
+    }
+    console.info('Update: RI asset rates');
+  };
+
+  const updateEpoch = async timestamp => {
+    const { epochExpiries } = store.getState();
+    const expiredEpochs = Object.entries(epochExpiries).filter(([key, value]) => value <= timestamp);
+    const expiries = {};
+
+    for (const epochExpiration of expiredEpochs) {
+      const [vaultId] = epochExpiration;
+      expiries[vaultId] = await chainApi.fetchVaultNextEpochStart(vaultId);
+      await updateRiVaultCapacity(vaultId);
+    }
+
+    store.dispatch({ type: SET_RI_EPOCH_EXPIRIES, payload: { expiries } });
+  };
+
+  const updateRiVaultCapacity = async vaultId => {
+    const { riSubnetworks } = store.getState();
+    const productIds = Object.values(riSubnetworks).reduce((acc, { products }) => {
+      const subnetworkProductIds = Object.keys(products);
+      return [...new Set([...acc, ...subnetworkProductIds])];
+    }, []);
+
+    // Calculate activeStake for each product based on its weight in parallel
+    const [withdrawalAmount, ...stakeResults] = await Promise.all([
+      chainApi.fetchVaultWithdrawals(vaultId),
+      ...productIds.map(productId =>
+        chainApi
+          .fetchVaultStake(vaultId, Object.keys(riSubnetworks), productId, riSubnetworks)
+          .then(activeStake => ({ productId, activeStake })),
+      ),
+    ]);
+
+    // Build productStakes object from results
+    const productStakes = {};
+    stakeResults.forEach(({ productId, activeStake }) => {
+      productStakes[productId] = activeStake;
+    });
+
+    store.dispatch({
+      type: SET_VAULT_STAKE,
+      payload: { vaultId, productIds, productStakes, withdrawalAmount },
+    });
+  };
+
+  const updatesOnBlockMined = async (blockNumber, blockTimestamp) => {
+    return Promise.all([updateAssetRates, () => updateEpoch(blockTimestamp)]);
+  };
+
+  const updateRiData = async () => {
+    const allAllocations = await chainApi.fetchVaultAllocations(RI_FETCH_COVER_DATA_FROM_BLOCK);
+    const { riSubnetworks } = store.getState();
+    const vaultProducts = {};
+    for (const subnetwork of Object.values(riSubnetworks)) {
+      const { vaults, products } = subnetwork;
+      for (const vaultId of vaults) {
+        const withdrawalAmount = await chainApi.fetchVaultWithdrawals(vaultId);
+        for (const product of Object.values(products)) {
+          // Calculate activeStake for each product based on its weight
+          const activeStake = await chainApi.fetchVaultStake(
+            vaultId,
+            Object.keys(riSubnetworks),
+            product.productId,
+            riSubnetworks,
+          );
+          const key = `${product.productId}_${vaultId}`;
+          vaultProducts[key] = {
+            vaultId,
+            product: product.productId,
+            allocations: allAllocations[key] || [],
+            price: product.price,
+            activeStake,
+            withdrawalAmount,
+          };
+        }
+      }
+    }
+    store.dispatch({ type: SET_RI_VAULT_PRODUCTS, payload: { vaultProducts } });
+  };
+
+  const updateRiNonce = async providerId => {
+    const { riNonces } = store.getState();
+    const nonce = riNonces[providerId] + 1;
+
+    store.dispatch({ type: SET_RI_NONCE, payload: { providerId, nonce } });
+  };
+
   eventsApi.on('pool:change', updatePool);
   eventsApi.on('cover:bought', updateCover);
   eventsApi.on('cover:edit', updateCoverReference);
   eventsApi.on('product:change', updateProduct);
   eventsApi.on('tranche:change', updateAll);
   eventsApi.on('bucket:change', updateAll);
-  eventsApi.on('block', updateAssetRates);
+  eventsApi.on('block', updatesOnBlockMined);
+  // RI vault updates
+  eventsApi.on('ri:bought', updateRiVaultProductAllocations);
+  eventsApi.on('ri:withdraw', updateRiVaultCapacity);
+  eventsApi.on('ri:deposit', updateRiVaultCapacity);
+  eventsApi.on('ri:slash', updateRiVaultCapacity);
+  eventsApi.on('ri:setMaxNetworkLimit', updateRiVaultCapacity);
+  eventsApi.on('ri:setNetworkLimit', updateRiVaultCapacity);
 
   return {
     updateAll,
     updateAssetRates,
     updateCover,
     updateCoverReference,
+    updateEpoch,
+    updateRiAssetNXMRates,
+    updateRiVaultProductAllocations,
+    updateRiVaultCapacity,
+    updatesOnBlockMined,
+    updateRiData,
+    updateRiNonce,
   };
 };

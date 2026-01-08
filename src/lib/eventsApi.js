@@ -6,7 +6,7 @@ const { calculateTrancheId, calculateBucketId } = require('./helpers');
 
 const events = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
 
-module.exports = async (provider, contracts) => {
+module.exports = async (provider, contracts, riContracts) => {
   // event emitter
   const emitter = new EventEmitter();
 
@@ -24,12 +24,12 @@ module.exports = async (provider, contracts) => {
 
   // emit an event on every block
   provider.on('block', async blockNumber => {
+    const { timestamp: blockTimestamp } = await provider.getBlock(blockNumber);
     const now = Math.floor(Date.now() / 1000);
     const activeBucketId = calculateBucketId(now);
     const activeTrancheId = calculateTrancheId(now);
 
     if (activeBucketId !== currentBucketId) {
-      const { timestamp: blockTimestamp } = await provider.getBlock(blockNumber);
       const blockBucketId = calculateBucketId(blockTimestamp);
 
       if (blockBucketId === activeBucketId) {
@@ -41,7 +41,6 @@ module.exports = async (provider, contracts) => {
     }
 
     if (activeTrancheId !== currentTrancheId) {
-      const { timestamp: blockTimestamp } = await provider.getBlock(blockNumber);
       const blockTrancheId = calculateTrancheId(blockTimestamp);
 
       if (blockTrancheId === activeTrancheId) {
@@ -52,7 +51,7 @@ module.exports = async (provider, contracts) => {
       }
     }
 
-    emitter.emit('block', blockNumber);
+    emitter.emit('block', blockNumber, blockTimestamp);
   });
 
   // listeners
@@ -103,6 +102,40 @@ module.exports = async (provider, contracts) => {
     console.info(`Event: Claim payout redeemed for cover id ${coverId}`);
     emitter.emit('cover:change', coverId);
   });
+
+  // Cover Ri events
+  cover.on('CoverRiAllocated', (coverId, premium, paymentAsset, data, dataFormat) => {
+    console.info(`Event: Cover ${coverId} allocated with RI`);
+    emitter.emit('ri:bought', coverId, data, dataFormat);
+  });
+
+  for (const contractName of Object.keys(riContracts)) {
+    const vaultId = contractName.split('_')[1];
+    if (contractName.startsWith('vault_')) {
+      riContracts[contractName].on('Withdraw', () => {
+        console.info(`Event: Withdraw for vault ${vaultId}`);
+        emitter.emit('ri:withdraw', vaultId);
+      });
+      riContracts[`vault_${vaultId}`].on('Deposit', () => {
+        console.info(`Event: Deposit for vault ${vaultId}`);
+        emitter.emit('ri:deposit', vaultId);
+      });
+      riContracts[`vault_${vaultId}`].on('OnSlash', () => {
+        console.info(`Event: Slash for vault ${vaultId}`);
+        emitter.emit('ri:slash', vaultId);
+      });
+    }
+    if (contractName.startsWith('delegator_')) {
+      riContracts[`delegator_${vaultId}`].on('SetMaxNetworkLimit', () => {
+        console.info(`Event: SetMaxNetworkLimit for vault ${vaultId}`);
+        emitter.emit('ri:setMaxNetworkLimit', vaultId);
+      });
+      riContracts[`delegator_${vaultId}`].on('SetNetworkLimit', () => {
+        console.info(`Event: SetNetworkLimit for vault ${vaultId}`);
+        emitter.emit('ri:setNetworkLimit', vaultId);
+      });
+    }
+  }
 
   return {
     on: emitter.on.bind(emitter),

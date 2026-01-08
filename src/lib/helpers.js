@@ -13,12 +13,14 @@ const {
   CAPACITY_BUFFER_MINIMUM,
   MAX_ACTIVE_TRANCHES,
   HTTP_STATUS,
+  RI_DATA_FORMATS,
 } = require('./constants');
 const { ApiError } = require('./error');
 const { selectCover } = require('../store/selectors');
 
 const { BigNumber } = ethers;
 const { WeiPerEther, Zero } = ethers.constants;
+const { defaultAbiCoder } = ethers.utils;
 
 /* Bignumber Utils */
 
@@ -301,6 +303,10 @@ function getLatestCover(store, originalCoverId) {
     : selectCover(store, originalCover.latestCoverId);
 }
 
+const decodeRiData = (data, dataFormat) => {
+  return defaultAbiCoder.decode([RI_DATA_FORMATS[dataFormat]], [data]);
+};
+
 module.exports = {
   bnMax,
   bnMin,
@@ -319,4 +325,5 @@ module.exports = {
   getCoverTrancheAllocations,
   calculateCoverRefundInNXM,
   getLatestCover,
+  decodeRiData,
 };
