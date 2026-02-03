@@ -13,11 +13,7 @@ const {
   bnMin,
   getLatestCover,
 } = require('./helpers');
-const {
-  selectAssetRate,
-  selectProductPools,
-  selectProduct,
-} = require('../store/selectors');
+const { selectAssetRate, selectProductPools, selectProduct } = require('../store/selectors');
 
 const { WeiPerEther, Zero } = ethers.constants;
 const { formatEther } = ethers.utils;

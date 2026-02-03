@@ -8,15 +8,6 @@ const {
   SET_COVER_REFERENCE,
   RESET_PRODUCT_POOLS,
 } = require('./actions');
-const config = require('../config');
-
-// Automatically populate productPriorityPoolsFixedPrice
-const customPriorityPoolsOrder = config.get('customPriorityPoolsOrder') || {};
-const productPriorityPoolsFixedPrice = {};
-
-for (const [productId, orderArray] of Object.entries(customPriorityPoolsOrder)) {
-  productPriorityPoolsFixedPrice[productId] = orderArray;
-}
 
 const initialState = {
   assetRates: {}, // assetId -> rate
@@ -32,7 +23,6 @@ const initialState = {
   productPoolIds: {}, // productId -> [ poolIds ]
   products: {}, // productId -> { product }
   covers: {}, // coverId -> { cover }
-  productPriorityPoolsFixedPrice,
   trancheId: 0,
 };
 

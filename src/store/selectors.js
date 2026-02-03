@@ -40,11 +40,6 @@ const selectProductPools = (store, productId, poolId = null) => {
   return poolIds.map(id => poolProducts[`${productId}_${id}`]);
 };
 
-const selectProductPriorityPoolsFixedPrice = (store, productId) => {
-  const { productPriorityPoolsFixedPrice } = store.getState();
-  return productPriorityPoolsFixedPrice[productId];
-};
-
 /**
  * Retrieves all product IDs that are associated with a specific pool.
  *
@@ -66,6 +61,5 @@ module.exports = {
   selectCover,
   selectProduct,
   selectProductPools,
-  selectProductPriorityPoolsFixedPrice,
   selectProductsInPool,
 };
