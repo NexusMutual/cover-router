@@ -17,7 +17,6 @@ const {
   selectAssetRate,
   selectProductPools,
   selectProduct,
-  selectProductPriorityPoolsFixedPrice,
 } = require('../store/selectors');
 
 const { WeiPerEther, Zero } = ethers.constants;
@@ -97,9 +96,10 @@ function calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) {
  * @param {number} period - The cover period in seconds.
  * @param {string} coverAsset - The assetId of the asset to be covered.
  * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting quote for new cover.
+ * @param {Array<Number>} priorityPoolsOrder - An array of pool IDs in the desired order for fixed price products
  * @returns {Array<object>} - An array of objects containing pool allocations and premiums.
  */
-const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId = 0) => {
+const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId = 0, priorityPoolsOrder) => {
   const product = selectProduct(store, productId);
 
   if (!product) {
@@ -147,7 +147,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
     };
   });
 
-  const customPoolIdPriorityFixedPrice = selectProductPriorityPoolsFixedPrice(store, productId) || [];
+  const customPoolIdPriorityFixedPrice = priorityPoolsOrder || [];
   const poolsInPriorityOrder = sortPools(poolsData, customPoolIdPriorityFixedPrice);
   const allocations = calculatePoolAllocations(amountToAllocate, poolsInPriorityOrder);
 
