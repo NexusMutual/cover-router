@@ -27,7 +27,7 @@ describe('cache', function () {
     const state = { test: 'test2' };
     fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
     const loadedState = load(defaultState);
-    expect(loadedState).to.deep.equal({ ...state, assets: {}, productPriorityPoolsFixedPrice: {} });
+    expect(loadedState).to.deep.equal({ ...state, assets: {}, productPriorityPoolsFixedPrice: {}, riSubnetworks: {} });
   });
 
   it('save should write the state to the file', function () {

@@ -50,27 +50,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '5262352631887064160',
+        amount: '37986609171898107700',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '14704040331174418918482',
+        amount: '106142000048342086604649',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '14704040324',
+        amount: '106141999997',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '42116060',
+        amount: '304017318',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '511900000000000000000',
+        amount: '3695180957138099995244',
         asset: assets[255],
       },
     ],
@@ -83,27 +83,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '4756985850516546336',
+        amount: '12938049985519307221',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '13291946909255031471651',
+        amount: '36151436838546948393193',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '13291946902',
+        amount: '36151436821',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '38071470',
+        amount: '103546785',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '462740000000000000000',
+        amount: '1258560239284524998811',
         asset: assets[255],
       },
     ],
@@ -113,27 +113,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '650305069624035537600',
+        amount: '653315188760254613847',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '1817079287575234550428386',
+        amount: '1825490147940693063719621',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '1817079286701',
+        amount: '1825490147062',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '5204570966',
+        amount: '5228661780',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '63259000000000000000000',
+        amount: '63551811997526283240569',
         asset: assets[255],
       },
     ],
@@ -146,27 +146,27 @@ const capacities = [
     availableCapacity: [
       {
         assetId: 0,
-        amount: '37190101809685157280',
+        amount: '49925308525200018802',
         asset: assets[0],
       },
       {
         assetId: 1,
-        amount: '103916403020296337803075',
+        amount: '139501056172592462935684',
         asset: assets[1],
       },
       {
         assetId: 6,
-        amount: '103916402970',
+        amount: '139501056105',
         asset: assets[6],
       },
       {
         assetId: 7,
-        amount: '297642649',
+        amount: '399566024',
         asset: assets[7],
       },
       {
         assetId: 255,
-        amount: '3617700000000000000000',
+        amount: '4856528481042766757053',
         asset: assets[255],
       },
     ],
@@ -420,6 +420,7 @@ const ethQuote = {
       coverAmountInAsset: '100024792163041872',
     },
   ],
+  riRequest: null,
 };
 
 const daiQuote = {
@@ -437,6 +438,7 @@ const daiQuote = {
       coverAmountInAsset: '1148977560552796946',
     },
   ],
+  riRequest: null,
 };
 
 const usdcQuote = {
@@ -454,6 +456,7 @@ const usdcQuote = {
       coverAmountInAsset: '10053553',
     },
   ],
+  riRequest: null,
 };
 
 const quoteMapping = {

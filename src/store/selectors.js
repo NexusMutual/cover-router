@@ -64,12 +64,17 @@ function selectProductsInPool(store, poolId) {
 
 const selectActiveCoverAmount = (store, productId, now) => {
   const { covers } = store.getState();
+  const nowBN = BigNumber.isBigNumber(now) ? now : BigNumber.from(now);
   return Object.values(covers).reduce((acc, cover) => {
-    const isStillActive = now.lt(cover.start + cover.period);
+    const coverEnd = BigNumber.from(cover.start).add(cover.period);
+    const isStillActive = nowBN.lt(coverEnd);
 
     if (isStillActive && cover.productId === productId) {
       for (const pool of cover.poolAllocations) {
-        acc = acc.add(pool.coverAmountInNxm);
+        const coverAmount = BigNumber.isBigNumber(pool.coverAmountInNxm)
+          ? pool.coverAmountInNxm
+          : BigNumber.from(pool.coverAmountInNxm);
+        acc = acc.add(coverAmount);
       }
     }
     return acc;
@@ -98,7 +103,7 @@ const selectVaultProducts = (store, productId, vaultId = null) => {
   }
   const vaultsIds = Array.from(vaultsIdsSet);
 
-  return vaultsIds.map(vaultId => vaultProducts[`${productId}_${vaultId}`]);
+  return vaultsIds.map(vaultId => vaultProducts[`${productId}_${vaultId}`]).filter(Boolean);
 };
 
 const selectVaultEpochExpiryTimestamp = store => {

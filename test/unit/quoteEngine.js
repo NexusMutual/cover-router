@@ -4,7 +4,15 @@ const {
 } = require('ethers');
 const { BigNumber } = require('ethers');
 
-const { MIN_COVER_PERIOD, TRANCHE_DURATION, SECONDS_PER_DAY } = require('../../src/lib/constants');
+const {
+  MIN_COVER_PERIOD,
+  TRANCHE_DURATION,
+  SECONDS_PER_DAY,
+  RI_THRESHOLD,
+  RI_EPOCH_DURATION,
+  RI_COVER_AMOUNT_PERCENTAGE,
+  RI_COVER_AMOUNT_DENOMINATOR,
+} = require('../../src/lib/constants');
 const { quoteEngine } = require('../../src/lib/quoteEngine');
 const mockStore = require('../mocks/store');
 
@@ -176,7 +184,12 @@ describe('Quote Engine tests', () => {
 
     const now = BigNumber.from(Date.now()).div(1000);
 
-    mockStore.covers[1].start = now.sub(TRANCHE_DURATION + 14 * SECONDS_PER_DAY).toNumber();
+    // Set cover to start in a previous tranche (TRANCHE_DURATION + 14 days ago)
+    // but extend period to ensure it's still active
+    const startTime = now.sub(TRANCHE_DURATION + 14 * SECONDS_PER_DAY);
+    mockStore.covers[1].start = startTime.toNumber();
+    // Extend period to ensure cover is still active (original period was 30 days)
+    mockStore.covers[1].period = 120 * 24 * 3600; // 120 days to ensure it's still active
 
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
     const [quote1, quote2, quote3] = quote.poolsWithPremium;
@@ -233,5 +246,289 @@ describe('Quote Engine tests', () => {
     const amount = parseEther('102000');
 
     expect(() => quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 2)).to.throw('Not original cover id');
+  });
+
+  describe('RI Quote Tests', () => {
+    const now = BigNumber.from(Date.now()).div(1000);
+    const period = MIN_COVER_PERIOD;
+    const coverExpiry = now.add(mockStore.products[1].gracePeriod).add(period);
+    const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
+
+    const createRiStore = (riSubnetworks, vaultProducts, activeCoverAmount = null) => {
+      const baseStore = {
+        ...mockStore,
+        riSubnetworks,
+        vaultProducts: {
+          ...mockStore.vaultProducts,
+          ...vaultProducts,
+        },
+        riAssetRates: {
+          ...(mockStore.riAssetRates || {}),
+          0: parseEther('1.2'), // 1 wstETH = 1.2 NXM
+        },
+        epochExpires: {
+          ...(mockStore.epochExpires || {}),
+          '1': BigNumber.from(Date.now()).div(1000).add(365 * 24 * 3600), // Set far in the future to ensure it passes the check
+          '2': BigNumber.from(Date.now()).div(1000).add(365 * 24 * 3600), // Set far in the future to ensure it passes the check
+        },
+      };
+
+      // Set active cover amount if provided (to meet RI threshold)
+      if (activeCoverAmount !== null) {
+        const usdcRate = mockStore.assetRates[6];
+        const riThresholdInNXM = BigNumber.from(RI_THRESHOLD).mul(parseEther('1')).div(usdcRate);
+        const coverAmount = riThresholdInNXM.add(activeCoverAmount);
+        baseStore.covers = {
+          ...(mockStore.covers || {}),
+          100: {
+            start: now.toNumber() - 1000,
+            period: 365 * 24 * 3600,
+            coverAsset: 6,
+            productId: 1,
+            poolAllocations: [
+              {
+                poolId: 1,
+                coverAmountInNxm: coverAmount,
+                premiumInNXM: parseEther('100'),
+              },
+            ],
+          },
+        };
+      }
+
+      return { getState: () => baseStore };
+    };
+
+    it('should return quote excluding RI when useRiVaults is false', () => {
+      const productId = 1;
+      const amount = parseEther('1000');
+      const riStore = createRiStore(
+        {
+          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+            products: {
+              '1': { productId: 1, price: 500, weight: 25 },
+            },
+            vaults: ['1'],
+          },
+        },
+        {
+          '1_1': {
+            vaultId: '1',
+            id: '1',
+            providerId: 1,
+            product: 1,
+            allocations: [],
+            price: 500,
+            activeStake: parseEther('10000'),
+            withdrawalAmount: parseEther('1000'),
+            asset: 0,
+          },
+        },
+      );
+
+      const quote = quoteEngine(riStore, productId, amount, period, 1, 0, 1, false);
+
+      expect(quote.riQuote).to.be.null;
+      expect(quote.poolsWithPremium.length).to.be.greaterThan(0);
+    });
+
+    it('should return quote with 80/20 split (default)', () => {
+      const productId = 1;
+      const amount = parseEther('10000');
+      const riStore = createRiStore(
+        {
+          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+            products: {
+              '1': { productId: 1, price: 500, weight: 25 },
+            },
+            vaults: ['1'],
+          },
+        },
+        {
+          '1_1': {
+            vaultId: '1',
+            id: '1',
+            providerId: 1,
+            product: 1,
+            allocations: [],
+            price: 500,
+            activeStake: parseEther('100000'),
+            withdrawalAmount: parseEther('10000'),
+            asset: 0,
+          },
+        },
+        parseEther('1000000'), // Active cover to meet threshold
+      );
+
+      const quote = quoteEngine(riStore, productId, amount, period, 1, 0, 1, true);
+
+      expect(quote.riQuote).to.not.be.null;
+      const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
+      const expectedRiAmount = amountInNXM.mul(RI_COVER_AMOUNT_PERCENTAGE).div(RI_COVER_AMOUNT_DENOMINATOR);
+      const expectedPoolAmount = amountInNXM.sub(expectedRiAmount);
+
+      // Verify RI quote has approximately 80% of the amount
+      expect(quote.riQuote.amount.gte(expectedRiAmount.mul(99).div(100))).to.be.true;
+      expect(quote.riQuote.amount.lte(expectedRiAmount.mul(101).div(100))).to.be.true;
+
+      // Verify pools get the remaining amount
+      const totalPoolAmount = quote.poolsWithPremium.reduce(
+        (sum, pool) => sum.add(pool.coverAmountInNxm),
+        BigNumber.from(0),
+      );
+      expect(totalPoolAmount.gte(expectedPoolAmount.mul(99).div(100))).to.be.true;
+      expect(totalPoolAmount.lte(expectedPoolAmount.mul(101).div(100))).to.be.true;
+    });
+
+    it('should return quote with 100% RI coverage when product has riCoverAmountPercentage set to 100', () => {
+      const productId = 1;
+      const amount = parseEther('5000');
+      const riStore = createRiStore(
+        {
+          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+            products: {
+              '1': { productId: 1, price: 500, weight: 25, riCoverAmountPercentage: 100 },
+            },
+            vaults: ['1'],
+          },
+        },
+        {
+          '1_1': {
+            vaultId: '1',
+            id: '1',
+            providerId: 1,
+            product: 1,
+            allocations: [],
+            price: 500,
+            activeStake: parseEther('50000'),
+            withdrawalAmount: parseEther('5000'),
+            asset: 0,
+          },
+        },
+        parseEther('1000000'), // Active cover to meet threshold
+      );
+
+      const quote = quoteEngine(riStore, productId, amount, period, 1, 0, 1, true);
+
+      expect(quote.riQuote).to.not.be.null;
+      const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
+      
+      // Should allocate 100% to RI
+      expect(quote.riQuote.amount.gte(amountInNXM.mul(99).div(100))).to.be.true;
+      expect(quote.riQuote.amount.lte(amountInNXM.mul(101).div(100))).to.be.true;
+
+      // Pools should get minimal or zero allocation
+      const totalPoolAmount = quote.poolsWithPremium.reduce(
+        (sum, pool) => sum.add(pool.coverAmountInNxm),
+        BigNumber.from(0),
+      );
+      expect(totalPoolAmount.lte(amountInNXM.mul(5).div(100))).to.be.true; // Less than 5% rounding
+    });
+
+    it('should allocate remaining amount to RI when pool capacity is insufficient', () => {
+      const productId = 1;
+      const amount = parseEther('50000'); // Large amount
+      const riStore = createRiStore(
+        {
+          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+            products: {
+              '1': { productId: 1, price: 500, weight: 25 },
+            },
+            vaults: ['1'],
+          },
+        },
+        {
+          '1_1': {
+            vaultId: '1',
+            id: '1',
+            providerId: 1,
+            product: 1,
+            allocations: [],
+            price: 500,
+            activeStake: parseEther('1000000'), // Large RI capacity
+            withdrawalAmount: parseEther('100000'),
+            asset: 0,
+          },
+        },
+        parseEther('1000000'), // Active cover to meet threshold
+      );
+
+      // Create store with limited pool capacity
+      const limitedPoolStore = {
+        getState: () => {
+          const state = riStore.getState();
+          // Reduce pool capacity significantly
+          return {
+            ...state,
+            poolProducts: {
+              ...state.poolProducts,
+              '1_1': {
+                ...state.poolProducts['1_1'],
+                trancheCapacities: state.poolProducts['1_1'].trancheCapacities.map(() => BigNumber.from(1000)),
+              },
+              '1_2': {
+                ...state.poolProducts['1_2'],
+                trancheCapacities: state.poolProducts['1_2'].trancheCapacities.map(() => BigNumber.from(1000)),
+              },
+            },
+          };
+        },
+      };
+
+      const quote = quoteEngine(limitedPoolStore, productId, amount, period, 1, 0, 1, true);
+
+      expect(quote.riQuote).to.not.be.null;
+      const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
+      
+      // RI should get more than the default 80% because pools are insufficient
+      const defaultRiAmount = amountInNXM.mul(RI_COVER_AMOUNT_PERCENTAGE).div(RI_COVER_AMOUNT_DENOMINATOR);
+      expect(quote.riQuote.amount.gte(defaultRiAmount)).to.be.true;
+    });
+
+    it('should allocate remaining amount to pools when RI capacity is insufficient', () => {
+      const productId = 1;
+      const amount = parseEther('10000');
+      const riStore = createRiStore(
+        {
+          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+            products: {
+              1: { productId: 1, price: 500, weight: 25 },
+            },
+            vaults: ['1'],
+          },
+        },
+        {
+          '1_1': {
+            vaultId: '1',
+            id: '1',
+            providerId: 1,
+            product: 1,
+            allocations: [],
+            price: 500,
+            activeStake: parseEther('100'), // Very limited RI capacity
+            withdrawalAmount: parseEther('10'),
+            asset: 0,
+          },
+        },
+        parseEther('1000000'), // Active cover to meet threshold
+      );
+
+      const quote = quoteEngine(riStore, productId, amount, period, 1, 0, 1, true);
+
+      expect(quote.riQuote).to.not.be.null;
+      const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
+      const defaultRiAmount = amountInNXM.mul(RI_COVER_AMOUNT_PERCENTAGE).div(RI_COVER_AMOUNT_DENOMINATOR);
+      
+      // RI should get less than default 80% because capacity is limited
+      expect(quote.riQuote.amount.lte(defaultRiAmount)).to.be.true;
+      
+      // Pools should get more than the default 20%
+      const totalPoolAmount = quote.poolsWithPremium.reduce(
+        (sum, pool) => sum.add(pool.coverAmountInNxm),
+        BigNumber.from(0),
+      );
+      const defaultPoolAmount = amountInNXM.sub(defaultRiAmount);
+      expect(totalPoolAmount.gte(defaultPoolAmount)).to.be.true;
+    });
   });
 });

@@ -3,6 +3,7 @@ const { expect } = require('chai');
 const { getDefaultProvider } = require('ethers');
 
 const contractFactory = require('../../src/lib/contracts');
+const riContractFactory = require('../../src/lib/riContracts');
 const eventsApiConstructor = require('../../src/lib/eventsApi');
 
 const stakingPoolEvents = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
@@ -39,12 +40,14 @@ const settleEvents = () => new Promise(resolve => setTimeout(resolve, 0));
 describe('Catching events', () => {
   let eventsApi;
   let contracts;
+  let riContracts;
 
   beforeEach(async function () {
     this.timeout(0);
     const provider = getDefaultProvider();
     contracts = contractFactoryMock(addresses, provider);
-    eventsApi = await eventsApiConstructor(provider, contracts);
+    riContracts = riContractFactory(provider);
+    eventsApi = await eventsApiConstructor(provider, contracts, riContracts);
   });
 
   it('should catch all events on staking pool', async function () {

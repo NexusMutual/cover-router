@@ -12,7 +12,7 @@ const {
   calculatePoolUtilizationRate,
   calculateProductCapacity,
 } = require('../../src/lib/capacityEngine');
-const { MAX_COVER_PERIOD, SECONDS_PER_DAY, NXM_PER_ALLOCATION_UNIT } = require('../../src/lib/constants');
+const { MAX_COVER_PERIOD, SECONDS_PER_DAY, NXM_PER_ALLOCATION_UNIT, RI_EPOCH_DURATION } = require('../../src/lib/constants');
 const {
   calculateAvailableCapacityInNXM,
   calculateBasePrice,
@@ -22,6 +22,7 @@ const {
   calculateTrancheId,
   bufferedCapacityInNxm,
 } = require('../../src/lib/helpers');
+const { selectVaultProducts, selectRiAssetRate, selectVaultEpochExpiryTimestamp } = require('../../src/store/selectors');
 const mockStore = require('../mocks/store');
 
 const { BigNumber } = ethers;
@@ -363,8 +364,36 @@ describe('capacityEngine', function () {
         return total.add(availableCapacity);
       }, Zero);
 
+      // Add RI capacity if product is in riSubnetworks
+      const period = SECONDS_PER_DAY.mul(30);
+      const coverExpiry = now.add(storeProduct.gracePeriod).add(period);
+      const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
+      const riVaults = selectVaultProducts(store, product.productId);
+      const expiries = selectVaultEpochExpiryTimestamp(store);
+      const { assetRates, riAssetRates } = store.getState();
+
+      const totalRiCapacity = riVaults
+        .filter(vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry))
+        .reduce((total, vault) => {
+          const assetRate = selectRiAssetRate(store, vault.asset);
+          if (!assetRate) return total;
+          const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
+            if (allocation.expiryTimestamp > now && allocation.active) {
+              acc = acc.add(BigNumber.from(allocation.amount));
+            }
+            return acc;
+          }, Zero);
+          const activeStake = BigNumber.isBigNumber(vault.activeStake) ? vault.activeStake : BigNumber.from(vault.activeStake || 0);
+          const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount) ? vault.withdrawalAmount : BigNumber.from(vault.withdrawalAmount || 0);
+          const availableCapacityInAsset = activeStake.add(withdrawalAmount).sub(allocatedAmount);
+          const availableCapacityInNXM = availableCapacityInAsset.mul(assetRate).div(WeiPerEther);
+          return total.add(availableCapacityInNXM);
+        }, Zero);
+
+      const expectedTotalCapacity = expectedAvailableNXM.add(totalRiCapacity);
+
       const nxmCapacity = product.availableCapacity.find(c => c.assetId === 255);
-      expect(nxmCapacity.amount.toString()).to.equal(expectedAvailableNXM.toString());
+      expect(nxmCapacity.amount.toString()).to.equal(expectedTotalCapacity.toString());
       expect(nxmCapacity.asset).to.deep.equal(assets[255]);
 
       const expectedUsedCapacity = poolIds.reduce((total, poolId) => {
@@ -729,6 +758,33 @@ describe('capacityEngine', function () {
                 );
                 return total.add(poolCapacity);
               }, Zero);
+              
+              // Add RI capacity if product is in riSubnetworks
+              const coverExpiry = now.add(products[expectedProductId].gracePeriod).add(period);
+              const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
+              const riVaults = selectVaultProducts(store, Number(expectedProductId));
+              const expiries = selectVaultEpochExpiryTimestamp(store);
+              const { riAssetRates } = store.getState();
+
+              const totalRiCapacity = riVaults
+                .filter(vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry))
+                .reduce((total, vault) => {
+                  const assetRate = selectRiAssetRate(store, vault.asset);
+                  if (!assetRate) return total;
+                  const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
+                    if (allocation.expiryTimestamp > now && allocation.active) {
+                      acc = acc.add(BigNumber.from(allocation.amount));
+                    }
+                    return acc;
+                  }, Zero);
+                  const activeStake = BigNumber.isBigNumber(vault.activeStake) ? vault.activeStake : BigNumber.from(vault.activeStake || 0);
+                  const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount) ? vault.withdrawalAmount : BigNumber.from(vault.withdrawalAmount || 0);
+                  const availableCapacityInAsset = activeStake.add(withdrawalAmount).sub(allocatedAmount);
+                  const availableCapacityInNXM = availableCapacityInAsset.mul(assetRate).div(WeiPerEther);
+                  return total.add(availableCapacityInNXM);
+                }, Zero);
+              
+              expectedAmount = expectedAmount.add(totalRiCapacity);
             }
           } else {
             // For other assets, convert from NXM using asset rate
@@ -814,6 +870,156 @@ describe('capacityEngine', function () {
 
       const expectedUtilizationRate = totalUsedNXM.mul(10000).div(totalAvailableNXM.add(totalUsedNXM));
       expect(poolCapacityResponse.utilizationRate.toString()).to.equal(expectedUtilizationRate.toString());
+    });
+  });
+
+  describe('RI Capacity Integration', function () {
+    const { assets, assetRates } = mockStore;
+    const now = getCurrentTimestamp();
+    const period = SECONDS_PER_DAY.mul(30);
+
+    const calculatePoolCapacity = (poolProduct, firstUsableTrancheIndex = 0) => {
+      return calculateAvailableCapacityInNXM(
+        poolProduct.trancheCapacities,
+        poolProduct.allocations,
+        firstUsableTrancheIndex,
+      );
+    };
+
+    it('should include RI capacity when calculating product capacity', function () {
+      const productId = '1';
+      const riStore = {
+        getState: () => ({
+          ...mockStore,
+          riSubnetworks: {
+            '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+              products: {
+                '1': {
+                  productId: 1,
+                  price: 500,
+                  weight: 25,
+                },
+              },
+              vaults: ['1', '2'],
+            },
+          },
+          vaultProducts: {
+            '1_1': {
+              vaultId: '1',
+              product: 1,
+              allocations: [],
+              price: 500,
+              activeStake: BigNumber.from(parseEther('1000')), // 1000 in vault asset units
+              withdrawalAmount: BigNumber.from(parseEther('100')),
+              asset: 0, // wstETH
+            },
+            '1_2': {
+              vaultId: '2',
+              product: 1,
+              allocations: [],
+              price: 500,
+              activeStake: BigNumber.from(parseEther('500')),
+              withdrawalAmount: BigNumber.from(parseEther('50')),
+              asset: 0,
+            },
+          },
+          riAssetRates: {
+            0: BigNumber.from(parseEther('1.2')), // 1 wstETH = 1.2 NXM
+          },
+          epochExpires: {
+            '1': now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
+            '2': now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
+          },
+        }),
+      };
+
+      const response = calculateProductCapacity(riStore, productId, {
+        period,
+        now,
+        assets,
+        assetRates,
+      });
+
+      // Calculate expected RI capacity
+      // Vault 1: (1000 + 100) * 1.2 = 1320 NXM
+      // Vault 2: (500 + 50) * 1.2 = 660 NXM
+      // Total RI: 1980 NXM
+      const expectedRiCapacity = parseEther('1980');
+
+      // Get pool capacity from mockStore (which is included in riStore)
+      const state = riStore.getState();
+      const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
+        now,
+        state.products[productId].gracePeriod,
+        period,
+      );
+      const pool1Capacity = calculatePoolCapacity(state.poolProducts['1_1'], firstUsableTrancheIndex);
+      const pool2Capacity = calculatePoolCapacity(state.poolProducts['1_2'], firstUsableTrancheIndex);
+      const totalPoolCapacity = pool1Capacity.add(pool2Capacity);
+
+      // Total should be pool + RI
+      const expectedTotal = totalPoolCapacity.add(expectedRiCapacity);
+
+      const nxmCapacity = response.availableCapacity.find(c => c.assetId === 255);
+      expect(nxmCapacity.amount.toString()).to.equal(expectedTotal.toString());
+    });
+
+    it('should exclude RI capacity when poolId is specified', function () {
+      const productId = '1';
+      const poolId = 1;
+      const riStore = {
+        getState: () => ({
+          ...mockStore,
+          riSubnetworks: {
+            '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+              products: {
+                '1': {
+                  productId: 1,
+                  price: 500,
+                  weight: 25,
+                },
+              },
+              vaults: ['1'],
+            },
+          },
+          vaultProducts: {
+            '1_1': {
+              vaultId: '1',
+              product: 1,
+              allocations: [],
+              price: 500,
+              activeStake: BigNumber.from(parseEther('1000')),
+              withdrawalAmount: BigNumber.from(parseEther('100')),
+              asset: 0,
+            },
+          },
+          riAssetRates: {
+            0: BigNumber.from(parseEther('1.2')),
+          },
+          epochExpires: {
+            '1': now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
+          },
+        }),
+      };
+
+      const response = calculateProductCapacity(riStore, productId, {
+        poolId,
+        period,
+        now,
+        assets,
+        assetRates,
+      });
+
+      // Should only include pool capacity, not RI
+      const state = riStore.getState();
+      const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
+        now,
+        state.products[productId].gracePeriod,
+        period,
+      );
+      const poolCapacity = calculatePoolCapacity(state.poolProducts['1_1'], firstUsableTrancheIndex);
+      const nxmCapacity = response.availableCapacity.find(c => c.assetId === 255);
+      expect(nxmCapacity.amount.toString()).to.equal(poolCapacity.toString());
     });
   });
 });
