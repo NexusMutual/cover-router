@@ -3,8 +3,8 @@ const { expect } = require('chai');
 const { getDefaultProvider } = require('ethers');
 
 const contractFactory = require('../../src/lib/contracts');
-const riContractFactory = require('../../src/lib/riContracts');
 const eventsApiConstructor = require('../../src/lib/eventsApi');
+const riContractFactory = require('../../src/lib/riContracts');
 
 const stakingPoolEvents = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
 const coverEvents = ['CoverBought'];

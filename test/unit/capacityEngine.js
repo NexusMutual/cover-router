@@ -12,7 +12,12 @@ const {
   calculatePoolUtilizationRate,
   calculateProductCapacity,
 } = require('../../src/lib/capacityEngine');
-const { MAX_COVER_PERIOD, SECONDS_PER_DAY, NXM_PER_ALLOCATION_UNIT, RI_EPOCH_DURATION } = require('../../src/lib/constants');
+const {
+  MAX_COVER_PERIOD,
+  SECONDS_PER_DAY,
+  NXM_PER_ALLOCATION_UNIT,
+  RI_EPOCH_DURATION,
+} = require('../../src/lib/constants');
 const {
   calculateAvailableCapacityInNXM,
   calculateBasePrice,
@@ -22,7 +27,11 @@ const {
   calculateTrancheId,
   bufferedCapacityInNxm,
 } = require('../../src/lib/helpers');
-const { selectVaultProducts, selectRiAssetRate, selectVaultEpochExpiryTimestamp } = require('../../src/store/selectors');
+const {
+  selectVaultProducts,
+  selectRiAssetRate,
+  selectVaultEpochExpiryTimestamp,
+} = require('../../src/store/selectors');
 const mockStore = require('../mocks/store');
 
 const { BigNumber } = ethers;
@@ -370,21 +379,26 @@ describe('capacityEngine', function () {
       const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
       const riVaults = selectVaultProducts(store, product.productId);
       const expiries = selectVaultEpochExpiryTimestamp(store);
-      const { assetRates, riAssetRates } = store.getState();
 
       const totalRiCapacity = riVaults
         .filter(vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry))
         .reduce((total, vault) => {
           const assetRate = selectRiAssetRate(store, vault.asset);
-          if (!assetRate) return total;
+          if (!assetRate) {
+            return total;
+          }
           const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
             if (allocation.expiryTimestamp > now && allocation.active) {
               acc = acc.add(BigNumber.from(allocation.amount));
             }
             return acc;
           }, Zero);
-          const activeStake = BigNumber.isBigNumber(vault.activeStake) ? vault.activeStake : BigNumber.from(vault.activeStake || 0);
-          const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount) ? vault.withdrawalAmount : BigNumber.from(vault.withdrawalAmount || 0);
+          const activeStake = BigNumber.isBigNumber(vault.activeStake)
+            ? vault.activeStake
+            : BigNumber.from(vault.activeStake || 0);
+          const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount)
+            ? vault.withdrawalAmount
+            : BigNumber.from(vault.withdrawalAmount || 0);
           const availableCapacityInAsset = activeStake.add(withdrawalAmount).sub(allocatedAmount);
           const availableCapacityInNXM = availableCapacityInAsset.mul(assetRate).div(WeiPerEther);
           return total.add(availableCapacityInNXM);
@@ -758,32 +772,40 @@ describe('capacityEngine', function () {
                 );
                 return total.add(poolCapacity);
               }, Zero);
-              
+
               // Add RI capacity if product is in riSubnetworks
               const coverExpiry = now.add(products[expectedProductId].gracePeriod).add(period);
               const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
               const riVaults = selectVaultProducts(store, Number(expectedProductId));
               const expiries = selectVaultEpochExpiryTimestamp(store);
-              const { riAssetRates } = store.getState();
 
               const totalRiCapacity = riVaults
-                .filter(vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry))
+                .filter(
+                  vault =>
+                    vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry),
+                )
                 .reduce((total, vault) => {
                   const assetRate = selectRiAssetRate(store, vault.asset);
-                  if (!assetRate) return total;
+                  if (!assetRate) {
+                    return total;
+                  }
                   const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
                     if (allocation.expiryTimestamp > now && allocation.active) {
                       acc = acc.add(BigNumber.from(allocation.amount));
                     }
                     return acc;
                   }, Zero);
-                  const activeStake = BigNumber.isBigNumber(vault.activeStake) ? vault.activeStake : BigNumber.from(vault.activeStake || 0);
-                  const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount) ? vault.withdrawalAmount : BigNumber.from(vault.withdrawalAmount || 0);
+                  const activeStake = BigNumber.isBigNumber(vault.activeStake)
+                    ? vault.activeStake
+                    : BigNumber.from(vault.activeStake || 0);
+                  const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount)
+                    ? vault.withdrawalAmount
+                    : BigNumber.from(vault.withdrawalAmount || 0);
                   const availableCapacityInAsset = activeStake.add(withdrawalAmount).sub(allocatedAmount);
                   const availableCapacityInNXM = availableCapacityInAsset.mul(assetRate).div(WeiPerEther);
                   return total.add(availableCapacityInNXM);
                 }, Zero);
-              
+
               expectedAmount = expectedAmount.add(totalRiCapacity);
             }
           } else {
@@ -894,7 +916,7 @@ describe('capacityEngine', function () {
           riSubnetworks: {
             '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
               products: {
-                '1': {
+                1: {
                   productId: 1,
                   price: 500,
                   weight: 25,
@@ -927,8 +949,8 @@ describe('capacityEngine', function () {
             0: BigNumber.from(parseEther('1.2')), // 1 wstETH = 1.2 NXM
           },
           epochExpires: {
-            '1': now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
-            '2': now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
+            1: now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
+            2: now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
           },
         }),
       };
@@ -973,7 +995,7 @@ describe('capacityEngine', function () {
           riSubnetworks: {
             '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
               products: {
-                '1': {
+                1: {
                   productId: 1,
                   price: 500,
                   weight: 25,
@@ -997,7 +1019,7 @@ describe('capacityEngine', function () {
             0: BigNumber.from(parseEther('1.2')),
           },
           epochExpires: {
-            '1': now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
+            1: now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
           },
         }),
       };
