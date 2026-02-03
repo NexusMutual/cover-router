@@ -90,7 +90,7 @@ function calculateProductCapacity(
       productPools,
       firstUsableTrancheIndex,
       true,
-      now, 
+      now,
       assets,
       assetRates,
       editedCover,
@@ -133,7 +133,7 @@ function calculateProductCapacity(
     const coverExpiry = now.add(product.gracePeriod).add(period);
     const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
     const riVaults = selectVaultProducts(store, productId);
-  
+
     totalRiCapacity = riVaults
       .filter(vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry))
       .reduce((total, vault) => {

@@ -122,7 +122,7 @@ const selectVaultEpochExpiryTimestamp = store => {
  */
 const selectRiCoverAmountPercentage = (store, productId) => {
   const { riSubnetworks = {} } = store.getState();
-  
+
   for (const subnetwork of Object.values(riSubnetworks)) {
     if (subnetwork.products && subnetwork.products[String(productId)]) {
       const product = subnetwork.products[String(productId)];
@@ -131,7 +131,7 @@ const selectRiCoverAmountPercentage = (store, productId) => {
       }
     }
   }
-  
+
   return null;
 };
 

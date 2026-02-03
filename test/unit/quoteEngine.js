@@ -9,7 +9,6 @@ const {
   TRANCHE_DURATION,
   SECONDS_PER_DAY,
   RI_THRESHOLD,
-  RI_EPOCH_DURATION,
   RI_COVER_AMOUNT_PERCENTAGE,
   RI_COVER_AMOUNT_DENOMINATOR,
 } = require('../../src/lib/constants');
@@ -251,8 +250,6 @@ describe('Quote Engine tests', () => {
   describe('RI Quote Tests', () => {
     const now = BigNumber.from(Date.now()).div(1000);
     const period = MIN_COVER_PERIOD;
-    const coverExpiry = now.add(mockStore.products[1].gracePeriod).add(period);
-    const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
 
     const createRiStore = (riSubnetworks, vaultProducts, activeCoverAmount = null) => {
       const baseStore = {
@@ -268,8 +265,12 @@ describe('Quote Engine tests', () => {
         },
         epochExpires: {
           ...(mockStore.epochExpires || {}),
-          '1': BigNumber.from(Date.now()).div(1000).add(365 * 24 * 3600), // Set far in the future to ensure it passes the check
-          '2': BigNumber.from(Date.now()).div(1000).add(365 * 24 * 3600), // Set far in the future to ensure it passes the check
+          1: BigNumber.from(Date.now())
+            .div(1000)
+            .add(365 * 24 * 3600), // Set far in the future to ensure it passes the check
+          2: BigNumber.from(Date.now())
+            .div(1000)
+            .add(365 * 24 * 3600), // Set far in the future to ensure it passes the check
         },
       };
 
@@ -306,7 +307,7 @@ describe('Quote Engine tests', () => {
         {
           '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
             products: {
-              '1': { productId: 1, price: 500, weight: 25 },
+              1: { productId: 1, price: 500, weight: 25 },
             },
             vaults: ['1'],
           },
@@ -339,7 +340,7 @@ describe('Quote Engine tests', () => {
         {
           '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
             products: {
-              '1': { productId: 1, price: 500, weight: 25 },
+              1: { productId: 1, price: 500, weight: 25 },
             },
             vaults: ['1'],
           },
@@ -387,7 +388,7 @@ describe('Quote Engine tests', () => {
         {
           '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
             products: {
-              '1': { productId: 1, price: 500, weight: 25, riCoverAmountPercentage: 100 },
+              1: { productId: 1, price: 500, weight: 25, riCoverAmountPercentage: 100 },
             },
             vaults: ['1'],
           },
@@ -412,7 +413,7 @@ describe('Quote Engine tests', () => {
 
       expect(quote.riQuote).to.not.be.null;
       const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
-      
+
       // Should allocate 100% to RI
       expect(quote.riQuote.amount.gte(amountInNXM.mul(99).div(100))).to.be.true;
       expect(quote.riQuote.amount.lte(amountInNXM.mul(101).div(100))).to.be.true;
@@ -432,7 +433,7 @@ describe('Quote Engine tests', () => {
         {
           '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
             products: {
-              '1': { productId: 1, price: 500, weight: 25 },
+              1: { productId: 1, price: 500, weight: 25 },
             },
             vaults: ['1'],
           },
@@ -479,7 +480,7 @@ describe('Quote Engine tests', () => {
 
       expect(quote.riQuote).to.not.be.null;
       const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
-      
+
       // RI should get more than the default 80% because pools are insufficient
       const defaultRiAmount = amountInNXM.mul(RI_COVER_AMOUNT_PERCENTAGE).div(RI_COVER_AMOUNT_DENOMINATOR);
       expect(quote.riQuote.amount.gte(defaultRiAmount)).to.be.true;
@@ -518,10 +519,10 @@ describe('Quote Engine tests', () => {
       expect(quote.riQuote).to.not.be.null;
       const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
       const defaultRiAmount = amountInNXM.mul(RI_COVER_AMOUNT_PERCENTAGE).div(RI_COVER_AMOUNT_DENOMINATOR);
-      
+
       // RI should get less than default 80% because capacity is limited
       expect(quote.riQuote.amount.lte(defaultRiAmount)).to.be.true;
-      
+
       // Pools should get more than the default 20%
       const totalPoolAmount = quote.poolsWithPremium.reduce(
         (sum, pool) => sum.add(pool.coverAmountInNxm),

@@ -1,6 +1,4 @@
 const { BigNumber, ethers } = require('ethers');
-const { parseEther } = ethers.utils;
-const { RI_EPOCH_DURATION } = require('../../src/lib/constants');
 
 process.env.PRIORITY_POOLS_ORDER_186 = '18,22,1';
 process.env.PRIORITY_POOLS_ORDER_195 = '1,23,22,2,5';
@@ -8,8 +6,10 @@ process.env.PRIORITY_POOLS_ORDER_196 = '1,23,22,2,5';
 process.env.PRIORITY_POOLS_ORDER_227 = '8,23,22,2,1,5';
 process.env.PRIORITY_POOLS_ORDER_233 = '22,2,1,23';
 
-// require config after setting env variable
+const { parseEther } = ethers.utils;
 const config = require('../../src/config');
+const { RI_EPOCH_DURATION } = require('../../src/lib/constants');
+// require config after setting env variable
 
 const store = {
   assetRates: {
@@ -537,19 +537,19 @@ const store = {
   riSubnetworks: {
     '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
       products: {
-        '1': { productId: 1, price: 500, weight: 100, riCoverAmountPercentage: 80 },
-        '2': { productId: 2, price: 500, weight: 25 },
-        '3': { productId: 3, price: 500, weight: 25 },
-        '4': { productId: 4, price: 500, weight: 25 },
-        '5': { productId: 5, price: 500, weight: 25, riCoverAmountPercentage: 100 },
+        1: { productId: 1, price: 500, weight: 100, riCoverAmountPercentage: 80 },
+        2: { productId: 2, price: 500, weight: 25 },
+        3: { productId: 3, price: 500, weight: 25 },
+        4: { productId: 4, price: 500, weight: 25 },
+        5: { productId: 5, price: 500, weight: 25, riCoverAmountPercentage: 100 },
       },
       vaults: ['1'],
     },
     '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000001': {
       products: {
-        '1': { productId: 1, price: 500, weight: 100 },
-        '2': { productId: 2, price: 500, weight: 25 },
-        '4': { productId: 4, price: 500, weight: 25 },
+        1: { productId: 1, price: 500, weight: 100 },
+        2: { productId: 2, price: 500, weight: 25 },
+        4: { productId: 4, price: 500, weight: 25 },
       },
       vaults: ['2', '3'],
     },
@@ -659,9 +659,9 @@ const store = {
     0: parseEther('1.2'), // 1 wstETH = 1.2 NXM
   },
   epochExpires: {
-    '1': BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
-    '2': BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
-    '3': BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
+    1: BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
+    2: BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
+    3: BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
   },
   riNonces: {},
 };

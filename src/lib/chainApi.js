@@ -116,13 +116,13 @@ const createChainApi = async (contracts, riContracts) => {
   const fetchVaultStake = async (vaultId, subnetworks = [], productId = null, riSubnetworks = {}) => {
     const operator = '0x51ad1265C8702c9e96Ea61Fe4088C2e22eD4418e';
     let maxWeightedStake = BigNumber.from(0);
-    
+
     for (const subnetworkId of subnetworks) {
       const subnetworkStake = await riContracts[`delegator_${vaultId}`].stake(subnetworkId, operator);
-      
+
       // Determine the weight to use for this subnetwork
       let weight = constants.RI_WEIGHT; // Default weight
-      
+
       if (productId !== null && riSubnetworks && riSubnetworks[subnetworkId]) {
         const subnetwork = riSubnetworks[subnetworkId];
         // Check if this subnetwork contains the product
@@ -130,15 +130,15 @@ const createChainApi = async (contracts, riContracts) => {
           weight = subnetwork.products[String(productId)].weight;
         }
       }
-      
+
       // Calculate weighted stake for this subnetwork: stake * weight / 100
       const weightedStake = subnetworkStake.mul(weight).div(constants.RI_WEIGHT_DENOMINATOR);
-      
+
       // Keep track of the maximum weighted stake across all subnetworks
       // This allows a subnetwork with lower stake but higher weight to win
       maxWeightedStake = weightedStake.gt(maxWeightedStake) ? weightedStake : maxWeightedStake;
     }
-    
+
     return maxWeightedStake;
   };
 
