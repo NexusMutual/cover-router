@@ -33,6 +33,26 @@ const config = convict({
     format: Object,
     default: {},
   },
+  awsAccessKeyId: {
+    doc: 'The AWS credentials key ID',
+    default: '',
+    env: 'AWS_ACCESS_KEY_ID',
+  },
+  awsSecretAccessKey: {
+    doc: 'The AWS credentials secret access key',
+    default: '',
+    env: 'AWS_SECRET_ACCESS_KEY',
+  },
+  awsKmsKeyId: {
+    doc: 'The UUID of the AWS KMS key or AWS KMS key alias',
+    default: '',
+    env: 'AWS_KMS_KEY_ID',
+  },
+  awsRegion: {
+    doc: 'The AWS region where the KMS key is located',
+    default: '',
+    env: 'AWS_REGION',
+  },
 });
 
 // Automatically detect and add PRIORITY_POOLS_ORDER environment variables

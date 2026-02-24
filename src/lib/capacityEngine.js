@@ -1,6 +1,6 @@
 const { ethers, BigNumber } = require('ethers');
 
-const { MAX_COVER_PERIOD } = require('./constants');
+const { MAX_COVER_PERIOD, RI_EPOCH_DURATION } = require('./constants');
 const {
   bnMax,
   calculateTrancheId,
@@ -9,7 +9,14 @@ const {
   getCapacitiesInAssets,
   getLatestCover,
 } = require('./helpers');
-const { selectProduct, selectProductPools, selectProductsInPool } = require('../store/selectors');
+const {
+  selectProduct,
+  selectProductPools,
+  selectProductsInPool,
+  selectVaultProducts,
+  selectRiAssetRate,
+  selectVaultEpochExpiryTimestamp,
+} = require('../store/selectors');
 
 const { WeiPerEther, Zero } = ethers.constants;
 
@@ -60,7 +67,7 @@ function calculatePoolUtilizationRate(products) {
 function calculateProductCapacity(
   store,
   productId,
-  { poolId = null, period, now, assets, assetRates, withPools = true, editedCover = null },
+  { poolId = null, vaultId = null, period, now, assets, assetRates, withPools = true, editedCover = null },
 ) {
   const product = selectProduct(store, productId);
   if (!product) {
@@ -120,10 +127,42 @@ function calculateProductCapacity(
     }
   }
 
+  let totalRiCapacity = Zero;
+  if (!poolId) {
+    const expiries = selectVaultEpochExpiryTimestamp(store);
+    const coverExpiry = now.add(product.gracePeriod).add(period);
+    const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
+    const riVaults = selectVaultProducts(store, productId);
+
+    totalRiCapacity = riVaults
+      .filter(vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry))
+      .reduce((total, vault) => {
+        const assetRate = selectRiAssetRate(store, vault.asset);
+        if (!assetRate) {
+          return total; // Skip vaults without asset rate
+        }
+        const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
+          // cover edit allocation
+          if (allocation.expiryTimestamp > now && allocation.coverId !== editedCover?.coverId && allocation.active) {
+            acc = acc.add(allocation.amount);
+          }
+          return acc;
+        }, BigNumber.from(0));
+        // All values are in vault asset units: activeStake, withdrawalAmount, and allocatedAmount
+        // Convert to NXM at the end
+        const availableCapacityInAsset = vault.activeStake.add(vault.withdrawalAmount).sub(allocatedAmount);
+        const availableCapacityInNXM = availableCapacityInAsset.mul(assetRate).div(WeiPerEther);
+        return total.add(availableCapacityInNXM);
+      }, Zero);
+  }
+
   const { capacityAvailableNXM, capacityUsedNXM, minPrice } = aggregatedData;
 
+  // Add RI capacity to pool capacity
+  const totalCapacityAvailableNXM = capacityAvailableNXM.add(totalRiCapacity);
+
   // The available (i.e. remaining) capacity of a product
-  const capacityInAssets = getCapacitiesInAssets(capacityAvailableNXM, assets, assetRates);
+  const capacityInAssets = getCapacitiesInAssets(totalCapacityAvailableNXM, assets, assetRates);
 
   const capacityData = {
     productId: Number(productId),

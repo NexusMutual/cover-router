@@ -78,7 +78,7 @@ describe('GET /quote', () => {
       })
       .expect('Content-Type', /json/)
       .expect(400);
-    expect(message).to.be.equal('Not enough capacity for the cover amount');
+    expect(message).to.be.include('Not enough capacity');
   });
 
   it('should return 400 error for invalid productId', async function () {

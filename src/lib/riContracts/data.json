@@ -1,0 +1,30 @@
+{
+  "vaults": {
+    "1": "0x285Ef2547470dc830FB079cbe41B5eDFF56E5868",
+    "2": "0xBA8bB5409a4E3ec92ea33f0A4a2872f1D2B9Ff52",
+    "3": "0x99D7544BaF70D5Dc7356E48917809f5CAD8db4B4",
+    "4": "0x9eD949a2F30fAcED19eACe8c86d683dE847e29c2"
+  },
+  "delegators": {
+    "1": "0x6c2C4eeFff7b0218d5219f9b129f814a4392175d",
+    "2": "0xC77DA7aac64eEDD7d686ef3A2A74cb922a094Ee2",
+    "3": "0xf606703b8e346dc19662aa671EBE14D8887CD7B7",
+    "4": "0x43A6A228e394AeC2447398f4C1a604e18f39E227"
+  },
+  "slashers": {
+    "1": "0x89C4fad2b403A12B92E692B01Ede13C251DB30e0",
+    "2": "0x7445019336d2Bcc64fc365092d3eB407b8F1fbB2",
+    "3": "0xb3e82C4F27a18ABF4E50b81914CF3d45B2478d6a",
+    "4": "0x82013332E6c36D327138025E2744783F1671D49a"
+  },
+  "assets": {
+    "0": {
+      "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+      "decimals": 18,
+      "symbol": "wstETH",
+      "abi": ["function stEthPerToken() view returns (uint256)"],
+      "method": "stEthPerToken",
+      "protocolAssetCorrelationId": 0
+    }
+  }
+}

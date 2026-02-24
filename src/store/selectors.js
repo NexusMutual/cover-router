@@ -1,3 +1,5 @@
+const { BigNumber } = require('ethers');
+
 const selectAssetRate = (store, assetId) => {
   const { assetRates } = store.getState();
   return assetRates[assetId];
@@ -60,6 +62,79 @@ function selectProductsInPool(store, poolId) {
   });
 }
 
+const selectActiveCoverAmount = (store, productId, now) => {
+  const { covers } = store.getState();
+  const nowBN = BigNumber.isBigNumber(now) ? now : BigNumber.from(now);
+  return Object.values(covers).reduce((acc, cover) => {
+    const coverEnd = BigNumber.from(cover.start).add(cover.period);
+    const isStillActive = nowBN.lt(coverEnd);
+
+    if (isStillActive && cover.productId === productId) {
+      for (const pool of cover.poolAllocations) {
+        const coverAmount = BigNumber.isBigNumber(pool.coverAmountInNxm)
+          ? pool.coverAmountInNxm
+          : BigNumber.from(pool.coverAmountInNxm);
+        acc = acc.add(coverAmount);
+      }
+    }
+    return acc;
+  }, BigNumber.from(0));
+};
+
+const selectRiAssetRate = (store, assetId) => {
+  const { riAssetRates } = store.getState();
+  return riAssetRates[assetId];
+};
+
+const selectVaultProducts = (store, productId, vaultId = null) => {
+  const { riSubnetworks = {}, vaultProducts = {} } = store.getState();
+
+  if (vaultId !== null && vaultId !== undefined) {
+    const key = `${productId}_${vaultId}`;
+    return vaultProducts[key] || null;
+  }
+
+  const vaultsIdsSet = new Set();
+  for (const subnetwork of Object.values(riSubnetworks)) {
+    const vaults = subnetwork.vaults;
+    if (Object.keys(subnetwork.products).includes(String(productId))) {
+      vaults.forEach(vaultId => vaultsIdsSet.add(vaultId));
+    }
+  }
+  const vaultsIds = Array.from(vaultsIdsSet);
+
+  return vaultsIds.map(vaultId => vaultProducts[`${productId}_${vaultId}`]).filter(Boolean);
+};
+
+const selectVaultEpochExpiryTimestamp = store => {
+  const { epochExpires = {} } = store.getState();
+  return epochExpires;
+};
+
+/**
+ * Gets the RI cover amount percentage for a product from riSubnetworks.
+ * Returns the percentage from the first subnetwork that contains the product,
+ * or null if not found (will default to RI_COVER_AMOUNT_PERCENTAGE constant).
+ *
+ * @param {Object} store - The Redux store containing application state.
+ * @param {number|string} productId - The product ID.
+ * @returns {number|null} The RI cover amount percentage (0-100) or null if not found.
+ */
+const selectRiCoverAmountPercentage = (store, productId) => {
+  const { riSubnetworks = {} } = store.getState();
+
+  for (const subnetwork of Object.values(riSubnetworks)) {
+    if (subnetwork.products && subnetwork.products[String(productId)]) {
+      const product = subnetwork.products[String(productId)];
+      if (product.riCoverAmountPercentage !== undefined) {
+        return product.riCoverAmountPercentage;
+      }
+    }
+  }
+
+  return null;
+};
+
 module.exports = {
   selectAssetRate,
   selectAsset,
@@ -68,4 +143,9 @@ module.exports = {
   selectProductPools,
   selectProductPriorityPoolsFixedPrice,
   selectProductsInPool,
+  selectRiAssetRate,
+  selectVaultProducts,
+  selectActiveCoverAmount,
+  selectVaultEpochExpiryTimestamp,
+  selectRiCoverAmountPercentage,
 };

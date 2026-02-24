@@ -1,5 +1,4 @@
 const { BigNumber, ethers } = require('ethers');
-const { parseEther } = ethers.utils;
 
 process.env.PRIORITY_POOLS_ORDER_186 = '18,22,1';
 process.env.PRIORITY_POOLS_ORDER_195 = '1,23,22,2,5';
@@ -7,8 +6,10 @@ process.env.PRIORITY_POOLS_ORDER_196 = '1,23,22,2,5';
 process.env.PRIORITY_POOLS_ORDER_227 = '8,23,22,2,1,5';
 process.env.PRIORITY_POOLS_ORDER_233 = '22,2,1,23';
 
-// require config after setting env variable
+const { parseEther } = ethers.utils;
 const config = require('../../src/config');
+const { RI_EPOCH_DURATION } = require('../../src/lib/constants');
+// require config after setting env variable
 
 const store = {
   assetRates: {
@@ -533,6 +534,136 @@ const store = {
       ],
     },
   },
+  riSubnetworks: {
+    '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+      products: {
+        1: { productId: 1, price: 500, weight: 100, riCoverAmountPercentage: 80 },
+        2: { productId: 2, price: 500, weight: 25 },
+        3: { productId: 3, price: 500, weight: 25 },
+        4: { productId: 4, price: 500, weight: 25 },
+        5: { productId: 5, price: 500, weight: 25, riCoverAmountPercentage: 100 },
+      },
+      vaults: ['1'],
+    },
+    '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000001': {
+      products: {
+        1: { productId: 1, price: 500, weight: 100 },
+        2: { productId: 2, price: 500, weight: 25 },
+        4: { productId: 4, price: 500, weight: 25 },
+      },
+      vaults: ['2', '3'],
+    },
+  },
+  vaultProducts: {
+    '0_1': {
+      vaultId: '1',
+      product: 0,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x0d3a51a84e0439ce65'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '1_1': {
+      vaultId: '1',
+      product: 1,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x34e946a13810e73994'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '2_1': {
+      vaultId: '1',
+      product: 2,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x0d3a51a84e0439ce65'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '3_1': {
+      vaultId: '1',
+      product: 3,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x0d3a51a84e0439ce65'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '4_1': {
+      vaultId: '1',
+      product: 4,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x0d3a51a84e0439ce65'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '1_2': {
+      vaultId: '2',
+      product: 1,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x557906d5e9daf7b31c'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '2_2': {
+      vaultId: '2',
+      product: 2,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x155e41b57a76bdecc7'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '4_2': {
+      vaultId: '2',
+      product: 4,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x155e41b57a76bdecc7'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '1_3': {
+      vaultId: '3',
+      product: 1,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x056bc75e2d63100000'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '2_3': {
+      vaultId: '3',
+      product: 2,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x015af1d78b58c40000'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+    '4_3': {
+      vaultId: '3',
+      product: 4,
+      allocations: [],
+      price: 500,
+      activeStake: BigNumber.from('0x155e41b57a76bdecc7'),
+      withdrawalAmount: BigNumber.from(0),
+      asset: 0,
+    },
+  },
+  riAssetRates: {
+    0: parseEther('1.2'), // 1 wstETH = 1.2 NXM
+  },
+  epochExpires: {
+    1: BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
+    2: BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
+    3: BigNumber.from(Math.floor(Date.now() / 1000)).add(RI_EPOCH_DURATION * 24 * 3600 + 365 * 24 * 3600),
+  },
+  riNonces: {},
 };
 
 module.exports = store;

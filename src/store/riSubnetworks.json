@@ -1,0 +1,65 @@
+{
+      "0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000": {
+        "products": {
+          "1": {
+            "productId": 1,
+            "price": 500,
+            "weight": 100,
+            "riCoverAmountPercentage": 80
+          },
+          "2": {
+            "productId": 5,
+            "price": 500,
+            "weight": 25,
+            "riCoverAmountPercentage": 100
+          },
+          "3": {
+            "productId": 8,
+            "price": 500,
+            "weight": 25
+          },
+          "4": {
+            "productId": 11,
+            "price": 500,
+            "weight": 25
+          },
+          "5": {
+            "productId": 25,
+            "price": 500,
+            "weight": 25
+          }
+        },
+        "vaults": [
+          "1",
+          "2",
+          "3"
+        ],
+        "maxLimit": 50000000,
+        "limit": 50000000
+      },
+      "0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000001": {
+        "products": {
+          "1": {
+            "productId": 1,
+            "price": 500,
+            "weight": 100
+          },
+          "3": {
+            "productId": 21,
+            "price": 500,
+            "weight": 25
+          },
+          "5": {
+            "productId": 22,
+            "price": 500,
+            "weight": 25
+          }
+        },
+        "vaults": [
+          "2",
+          "3"
+        ],
+        "maxLimit": 50000000,
+        "limit": 50000000
+      }
+}

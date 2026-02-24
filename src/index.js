@@ -10,6 +10,7 @@ const config = require('./config');
 const createChainApi = require('./lib/chainApi');
 const contractFactory = require('./lib/contracts');
 const createEventsApi = require('./lib/eventsApi');
+const riContractFactory = require('./lib/riContracts');
 const swaggerSpec = require('./lib/swagger');
 const createSynchronizer = require('./lib/synchronizer');
 const { capacityRouter, pricingRouter, quoteRouter, reindexRouter } = require('./routes');
@@ -26,11 +27,12 @@ const main = async () => {
   provider.pollingInterval = config.get('pollingInterval');
 
   // contract factory
-  const contracts = await contractFactory(addresses, provider);
+  const contracts = contractFactory(addresses, provider);
+  const riContracts = riContractFactory(provider);
 
   // apis
-  const chainApi = await createChainApi(contracts);
-  const eventsApi = await createEventsApi(provider, contracts);
+  const chainApi = await createChainApi(contracts, riContracts);
+  const eventsApi = await createEventsApi(provider, contracts, riContracts);
 
   const app = express();
 
@@ -72,6 +74,7 @@ const main = async () => {
   if (!isFromCache) {
     console.warn('Missing initial state, delaying startup until the state is fully loaded');
     await synchronizer.updateAssetRates();
+    await synchronizer.updateRiData();
     await synchronizer.updateAll();
   }
 
@@ -83,6 +86,7 @@ const main = async () => {
 
   if (isFromCache) {
     await synchronizer.updateAssetRates();
+    await synchronizer.updateRiData();
     await synchronizer.updateAll();
   }
 };
