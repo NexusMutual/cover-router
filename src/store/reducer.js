@@ -119,10 +119,9 @@ function reducer(state = initialState, { type, payload }) {
   }
 
   if (type === SET_RI_VAULT_PRODUCT) {
-    const { vaultId, productId, vaultProduct } = payload;
-    const key = `${productId}_${vaultId}`;
-    const newVaultProduct = { productId, vaultId, ...vaultProduct };
-    const vaultProducts = { ...state.vaultProducts, [key]: newVaultProduct };
+    const { vaultProductId, allocations } = payload;
+    const vaultProduct = state.vaultProducts[vaultProductId];
+    const vaultProducts = { ...state.vaultProducts, [vaultProductId]: { ...vaultProduct, allocations } };
     return { ...state, vaultProducts };
   }
 

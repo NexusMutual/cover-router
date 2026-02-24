@@ -118,7 +118,7 @@ function calculateVaultCapacity(store, vault, now, coverId = 0) {
     const allocationAmount = BigNumber.isBigNumber(allocation.amount)
       ? allocation.amount
       : BigNumber.from(allocation.amount || 0);
-    if (expiryTimestamp.gt(now) && allocation.coverId !== coverId && allocation.active) {
+    if (expiryTimestamp.gt(now) && allocation.coverId !== coverId) {
       acc = acc.add(allocationAmount);
     }
     return acc;
@@ -172,7 +172,7 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
 
     // Find allocations for this cover that are still active
     const coverAllocations = vault.allocations.filter(
-      allocation => allocation.coverId === cover.coverId && allocation.expiryTimestamp > nowNumber && allocation.active,
+      allocation => allocation.coverId === cover.coverId && allocation.expiryTimestamp > nowNumber,
     );
 
     for (const allocation of coverAllocations) {
@@ -365,7 +365,7 @@ const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId
         : totalActiveCoverInNXM;
 
     const riThresholdInNXM = BigNumber.from(RI_THRESHOLD).mul(WeiPerEther).div(usdcRate);
-    const riMinCoverAmountInNXM = BigNumber.from(RI_MIN_COVER_AMOUNT).div(usdcRate);
+    const riMinCoverAmountInNXM = BigNumber.from(RI_MIN_COVER_AMOUNT).mul(WeiPerEther).div(usdcRate);
 
     // Get product-specific RI cover amount percentage, fall back to default if not set
     const riCoverAmountPercentage = selectRiCoverAmountPercentage(store, productId) ?? RI_COVER_AMOUNT_PERCENTAGE;
