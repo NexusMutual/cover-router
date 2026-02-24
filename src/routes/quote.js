@@ -121,7 +121,7 @@ router.get(
     const paymentAsset = Number(req.query.paymentAsset);
     const editedCoverId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
     // make default true and use falsy values
-    const useRiQuote = req.query.useRiQuote;
+    const useRiQuote = req.query.useRiQuote ?? true;
 
     const dbApiUrl = process.env.DB_API_URL;
     if (!dbApiUrl) {

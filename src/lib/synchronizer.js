@@ -20,6 +20,7 @@ const {
   SET_RI_NONCE,
 } = require('../store/actions');
 
+const { BigNumber } = ethers;
 const { WeiPerEther } = ethers.constants;
 
 module.exports = async (store, chainApi, eventsApi) => {
@@ -139,14 +140,17 @@ module.exports = async (store, chainApi, eventsApi) => {
       const { allocations } = vaultProducts[vaultProductId];
 
       const newAllocations = allocations.filter(
-        allocation => allocation.originalCoverId !== originalCoverId && allocation.expiryTimestamp > now,
+        allocation => allocation.originalCoverId !== originalCoverId && allocation.expiryTimestamp.gt(now),
       );
 
       store.dispatch({
         type: SET_RI_VAULT_PRODUCT,
         payload: {
           vaultProductId,
-          allocations: [...newAllocations, { amount, coverId, expiryTimestamp: start + period, originalCoverId }],
+          allocations: [
+            ...newAllocations,
+            { amount, coverId, expiryTimestamp: BigNumber.from(start).add(period), originalCoverId },
+          ],
         },
       });
     }
@@ -167,8 +171,8 @@ module.exports = async (store, chainApi, eventsApi) => {
   };
 
   const updateEpoch = async timestamp => {
-    const { epochExpiries } = store.getState();
-    const expiredEpochs = Object.entries(epochExpiries).filter(([key, value]) => value <= timestamp);
+    const { epochExpires } = store.getState();
+    const expiredEpochs = Object.entries(epochExpires).filter(([key, value]) => value <= timestamp);
     const expiries = {};
 
     for (const epochExpiration of expiredEpochs) {
@@ -210,7 +214,7 @@ module.exports = async (store, chainApi, eventsApi) => {
   };
 
   const updatesOnBlockMined = async (blockNumber, blockTimestamp) => {
-    return Promise.all([updateAssetRates, () => updateEpoch(blockTimestamp)]);
+    return Promise.all([updateAssetRates(), updateEpoch(blockTimestamp)]);
   };
 
   const updateRiData = async () => {

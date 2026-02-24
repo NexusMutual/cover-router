@@ -9,7 +9,7 @@ const { keccak256 } = ethers.utils;
 const domain = {
   name: 'NexusMutualCover',
   version: '1.0.0',
-  chainId: 0,
+  chainId: 1,
   verifyingContract: addresses.Cover,
 };
 

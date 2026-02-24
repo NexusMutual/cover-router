@@ -162,14 +162,14 @@ const createChainApi = async (contracts, riContracts) => {
 
       for (const coverAllocation of coverAllocations) {
         const { amount, vaultId } = coverAllocation;
-        if (!allocations[vaultId]) {
+        if (!allocations[`${productId}_${vaultId}`]) {
           allocations[`${productId}_${vaultId}`] = [];
         }
 
         allocations[`${productId}_${vaultId}`].push({
           amount,
           coverId,
-          expiryTimestamp: start + period,
+          expiryTimestamp: BigNumber.from(start).add(period),
           originalCoverId,
         });
       }
