@@ -125,7 +125,7 @@ router.get(
       return;
     }
 
-    const priorityPoolsOrderRes = await fetch(`${dbApiUrl}/products/${productId}`);
+    const priorityPoolsOrderRes = await fetch(`${dbApiUrl}/products/${productId}?withAttributes=priorityPools`);
     if (!priorityPoolsOrderRes.ok) {
       console.error('Failed to fetch product data');
       return;
