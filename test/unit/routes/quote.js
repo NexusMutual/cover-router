@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const ethers = require('ethers');
 const { parseUnits } = require('ethers/lib/utils');
+const sinon = require('sinon');
 const supertest = require('supertest');
 
 const initApp = require('../../mocks/server');
@@ -15,8 +16,20 @@ const USDC_ASSET_ID = 6;
 describe('GET /quote', () => {
   let server;
   before(() => {
+    process.env.DB_API_URL = 'http://mock-db-api';
     const app = initApp();
     server = supertest(app);
+  });
+
+  beforeEach(() => {
+    sinon.stub(global, 'fetch').resolves({
+      ok: true,
+      json: sinon.stub().resolves({ priorityPools: [] }),
+    });
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   it('should successfully get a quote for coverAsset 0 - ETH', async function () {
