@@ -125,12 +125,20 @@ router.get(
       return;
     }
 
-    const priorityPoolsOrderRes = await fetch(`${dbApiUrl}/products/${productId}?withAttributes=priorityPools`);
-    if (!priorityPoolsOrderRes.ok) {
-      console.error('Failed to fetch product data');
+    let priorityPoolsOrder = [];
+
+    try {
+      const priorityPoolsOrderRes = await fetch(`${dbApiUrl}/products/${productId}?withAttributes=priorityPools`);
+      if (!priorityPoolsOrderRes.ok) {
+        console.error('Failed to fetch priority pools order', priorityPoolsOrderRes.status);
+        return;
+      }
+      const data = await priorityPoolsOrderRes.json();
+      priorityPoolsOrder = data?.priorityPools;
+    } catch (error) {
+      console.error('Failed to fetch priority pools order', error);
       return;
     }
-    const priorityPoolsOrder = (await priorityPoolsOrderRes.json()?.priorityPools) ?? [];
 
     const store = req.app.get('store');
     const route = quoteEngine(store, productId, amount, period, coverAsset, editedCoverId, priorityPoolsOrder);
