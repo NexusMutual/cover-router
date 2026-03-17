@@ -1,15 +1,6 @@
 const { BigNumber, ethers } = require('ethers');
 const { parseEther } = ethers.utils;
 
-process.env.PRIORITY_POOLS_ORDER_186 = '18,22,1';
-process.env.PRIORITY_POOLS_ORDER_195 = '1,23,22,2,5';
-process.env.PRIORITY_POOLS_ORDER_196 = '1,23,22,2,5';
-process.env.PRIORITY_POOLS_ORDER_227 = '8,23,22,2,1,5';
-process.env.PRIORITY_POOLS_ORDER_233 = '22,2,1,23';
-
-// require config after setting env variable
-const config = require('../../src/config');
-
 const store = {
   assetRates: {
     0: BigNumber.from(10280040304526400n),
@@ -24,9 +15,6 @@ const store = {
     6: { id: 6, symbol: 'USDC', decimals: 6 },
     7: { id: 7, symbol: 'cbBTC', decimals: 8 },
     255: { id: 255, symbol: 'NXM', decimals: 18 },
-  },
-  productPriorityPoolsFixedPrice: {
-    4: config.get('customPriorityPoolsOrder')[186],
   },
   globalCapacityRatio: BigNumber.from(20000),
   poolProducts: {

@@ -119,8 +119,29 @@ router.get(
     const coverAsset = Number(req.query.coverAsset);
     const editedCoverId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;
 
+    const dbApiUrl = process.env.DB_API_URL;
+    if (!dbApiUrl) {
+      console.error('DB_API_URL is not configured');
+      return;
+    }
+
+    let priorityPoolsOrder = [];
+
+    try {
+      const priorityPoolsOrderRes = await fetch(`${dbApiUrl}/products/${productId}?withAttributes=priorityPools`);
+      if (!priorityPoolsOrderRes.ok) {
+        console.error('Failed to fetch priority pools order', priorityPoolsOrderRes.status);
+        return;
+      }
+      const data = await priorityPoolsOrderRes.json();
+      priorityPoolsOrder = data?.priorityPools;
+    } catch (error) {
+      console.error('Failed to fetch priority pools order', error);
+      return;
+    }
+
     const store = req.app.get('store');
-    const route = quoteEngine(store, productId, amount, period, coverAsset, editedCoverId);
+    const route = quoteEngine(store, productId, amount, period, coverAsset, editedCoverId, priorityPoolsOrder);
 
     const poolAllocationRequests = route.poolsWithPremium.reduce((poolAllocationRequests, pool) => {
       return [

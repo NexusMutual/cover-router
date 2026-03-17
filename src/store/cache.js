@@ -42,7 +42,6 @@ const load = defaultState => {
 
   // refresh constants values
   parsedData.assets = { ...defaultState.assets };
-  parsedData.productPriorityPoolsFixedPrice = { ...defaultState.productPriorityPoolsFixedPrice };
 
   return parsedData;
 };
