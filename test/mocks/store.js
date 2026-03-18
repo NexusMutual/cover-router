@@ -535,7 +535,7 @@ const store = {
     },
   },
   riSubnetworks: {
-    '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+    '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000000': {
       products: {
         1: { productId: 1, price: 500, weight: 100, riCoverAmountPercentage: 80 },
         2: { productId: 2, price: 500, weight: 25 },
@@ -545,7 +545,7 @@ const store = {
       },
       vaults: ['1'],
     },
-    '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000001': {
+    '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000001': {
       products: {
         1: { productId: 1, price: 500, weight: 100 },
         2: { productId: 2, price: 500, weight: 25 },

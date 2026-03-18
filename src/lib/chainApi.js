@@ -114,7 +114,7 @@ const createChainApi = async (contracts, riContracts) => {
 
   // RiContracts
   const fetchVaultStake = async (vaultId, subnetworks = [], productId = null, riSubnetworks = {}) => {
-    const operator = '0x51ad1265C8702c9e96Ea61Fe4088C2e22eD4418e';
+    const operator = '0xf99aa6479eb153dca93fd243a06cacd11f3268f9';
     let maxWeightedStake = BigNumber.from(0);
 
     for (const subnetworkId of subnetworks) {
