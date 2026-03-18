@@ -134,6 +134,14 @@ module.exports = async (provider, contracts, riContracts) => {
         console.info(`Event: SetNetworkLimit for vault ${vaultId}`);
         emitter.emit('ri:setNetworkLimit', vaultId);
       });
+      riContracts[`delegator_${vaultId}`].on('SetOperatorNetworkShares', () => {
+        console.info(`Event: SetOperatorNetworkShares for vault ${vaultId}`);
+        emitter.emit('ri:setOperatorNetworkShares', vaultId);
+      });
+      riContracts[`delegator_${vaultId}`].on('SetOperatorNetworkLimit', () => {
+        console.info(`Event: SetOperatorNetworkLimit for vault ${vaultId}`);
+        emitter.emit('ri:setOperatorNetworkLimit', vaultId);
+      });
     }
   }
 
