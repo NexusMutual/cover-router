@@ -1,6 +1,6 @@
 const { addresses } = require('@nexusmutual/deployments');
 const { expect } = require('chai');
-const { ethers, getDefaultProvider } = require('ethers');
+const { getDefaultProvider } = require('ethers');
 
 const contractFactory = require('../../src/lib/contracts');
 const eventsApiConstructor = require('../../src/lib/eventsApi');
@@ -14,22 +14,8 @@ const stakingPoolFactoryEvents = ['StakingPoolCreated'];
 
 function contractFactoryMock(addresses, provider) {
   const factory = contractFactory(addresses, provider);
-  let coverInstance;
 
   const mockedFactory = (name, id = 0, forceNew = false) => {
-    if (name === 'Cover') {
-      if (!coverInstance || forceNew) {
-        const cover = factory('Cover', id, forceNew);
-        // Add CoverRiAllocated event that is not yet in the deployed ABI
-        const fragment = ethers.utils.EventFragment.from(
-          'CoverRiAllocated(uint256 coverId, uint256 premium, address paymentAsset, bytes data, uint8 dataFormat)',
-        );
-        cover.interface.events[fragment.format()] = fragment;
-        coverInstance = cover;
-      }
-      return coverInstance;
-    }
-
     if (name !== 'StakingPoolFactory') {
       console.log({ name, id, forceNew });
       return factory(name, id, forceNew);
@@ -190,7 +176,6 @@ describe('Catching events', () => {
       limitVaultIds.push(vaultId);
     });
 
-    // Emit events with realistic args on each delegator contract
     for (const contractName of Object.keys(riContracts)) {
       if (contractName.startsWith('delegator_')) {
         riContracts[contractName].emit('SetOperatorNetworkShares', subnetwork, operator, 1000);
