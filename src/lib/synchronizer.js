@@ -269,6 +269,8 @@ module.exports = async (store, chainApi, eventsApi) => {
   eventsApi.on('ri:slash', updateRiVaultCapacity);
   eventsApi.on('ri:setMaxNetworkLimit', updateRiVaultCapacity);
   eventsApi.on('ri:setNetworkLimit', updateRiVaultCapacity);
+  eventsApi.on('ri:setOperatorNetworkShares', updateRiVaultCapacity);
+  eventsApi.on('ri:setOperatorNetworkLimit', updateRiVaultCapacity);
 
   return {
     updateAll,
