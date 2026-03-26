@@ -80,9 +80,9 @@ const calculatePoolAllocations = (coverAmount, pools) => {
  * @return {Array<object>} - A sorted array of pool data objects
  */
 function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
-  const prng = splitmix32(Math.floor(Date.now() / (3600 * 1000)));
-  const randomTiebreaker = new Map(poolsData.map(p => [p.poolId, prng()]));
-  const poolIdsByPrice = poolsData
+  const hourSeed = Math.floor(Date.now() / (3600 * 1000));
+  const randomTiebreaker = new Map(poolsData.map(p => [p.poolId, splitmix32(hourSeed ^ Number(p.poolId))()]));
+  const poolIdsByPrice = [...poolsData]
     .sort((a, b) => a.basePrice - b.basePrice || randomTiebreaker.get(a.poolId) - randomTiebreaker.get(b.poolId))
     .map(p => p.poolId);
 
