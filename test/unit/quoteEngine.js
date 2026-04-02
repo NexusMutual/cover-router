@@ -106,7 +106,7 @@ describe('Quote Engine tests', () => {
 
     const {
       poolsWithPremium: [quote1, quote2, quote3],
-    } = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1);
+    } = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 0, [18, 22, 1]);
 
     expect(quote1.poolId).to.be.equal(18); // capacity filled
     expect(quote1.premiumInNxm.toString()).to.be.equal('2740635616438356164');
@@ -150,7 +150,7 @@ describe('Quote Engine tests', () => {
     const now = BigNumber.from(Date.now()).div(1000);
     mockStore.covers[1].start = now.toNumber();
 
-    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
+    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1, [18, 22, 1]);
     const [quote1, quote2] = quote.poolsWithPremium;
 
     expect(quote.poolsWithPremium.length).to.equal(2);
@@ -178,7 +178,7 @@ describe('Quote Engine tests', () => {
 
     mockStore.covers[1].start = now.sub(TRANCHE_DURATION + 14 * SECONDS_PER_DAY).toNumber();
 
-    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
+    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1, [18, 22, 1]);
     const [quote1, quote2, quote3] = quote.poolsWithPremium;
 
     expect(quote.poolsWithPremium.length).to.equal(3);
@@ -209,7 +209,7 @@ describe('Quote Engine tests', () => {
     const now = BigNumber.from(Date.now()).div(1000);
     mockStore.covers[1].start = now.toNumber();
 
-    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
+    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1, [18, 22, 1]);
 
     expect(quote.refundInNXM.toString()).to.equal('55000000000000000000');
     expect(quote.refundInAsset.toString()).to.equal('1579844145760095800970');
@@ -222,7 +222,7 @@ describe('Quote Engine tests', () => {
     const now = BigNumber.from(Date.now()).div(1000);
     mockStore.covers[1].start = now.sub(Math.floor(mockStore.covers[1].period / 2)).toNumber();
 
-    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1);
+    const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1, [18, 22, 1]);
 
     expect(quote.refundInNXM.toString()).to.equal('27500000000000000000');
     expect(quote.refundInAsset.toString()).to.equal('789922072880047900485');

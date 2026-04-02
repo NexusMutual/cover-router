@@ -19,6 +19,22 @@ const { WeiPerEther, Zero } = ethers.constants;
 const { formatEther } = ethers.utils;
 
 /**
+ * Seeded PRNG based on splitmix32. Produces deterministic sequences for a given seed,
+ * ensuring consistent pool ordering within the same time window.
+ */
+function splitmix32(a) {
+  return function () {
+    a |= 0;
+    a = (a + 0x9e3779b9) | 0;
+    let t = a ^ (a >>> 16);
+    t = Math.imul(t, 0x21f0aaad);
+    t = t ^ (t >>> 15);
+    t = Math.imul(t, 0x735a2d97);
+    return ((t = t ^ (t >>> 15)) >>> 0) / 4294967296;
+  };
+}
+
+/**
  * This function allocates the requested amount in the provided list of pools in the provided order.
  * Empty array is returned if not enough capacity is available.
  *
@@ -64,7 +80,11 @@ const calculatePoolAllocations = (coverAmount, pools) => {
  * @return {Array<object>} - A sorted array of pool data objects
  */
 function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
-  const poolIdsByPrice = poolsData.sort((a, b) => a.basePrice - b.basePrice).map(p => p.poolId);
+  const hourSeed = Math.floor(Date.now() / (3600 * 1000));
+  const randomTiebreaker = new Map(poolsData.map(p => [p.poolId, splitmix32(hourSeed ^ Number(p.poolId))()]));
+  const poolIdsByPrice = [...poolsData]
+    .sort((a, b) => a.basePrice - b.basePrice || randomTiebreaker.get(a.poolId) - randomTiebreaker.get(b.poolId))
+    .map(p => p.poolId);
 
   const prioritized = new Set(customPoolIdPriorityFixedPrice.filter(poolId => poolIdsByPrice.includes(poolId)));
   const nonPrioritized = poolIdsByPrice.filter(poolId => !prioritized.has(poolId));
@@ -208,4 +228,6 @@ module.exports = {
   calculateBasePrice,
   calculatePremiumPerYear,
   calculatePoolAllocations,
+  sortPools,
+  splitmix32,
 };
