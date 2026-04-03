@@ -269,6 +269,11 @@ module.exports = async (store, chainApi, eventsApi) => {
   eventsApi.on('ri:slash', updateRiVaultCapacity);
   eventsApi.on('ri:setMaxNetworkLimit', updateRiVaultCapacity);
   eventsApi.on('ri:setNetworkLimit', updateRiVaultCapacity);
+  eventsApi.on('ri:setOperatorNetworkShares', updateRiVaultCapacity);
+  eventsApi.on('ri:setOperatorNetworkLimit', updateRiVaultCapacity);
+  // NOTE on RI events related to capacity updates
+  // operator-vault/network opt-in changes can also affect capacity, but are not event-driven here
+  // since Nexus controls the Nexus operator for onboarded Nexus vaults, refresh capacity manually after opt-in changes
 
   return {
     updateAll,

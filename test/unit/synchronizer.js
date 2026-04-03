@@ -93,4 +93,38 @@ describe('synchronizer', () => {
     expect(cover1AfterEdit.originalCoverId).to.be.equal(1);
     expect(cover1AfterEdit.latestCoverId).to.be.equal(2);
   });
+
+  const riCapacityEvents = [
+    { event: 'ri:setOperatorNetworkShares', stake: '0x1000', withdrawal: '0x500' },
+    { event: 'ri:setOperatorNetworkLimit', stake: '0x2000', withdrawal: '0x800' },
+  ];
+
+  for (const { event, stake, withdrawal } of riCapacityEvents) {
+    it(`should trigger updateRiVaultCapacity on ${event} event`, async () => {
+      const riEventApi = new EventEmitter();
+      const store = createStore({
+        ...extendedMockStore,
+        riSubnetworks: mockStore.riSubnetworks,
+        vaultProducts: mockStore.vaultProducts,
+      });
+      await createSynchronizer(
+        store,
+        {
+          ...mockChainApi,
+          fetchVaultStake: async () => BigNumber.from(stake),
+          fetchVaultWithdrawals: async () => BigNumber.from(withdrawal),
+        },
+        riEventApi,
+      );
+
+      riEventApi.emit(event, '1');
+
+      // Allow async handler to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const { vaultProducts } = store.getState();
+      expect(vaultProducts['1_1'].activeStake.toString()).to.equal(BigNumber.from(stake).toString());
+      expect(vaultProducts['1_1'].withdrawalAmount.toString()).to.equal(BigNumber.from(withdrawal).toString());
+    });
+  }
 });

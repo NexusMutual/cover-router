@@ -329,7 +329,7 @@ describe('Quote Engine tests', () => {
       const amount = parseEther('1000');
       const riStore = createRiStore(
         {
-          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+          '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000000': {
             products: {
               1: { productId: 1, price: 500, weight: 25 },
             },
@@ -362,7 +362,7 @@ describe('Quote Engine tests', () => {
       const amount = parseEther('200000');
       const riStore = createRiStore(
         {
-          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+          '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000000': {
             products: {
               1: { productId: 1, price: 500, weight: 25 },
             },
@@ -434,7 +434,7 @@ describe('Quote Engine tests', () => {
       const amount = parseEther('200000');
       const riStore = createRiStore(
         {
-          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+          '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000000': {
             products: {
               1: { productId: 1, price: 500, weight: 25, riCoverAmountPercentage: 100 },
             },
@@ -479,7 +479,7 @@ describe('Quote Engine tests', () => {
       const amount = parseEther('200000');
       const riStore = createRiStore(
         {
-          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+          '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000000': {
             products: {
               1: { productId: 1, price: 500, weight: 25 },
             },
@@ -540,7 +540,7 @@ describe('Quote Engine tests', () => {
       const amount = parseEther('172000'); // ~6000 NXM; 80% = 4800, we cap RI to 4000, pools get 2000
       const riStore = createRiStore(
         {
-          '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+          '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000000': {
             products: {
               1: { productId: 1, price: 500, weight: 25 },
             },

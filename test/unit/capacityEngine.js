@@ -914,7 +914,7 @@ describe('capacityEngine', function () {
         getState: () => ({
           ...mockStore,
           riSubnetworks: {
-            '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+            '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000000': {
               products: {
                 1: {
                   productId: 1,
@@ -993,7 +993,7 @@ describe('capacityEngine', function () {
         getState: () => ({
           ...mockStore,
           riSubnetworks: {
-            '0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000': {
+            '0xf99aa6479eb153dca93fd243a06cacd11f3268f9000000000000000000000000': {
               products: {
                 1: {
                   productId: 1,
