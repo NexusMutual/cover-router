@@ -153,6 +153,8 @@ module.exports = async (store, chainApi, eventsApi) => {
           ],
         },
       });
+
+      store.dispatch({ type: SET_RI_NONCE, payload: { providerId: allocation.providerId } });
     }
     console.info('Update: RI vault products');
   };
@@ -246,13 +248,6 @@ module.exports = async (store, chainApi, eventsApi) => {
       }
     }
     store.dispatch({ type: SET_RI_VAULT_PRODUCTS, payload: { vaultProducts } });
-  };
-
-  const updateRiNonce = async providerId => {
-    const { riNonces } = store.getState();
-    const nonce = riNonces[providerId] + 1;
-
-    store.dispatch({ type: SET_RI_NONCE, payload: { providerId, nonce } });
   };
 
   eventsApi.on('pool:change', updatePool);

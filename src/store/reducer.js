@@ -142,8 +142,9 @@ function reducer(state = initialState, { type, payload }) {
   }
 
   if (type === SET_RI_NONCE) {
-    const { providerId, nonce } = payload;
-    return { ...state, riNonces: { ...state.riNonces, [providerId]: nonce } };
+    const { providerId } = payload;
+    const nonce = state.riNonces[providerId] || 0;
+    return { ...state, riNonces: { ...state.riNonces, [providerId]: nonce + 1 } };
   }
 
   return state;
