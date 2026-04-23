@@ -58,6 +58,7 @@ module.exports = {
   RI_COVER_AMOUNT_PERCENTAGE: 80,
   RI_COVER_AMOUNT_DENOMINATOR: 100,
   RI_EPOCH_DURATION: 70, // days
+  RI_OPERATOR: '0x51ad1265C8702c9e96Ea61Fe4088C2e22eD4418e',
 
   RI_DATA_FORMATS: {
     1: 'tuple(uint256 amount,uint256 vaultId, uint256 subnetworkId,uint256 providerId)[]',
