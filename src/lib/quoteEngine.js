@@ -261,7 +261,15 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
         availableCapacityInNXM,
       };
     })
-    .sort((a, b) => a.availableCapacityInNXM.sub(b.availableCapacityInNXM).toNumber());
+    .sort((a, b) => {
+      if (a.availableCapacityInNXM.lt(b.availableCapacityInNXM)) {
+        return -1;
+      }
+      if (a.availableCapacityInNXM.gt(b.availableCapacityInNXM)) {
+        return 1;
+      }
+      return 0;
+    });
 
   if (totalAvailableCapacity.lt(amountInNXM)) {
     return null;
