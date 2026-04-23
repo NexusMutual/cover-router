@@ -48,6 +48,11 @@ const config = convict({
     default: '',
     env: 'AWS_REGION',
   },
+  providerUrl: {
+    doc: 'Providers URL (alias used by RI signer)',
+    env: 'PROVIDER_URL',
+    default: '',
+  },
 });
 
 config.validate({ allowed: 'strict' });
