@@ -223,9 +223,14 @@ module.exports = async (store, chainApi, eventsApi) => {
     const allAllocations = await chainApi.fetchVaultAllocations(RI_FETCH_COVER_DATA_FROM_BLOCK);
     const { riSubnetworks } = store.getState();
     const vaultProducts = {};
+    const expiries = {};
     for (const subnetwork of Object.values(riSubnetworks)) {
       const { vaults, products } = subnetwork;
       for (const vaultId of vaults) {
+        if (!expiries[vaultId]) {
+          expiries[vaultId] = await chainApi.fetchVaultNextEpochStart(vaultId);
+        }
+
         const withdrawalAmount = await chainApi.fetchVaultWithdrawals(vaultId);
         for (const product of Object.values(products)) {
           // Calculate activeStake for each product based on its weight
@@ -248,6 +253,7 @@ module.exports = async (store, chainApi, eventsApi) => {
       }
     }
     store.dispatch({ type: SET_RI_VAULT_PRODUCTS, payload: { vaultProducts } });
+    store.dispatch({ type: SET_RI_EPOCH_EXPIRIES, payload: { expiries } });
   };
 
   eventsApi.on('pool:change', updatePool);
