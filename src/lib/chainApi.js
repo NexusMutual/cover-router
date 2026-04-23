@@ -114,11 +114,10 @@ const createChainApi = async (contracts, riContracts) => {
 
   // RiContracts
   const fetchVaultStake = async (vaultId, subnetworks = [], productId = null, riSubnetworks = {}) => {
-    const operator = '0x51ad1265C8702c9e96Ea61Fe4088C2e22eD4418e';
     let maxWeightedStake = BigNumber.from(0);
 
     for (const subnetworkId of subnetworks) {
-      const subnetworkStake = await riContracts[`delegator_${vaultId}`].stake(subnetworkId, operator);
+      const subnetworkStake = await riContracts[`delegator_${vaultId}`].stake(subnetworkId, constants.RI_OPERATOR);
 
       // Determine the weight to use for this subnetwork
       let weight = constants.RI_WEIGHT; // Default weight
@@ -145,7 +144,7 @@ const createChainApi = async (contracts, riContracts) => {
   const fetchVaultWithdrawals = async vaultId => {
     console.log(riContracts[`vault_${vaultId}`].address);
     const currentEpoch = await riContracts[`vault_${vaultId}`].currentEpoch();
-    const withdrawalAmount = await riContracts[`vault_${vaultId}`].withdrawals(currentEpoch + 1);
+    const withdrawalAmount = await riContracts[`vault_${vaultId}`].withdrawals(currentEpoch.add(1));
     return withdrawalAmount.mul(constants.RI_WEIGHT).div(constants.RI_WEIGHT_DENOMINATOR);
   };
 
@@ -158,7 +157,7 @@ const createChainApi = async (contracts, riContracts) => {
       const { coverId, data, dataFormat } = args;
 
       const { start, period, productId, originalCoverId } = await fetchCover(coverId);
-      const coverAllocations = defaultAbiCoder.decode([constants.RI_DATA_FORMATS[dataFormat]], [data]);
+      const coverAllocations = defaultAbiCoder.decode([constants.RI_DATA_FORMATS[dataFormat]], data);
 
       for (const coverAllocation of coverAllocations) {
         const { amount, vaultId } = coverAllocation;

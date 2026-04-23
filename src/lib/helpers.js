@@ -304,7 +304,8 @@ function getLatestCover(store, originalCoverId) {
 }
 
 const decodeRiData = (data, dataFormat) => {
-  return defaultAbiCoder.decode([RI_DATA_FORMATS[dataFormat]], [data]);
+  const [allocations] = defaultAbiCoder.decode([RI_DATA_FORMATS[dataFormat]], data);
+  return allocations;
 };
 
 module.exports = {
