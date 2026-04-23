@@ -244,7 +244,9 @@ describe('Quote Engine tests', () => {
     const productId = 4;
     const amount = parseEther('102000');
 
-    expect(() => quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 2)).to.throw('Not original cover id');
+    expect(() => quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 2, [], 1, false)).to.throw(
+      'Not original cover id',
+    );
   });
 
   describe('RI Quote Tests', () => {
@@ -351,7 +353,7 @@ describe('Quote Engine tests', () => {
         },
       );
 
-      const quote = quoteEngine(riStore, productId, amount, period, 1, 0, 1, false);
+      const quote = quoteEngine(riStore, productId, amount, period, 1, 0, [], 1, false);
 
       expect(quote.riQuote).to.be.null;
       expect(quote.poolsWithPremium.length).to.be.greaterThan(0);
@@ -409,7 +411,7 @@ describe('Quote Engine tests', () => {
         },
       };
 
-      const quote = quoteEngine(riStoreWithPoolCap, productId, amount, period, 1, 0, 1, true);
+      const quote = quoteEngine(riStoreWithPoolCap, productId, amount, period, 1, 0, [], 1, true);
 
       expect(quote.riQuote).to.not.be.null;
       const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
@@ -457,7 +459,7 @@ describe('Quote Engine tests', () => {
         parseEther('1000000'), // Active cover to meet threshold
       );
 
-      const quote = quoteEngine(riStore, productId, amount, period, 1, 0, 1, true);
+      const quote = quoteEngine(riStore, productId, amount, period, 1, 0, [], 1, true);
 
       expect(quote.riQuote).to.not.be.null;
       const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
@@ -524,7 +526,7 @@ describe('Quote Engine tests', () => {
         },
       };
 
-      const quote = quoteEngine(limitedPoolStore, productId, amount, period, 1, 0, 1, true);
+      const quote = quoteEngine(limitedPoolStore, productId, amount, period, 1, 0, [], 1, true);
 
       expect(quote.riQuote).to.not.be.null;
       const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
@@ -590,7 +592,7 @@ describe('Quote Engine tests', () => {
         },
       };
 
-      const quote = quoteEngine(storeWithPoolCap, productId, amount, period, 1, 0, 1, true);
+      const quote = quoteEngine(storeWithPoolCap, productId, amount, period, 1, 0, [], 1, true);
 
       expect(quote.riQuote).to.not.be.null;
       const amountInNXM = amount.mul(parseEther('1')).div(mockStore.assetRates[1]);
