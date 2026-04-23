@@ -1,4 +1,5 @@
 const { BigNumber, ethers } = require('ethers');
+
 const { parseEther } = ethers.utils;
 const { RI_EPOCH_DURATION } = require('../../src/lib/constants');
 

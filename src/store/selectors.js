@@ -67,9 +67,7 @@ const selectActiveCoverAmount = (store, productId, now) => {
     if (isStillActive && cover.productId === productId) {
       for (const pool of cover.poolAllocations) {
         const rawCoverAmount = pool.coverAmountInNXM ?? pool.coverAmountInNxm ?? 0;
-        const coverAmount = BigNumber.isBigNumber(rawCoverAmount)
-          ? rawCoverAmount
-          : BigNumber.from(rawCoverAmount);
+        const coverAmount = BigNumber.isBigNumber(rawCoverAmount) ? rawCoverAmount : BigNumber.from(rawCoverAmount);
         acc = acc.add(coverAmount);
       }
     }

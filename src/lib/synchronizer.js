@@ -276,6 +276,5 @@ module.exports = async (store, chainApi, eventsApi) => {
     updateRiVaultCapacity,
     updatesOnBlockMined,
     updateRiData,
-    updateRiNonce,
   };
 };

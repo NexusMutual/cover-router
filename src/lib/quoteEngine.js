@@ -339,7 +339,17 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
  * @param {boolean} useRiVaults - Whether to use RI vaults for the quote.
  * @returns {Array<object>} - An array of objects containing pool allocations and premiums.
  */
-const quoteEngine = (store, productId, amount, period, coverAsset, editedCoverId = 0, priorityPoolsOrder, paymentAsset, useRiVaults) => {
+const quoteEngine = (
+  store,
+  productId,
+  amount,
+  period,
+  coverAsset,
+  editedCoverId = 0,
+  priorityPoolsOrder,
+  paymentAsset,
+  useRiVaults,
+) => {
   const product = selectProduct(store, productId);
 
   if (!product) {
