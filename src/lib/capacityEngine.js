@@ -67,7 +67,7 @@ function calculatePoolUtilizationRate(products) {
 function calculateProductCapacity(
   store,
   productId,
-  { poolId = null, vaultId = null, period, now, assets, assetRates, withPools = true, editedCover = null },
+  { poolId = null, period, now, assets, assetRates, withPools = true, editedCover = null },
 ) {
   const product = selectProduct(store, productId);
   if (!product) {
