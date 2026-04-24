@@ -46,7 +46,7 @@ const createChainApi = async (contracts, riContracts) => {
     const products = await coverProducts.getProducts();
     const productTypes = await coverProducts.getProductTypes();
 
-    return products.map((product, id) => {
+    return products.map(product => {
       const { productType, capacityReductionRatio, useFixedPrice, isDeprecated } = product;
       const gracePeriod = productTypes[product.productType].gracePeriod;
       return { productType, capacityReductionRatio, useFixedPrice, gracePeriod, isDeprecated };
@@ -108,37 +108,13 @@ const createChainApi = async (contracts, riContracts) => {
     const stakingPool = contracts('StakingPool', poolId);
     console.info(`Fetching allocations for cover ${coverId} in pool ${poolId} at address ${stakingPool.address}`);
 
-    const packedTrancheAllocation = await stakingPool.coverTrancheAllocations(allocationId);
-    return packedTrancheAllocation;
+    return stakingPool.coverTrancheAllocations(allocationId);
   };
 
   // RiContracts
-  const fetchVaultStake = async (vaultId, subnetworks = [], productId = null, riSubnetworks = {}) => {
-    let maxWeightedStake = BigNumber.from(0);
 
-    for (const subnetworkId of subnetworks) {
-      const subnetworkStake = await riContracts[`delegator_${vaultId}`].stake(subnetworkId, constants.RI_OPERATOR);
-
-      // Determine the weight to use for this subnetwork
-      let weight = constants.RI_WEIGHT; // Default weight
-
-      if (productId !== null && riSubnetworks && riSubnetworks[subnetworkId]) {
-        const subnetwork = riSubnetworks[subnetworkId];
-        // Check if this subnetwork contains the product
-        if (subnetwork.products && subnetwork.products[String(productId)]) {
-          weight = subnetwork.products[String(productId)].weight;
-        }
-      }
-
-      // Calculate weighted stake for this subnetwork: stake * weight / 100
-      const weightedStake = subnetworkStake.mul(weight).div(constants.RI_WEIGHT_DENOMINATOR);
-
-      // Keep track of the maximum weighted stake across all subnetworks
-      // This allows a subnetwork with lower stake but higher weight to win
-      maxWeightedStake = weightedStake.gt(maxWeightedStake) ? weightedStake : maxWeightedStake;
-    }
-
-    return maxWeightedStake;
+  const fetchSubnetworkStake = async (vaultId, subnetworkId) => {
+    return await riContracts[`delegator_${vaultId}`].stake(subnetworkId, constants.RI_OPERATOR);
   };
 
   const fetchVaultWithdrawals = async vaultId => {
@@ -149,12 +125,20 @@ const createChainApi = async (contracts, riContracts) => {
   };
 
   const fetchVaultAllocations = async blockNumber => {
-    const events = await cover.queryFilter(cover.filters.CoverRiAllocated(), blockNumber);
+    const latestBlockNumber = await cover.provider.getBlockNumber();
+    const startBlockNumber = blockNumber;
+    const events = [];
+
+    for (let fromBlock = startBlockNumber; fromBlock <= latestBlockNumber; fromBlock += 1000) {
+      const toBlock = Math.min(fromBlock + 999, latestBlockNumber);
+      const batchEvents = await cover.queryFilter(cover.filters.CoverRiAllocated(), fromBlock, toBlock);
+      events.push(...batchEvents);
+    }
 
     const allocations = {};
+
     for (const event of events) {
-      const { args } = event;
-      const { coverId, data, dataFormat } = args;
+      const { coverId, data, dataFormat } = event.args;
 
       const { start, period, productId, originalCoverId } = await fetchCover(coverId);
       const coverAllocations = defaultAbiCoder.decode([constants.RI_DATA_FORMATS[dataFormat]], data);
@@ -202,7 +186,7 @@ const createChainApi = async (contracts, riContracts) => {
     fetchCover,
     fetchCoverPoolTrancheAllocations,
     fetchCoverReference,
-    fetchVaultStake,
+    fetchSubnetworkStake,
     fetchVaultWithdrawals,
     fetchVaultAllocations,
     fetchVaultNextEpochStart,

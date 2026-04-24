@@ -323,6 +323,7 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
       amount: allocationAmount.mul(riAssetRate).div(WeiPerEther),
       riVaultId: vault.id,
       providerId: vault.providerId,
+      subnetworkId: vault.subnetworkId,
     });
   }
 

@@ -1,6 +1,6 @@
 const { ethers } = require('ethers');
 
-const { FETCH_COVER_DATA_FROM_ID, RI_FETCH_COVER_DATA_FROM_BLOCK } = require('./constants');
+const constants = require('./constants');
 const { calculateTrancheId, promiseAllInBatches, decodeRiData } = require('./helpers');
 const config = require('../config');
 const {
@@ -22,6 +22,7 @@ const {
 
 const { BigNumber } = ethers;
 const { WeiPerEther } = ethers.constants;
+const { FETCH_COVER_DATA_FROM_ID, RI_FETCH_COVER_DATA_FROM_BLOCK } = constants;
 
 module.exports = async (store, chainApi, eventsApi) => {
   const updateProduct = async productId => {
@@ -95,15 +96,26 @@ module.exports = async (store, chainApi, eventsApi) => {
   };
 
   const updateAssetRates = async () => {
+    // Protocol Assets
     const { assets } = store.getState();
     const assetIds = Object.keys(assets);
     for (const assetId of assetIds) {
       const rate = await chainApi.fetchTokenPriceInAsset(assetId);
       store.dispatch({ type: SET_ASSET_RATE, payload: { assetId, rate } });
     }
-
-    await updateRiAssetNXMRates();
     console.info('Update: Asset rates');
+
+    // RI Assets
+    const { riAssets, assetRates } = store.getState();
+    const riAssetIds = Object.keys(riAssets);
+
+    for (const assetId of riAssetIds) {
+      const { assetRate, protocolAssetCorrelationId } = await chainApi.fetchRiAssetRate(assetId);
+      const internalAssetRate = assetRates[protocolAssetCorrelationId];
+      const rate = assetRate.mul(internalAssetRate).div(WeiPerEther);
+      store.dispatch({ type: SET_RI_ASSET_RATE, payload: { assetId, rate } });
+    }
+    console.info('Update: RI asset rates');
   };
 
   const updateCover = async coverId => {
@@ -159,19 +171,6 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.info('Update: RI vault products');
   };
 
-  const updateRiAssetNXMRates = async () => {
-    const { riAssets, assetRates } = store.getState();
-    const assetIds = Object.keys(riAssets);
-
-    for (const assetId of assetIds) {
-      const { assetRate, protocolAssetCorrelationId } = await chainApi.fetchRiAssetRate(assetId);
-      const internalAssetRate = assetRates[protocolAssetCorrelationId];
-      const rate = assetRate.mul(internalAssetRate).div(WeiPerEther);
-      store.dispatch({ type: SET_RI_ASSET_RATE, payload: { assetId, rate } });
-    }
-    console.info('Update: RI asset rates');
-  };
-
   const updateEpoch = async timestamp => {
     const { epochExpires } = store.getState();
     const expiredEpochs = Object.entries(epochExpires).filter(([key, value]) => value <= timestamp);
@@ -186,28 +185,57 @@ module.exports = async (store, chainApi, eventsApi) => {
     store.dispatch({ type: SET_RI_EPOCH_EXPIRIES, payload: { expiries } });
   };
 
+  const fetchVaultStake = (productId, subnetworks, subnetworkStakes) => {
+    let maxWeightedStake = BigNumber.from(0);
+    let maxStakeSubnetworkId = null;
+
+    for (const subnetwork of subnetworks) {
+      const subnetworkStake = subnetworkStakes[subnetwork.id];
+      const subnetworkProduct = subnetwork.products[String(productId)];
+
+      if (!subnetworkProduct) {
+        continue;
+      }
+
+      const weight = subnetworkProduct.weight || constants.RI_WEIGHT;
+
+      // Calculate weighted stake for this subnetwork: stake * weight / 100
+      const weightedStake = subnetworkStake.mul(weight).div(constants.RI_WEIGHT_DENOMINATOR);
+
+      // Keep track of the maximum weighted stake across all subnetworks
+      // This allows a subnetwork with lower stake but higher weight to win
+      maxWeightedStake = weightedStake.gt(maxWeightedStake) ? weightedStake : maxWeightedStake;
+      maxStakeSubnetworkId = subnetwork.id;
+    }
+
+    return {
+      activeStake: maxWeightedStake,
+      subnetworkId: maxStakeSubnetworkId,
+    };
+  };
+
   const updateRiVaultCapacity = async vaultId => {
     const { riSubnetworks } = store.getState();
-    const productIds = Object.values(riSubnetworks).reduce((acc, { products }) => {
-      const subnetworkProductIds = Object.keys(products);
-      return [...new Set([...acc, ...subnetworkProductIds])];
-    }, []);
+    const vaultSubnetworks = Object.entries(riSubnetworks)
+      .map(([subnetworkId, subnetwork]) => ({ id: subnetworkId, ...subnetwork }))
+      .filter(subnetwork => subnetwork.vaults.includes(vaultId));
 
-    // Calculate activeStake for each product based on its weight in parallel
-    const [withdrawalAmount, ...stakeResults] = await Promise.all([
-      chainApi.fetchVaultWithdrawals(vaultId),
-      ...productIds.map(productId =>
-        chainApi
-          .fetchVaultStake(vaultId, Object.keys(riSubnetworks), productId, riSubnetworks)
-          .then(activeStake => ({ productId, activeStake })),
-      ),
-    ]);
+    // get deduplicated product ids from all subnetworks of this vault
+    const productIds = [...new Set(vaultSubnetworks.flatMap(subnetwork => Object.keys(subnetwork.products)))];
 
-    // Build productStakes object from results
-    const productStakes = {};
-    stakeResults.forEach(({ productId, activeStake }) => {
-      productStakes[productId] = activeStake;
-    });
+    const subnetworkStakes = {};
+
+    for (const subnetwork of vaultSubnetworks) {
+      subnetworkStakes[subnetwork.id] = await chainApi.fetchSubnetworkStake(vaultId, subnetwork.id);
+    }
+
+    const withdrawalAmount = await chainApi.fetchVaultWithdrawals(vaultId);
+
+    // calculate activeStake for each product based on its weight
+    const productStakes = productIds.reduce((acc, productId) => {
+      const { activeStake, subnetworkId } = fetchVaultStake(productId, vaultSubnetworks, subnetworkStakes);
+      return { ...acc, [productId]: { activeStake, subnetworkId } };
+    }, {});
 
     store.dispatch({
       type: SET_VAULT_STAKE,
@@ -224,34 +252,42 @@ module.exports = async (store, chainApi, eventsApi) => {
     const { riSubnetworks } = store.getState();
     const vaultProducts = {};
     const expiries = {};
+    const subnetworkStakes = {};
+    const vaultProductsMaping = {};
+
+    // Fetch vault stakes and expiries
     for (const subnetwork of Object.values(riSubnetworks)) {
       const { vaults, products } = subnetwork;
       for (const vaultId of vaults) {
+        subnetworkStakes[vaultId] = await chainApi.fetchSubnetworkStake(vaultId, subnetwork.id);
+        vaultProductsMaping[vaultId] = !vaultProductsMaping[vaultId]
+          ? [...products]
+          : new Set([...vaultProductsMaping[vaultId], ...products]);
         if (!expiries[vaultId]) {
           expiries[vaultId] = await chainApi.fetchVaultNextEpochStart(vaultId);
         }
-
-        const withdrawalAmount = await chainApi.fetchVaultWithdrawals(vaultId);
-        for (const product of Object.values(products)) {
-          // Calculate activeStake for each product based on its weight
-          const activeStake = await chainApi.fetchVaultStake(
-            vaultId,
-            Object.keys(riSubnetworks),
-            product.productId,
-            riSubnetworks,
-          );
-          const key = `${product.productId}_${vaultId}`;
-          vaultProducts[key] = {
-            vaultId,
-            product: product.productId,
-            allocations: allAllocations[key] || [],
-            price: product.price,
-            activeStake,
-            withdrawalAmount,
-          };
-        }
       }
     }
+
+    // Fetch product data
+    for (const [vaultId, products] of Object.entries(vaultProductsMaping)) {
+      const withdrawalAmount = await chainApi.fetchVaultWithdrawals(vaultId);
+      for (const product of Object.values(products)) {
+        // Calculate activeStake for each product based on its weight
+        const { activeStake, subnetworkId } = fetchVaultStake(product.productId, riSubnetworks, subnetworkStakes);
+        const key = `${product.productId}_${vaultId}`;
+        vaultProducts[key] = {
+          vaultId,
+          product: product.productId,
+          allocations: allAllocations[key] || [],
+          price: product.price,
+          activeStake,
+          withdrawalAmount,
+          subnetworkId,
+        };
+      }
+    }
+
     store.dispatch({ type: SET_RI_VAULT_PRODUCTS, payload: { vaultProducts } });
     store.dispatch({ type: SET_RI_EPOCH_EXPIRIES, payload: { expiries } });
   };
@@ -277,7 +313,6 @@ module.exports = async (store, chainApi, eventsApi) => {
     updateCover,
     updateCoverReference,
     updateEpoch,
-    updateRiAssetNXMRates,
     updateRiVaultProductAllocations,
     updateRiVaultCapacity,
     updatesOnBlockMined,
