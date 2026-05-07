@@ -183,9 +183,11 @@ describe('Quote Engine tests', () => {
 
     const now = BigNumber.from(Date.now()).div(1000);
 
-    // Set cover to start in a previous tranche (TRANCHE_DURATION + 14 days ago)
-    // but extend period to ensure it's still active
-    const startTime = now.sub(TRANCHE_DURATION + 14 * SECONDS_PER_DAY);
+    // Anchor to tranche boundaries to avoid date-dependent flakiness.
+    // This places the cover in an earlier tranche, yielding a stable
+    // allocation split of 2 full pools and 1 partially filled pool.
+    const currentTrancheStart = now.div(TRANCHE_DURATION).mul(TRANCHE_DURATION);
+    const startTime = currentTrancheStart.sub(TRANCHE_DURATION + 7 * SECONDS_PER_DAY);
     mockStore.covers[1].start = startTime.toNumber();
     // Extend period to ensure cover is still active (original period was 30 days)
     mockStore.covers[1].period = 120 * 24 * 3600; // 120 days to ensure it's still active
