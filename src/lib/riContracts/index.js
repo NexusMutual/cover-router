@@ -21,7 +21,7 @@ module.exports = provider => {
     const contract = new ethers.Contract(assets[key].address, assets[key].abi, provider);
     symbiotic[`asset_${key}`] = {
       getRate: async () => contract[assets[key].method](),
-      protocolAssetCorrelationId: assets[key].protocolAssetCorrelationId,
+      quoteAssetId: assets[key].quoteAssetId,
     };
   }
 

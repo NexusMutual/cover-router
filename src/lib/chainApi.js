@@ -168,7 +168,7 @@ const createChainApi = async (contracts, riContracts) => {
   const fetchRiAssetRate = async assetId => {
     return {
       assetRate: await riContracts[`asset_${assetId}`].getRate(),
-      protocolAssetCorrelationId: riContracts[`asset_${assetId}`].protocolAssetCorrelationId,
+      quoteAssetId: riContracts[`asset_${assetId}`].quoteAssetId,
     };
   };
 

@@ -24,7 +24,7 @@
       "symbol": "wstETH",
       "abi": ["function stEthPerToken() view returns (uint256)"],
       "method": "stEthPerToken",
-      "protocolAssetCorrelationId": 0
+      "quoteAssetId": 0
     }
   }
 }

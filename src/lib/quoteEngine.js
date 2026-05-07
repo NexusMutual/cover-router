@@ -256,10 +256,7 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
     .map(vault => {
       const availableCapacityInNXM = calculateVaultCapacity(store, vault, now, cover?.coverId || 0);
       totalAvailableCapacity = totalAvailableCapacity.add(availableCapacityInNXM);
-      return {
-        ...vault,
-        availableCapacityInNXM,
-      };
+      return { ...vault, availableCapacityInNXM };
     })
     .sort((a, b) => {
       if (a.availableCapacityInNXM.lt(b.availableCapacityInNXM)) {
