@@ -146,7 +146,10 @@ module.exports = async (store, chainApi, eventsApi) => {
     const { vaultProducts } = store.getState();
     const { productId, originalCoverId, start, period } = await chainApi.fetchCover(coverId);
     const now = Math.floor(Date.now() / 1000);
+
+    const providerIds = new Set();
     for (const allocation of allocations) {
+      providerIds.add(allocation.providerId);
       const { amount, vaultId } = allocation;
       const vaultProductId = `${productId}_${vaultId}`;
       const { allocations } = vaultProducts[vaultProductId];
@@ -165,8 +168,9 @@ module.exports = async (store, chainApi, eventsApi) => {
           ],
         },
       });
-
-      store.dispatch({ type: SET_RI_NONCE, payload: { providerId: allocation.providerId } });
+    }
+    for (const providerId of providerIds) {
+      store.dispatch({ type: SET_RI_NONCE, payload: { providerId } });
     }
     console.info('Update: RI vault products');
   };
