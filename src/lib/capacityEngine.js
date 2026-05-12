@@ -13,7 +13,7 @@ const {
   selectProduct,
   selectProductPools,
   selectProductsInPool,
-  selectVaultProducts,
+  selectProductVaults,
   selectRiAssetRate,
   selectVaultEpochExpiryTimestamp,
 } = require('../store/selectors');
@@ -144,7 +144,7 @@ function calculateProductCapacity(
     const expiries = selectVaultEpochExpiryTimestamp(store);
     const coverGracePeriodExpiry = now.add(product.gracePeriod).add(period);
     const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
-    const riVaults = selectVaultProducts(store, productId);
+    const riVaults = selectProductVaults(store, productId);
 
     totalRiCapacity = riVaults
       .filter(vault => expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverGracePeriodExpiry))

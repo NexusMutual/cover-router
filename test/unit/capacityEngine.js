@@ -28,7 +28,7 @@ const {
   bufferedCapacityInNxm,
 } = require('../../src/lib/helpers');
 const {
-  selectVaultProducts,
+  selectProductVaults,
   selectRiAssetRate,
   selectVaultEpochExpiryTimestamp,
 } = require('../../src/store/selectors');
@@ -377,7 +377,7 @@ describe('capacityEngine', function () {
       const period = SECONDS_PER_DAY.mul(30);
       const coverExpiry = now.add(storeProduct.gracePeriod).add(period);
       const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
-      const riVaults = selectVaultProducts(store, product.productId);
+      const riVaults = selectProductVaults(store, product.productId);
       const expiries = selectVaultEpochExpiryTimestamp(store);
 
       const totalRiCapacity = riVaults
@@ -776,7 +776,7 @@ describe('capacityEngine', function () {
               // Add RI capacity if product is in riSubnetworks
               const coverExpiry = now.add(products[expectedProductId].gracePeriod).add(period);
               const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
-              const riVaults = selectVaultProducts(store, Number(expectedProductId));
+              const riVaults = selectProductVaults(store, Number(expectedProductId));
               const expiries = selectVaultEpochExpiryTimestamp(store);
 
               const totalRiCapacity = riVaults

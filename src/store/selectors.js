@@ -80,13 +80,8 @@ const selectRiAssetRate = (store, assetId) => {
   return riAssetRates[assetId];
 };
 
-const selectVaultProducts = (store, productId, vaultId = null) => {
+const selectProductVaults = (store, productId) => {
   const { riSubnetworks = {}, vaultProducts = {} } = store.getState();
-
-  if (vaultId !== null && vaultId !== undefined) {
-    const key = `${productId}_${vaultId}`;
-    return vaultProducts[key] || null;
-  }
 
   const vaultsIdsSet = new Set();
   for (const subnetwork of Object.values(riSubnetworks)) {
@@ -137,7 +132,7 @@ module.exports = {
   selectProductPools,
   selectProductsInPool,
   selectRiAssetRate,
-  selectVaultProducts,
+  selectProductVaults,
   selectActiveCoverAmount,
   selectVaultEpochExpiryTimestamp,
   selectRiCoverAmountPercentage,

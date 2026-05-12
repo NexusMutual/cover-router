@@ -28,7 +28,7 @@ const {
   selectAssetRate,
   selectProductPools,
   selectProduct,
-  selectVaultProducts,
+  selectProductVaults,
   selectRiAssetRate,
   selectActiveCoverAmount,
   selectVaultEpochExpiryTimestamp,
@@ -200,7 +200,7 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
     return Zero;
   }
 
-  const vaults = selectVaultProducts(store, product.productId);
+  const vaults = selectProductVaults(store, product.productId);
   let totalRefundInPaymentAsset = Zero;
   const nowNumber = BigNumber.isBigNumber(now) ? now.toNumber() : now;
 
@@ -262,7 +262,7 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
 
   let totalAvailableCapacity = BigNumber.from(0);
 
-  const allVaults = selectVaultProducts(store, product.id);
+  const allVaults = selectProductVaults(store, product.id);
   if (!allVaults || !Array.isArray(allVaults) || allVaults.length === 0) {
     return null;
   }
@@ -485,7 +485,7 @@ const quoteEngine = (
     const expiries = selectVaultEpochExpiryTimestamp(store);
     const coverExpiry = now.add(product.gracePeriod).add(period);
     const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
-    const riVaults = selectVaultProducts(store, productId);
+    const riVaults = selectProductVaults(store, productId);
     totalRiCapacity = riVaults
       .filter(vault => {
         return vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry);
