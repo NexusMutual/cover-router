@@ -151,9 +151,7 @@ function calculateVaultCapacity(store, vault, now, coverId = 0) {
   }
   const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
     // cover edit allocation
-    const expiryTimestamp = BigNumber.isBigNumber(allocation.expiryTimestamp)
-      ? allocation.expiryTimestamp
-      : BigNumber.from(allocation.expiryTimestamp || 0);
+    const expiryTimestamp = BigNumber.from(allocation.expiryTimestamp || 0);
     const allocationAmount = BigNumber.isBigNumber(allocation.amount)
       ? allocation.amount
       : BigNumber.from(allocation.amount || 0);
