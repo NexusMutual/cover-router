@@ -198,7 +198,7 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
     return Zero;
   }
 
-  const vaults = selectProductVaults(store, product.productId);
+  const vaults = selectProductVaults(store, product.id);
   let totalRefundInPaymentAsset = Zero;
   const nowNumber = BigNumber.isBigNumber(now) ? now.toNumber() : now;
 
