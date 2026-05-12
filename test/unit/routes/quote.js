@@ -22,6 +22,7 @@ describe('GET /quote', () => {
   });
 
   beforeEach(() => {
+    sinon.stub(Date, 'now').returns(1700002800000);
     sinon.stub(global, 'fetch').resolves({
       ok: true,
       json: sinon.stub().resolves({ priorityPools: [] }),
