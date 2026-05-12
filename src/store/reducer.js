@@ -36,7 +36,7 @@ const initialState = {
   products: {}, // productId -> { product }
   covers: {}, // coverId -> { cover }
   trancheId: 0,
-  vaultProducts: {}, // {productId}_{vaultId} -> { allocations, activeStake, withdrawalAmount, price }
+  vaultProducts: {}, // {productId}_{vaultId} -> { id, vaultId, asset, providerId, allocations, activeStake, … }
   epochExpires: {}, // vaultId -> timestamp
   riNonces: {},
 };
@@ -122,7 +122,8 @@ function reducer(state = initialState, { type, payload }) {
       const key = `${productId}_${vaultId}`;
       newVaultProducts[key] = {
         ...state.vaultProducts[key],
-        activeStake: productStakes[productId],
+        activeStake: productStakes[productId].activeStake,
+        subnetworkId: productStakes[productId].subnetworkId,
         withdrawalAmount,
       };
     }

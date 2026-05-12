@@ -545,6 +545,7 @@ const store = {
   },
   vaultProducts: {
     '0_1': {
+      id: '1',
       vaultId: '1',
       product: 0,
       allocations: [],
@@ -552,8 +553,10 @@ const store = {
       activeStake: BigNumber.from('0x0d3a51a84e0439ce65'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '1_1': {
+      id: '1',
       vaultId: '1',
       product: 1,
       allocations: [],
@@ -561,8 +564,10 @@ const store = {
       activeStake: BigNumber.from('0x34e946a13810e73994'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '2_1': {
+      id: '1',
       vaultId: '1',
       product: 2,
       allocations: [],
@@ -570,8 +575,10 @@ const store = {
       activeStake: BigNumber.from('0x0d3a51a84e0439ce65'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '3_1': {
+      id: '1',
       vaultId: '1',
       product: 3,
       allocations: [],
@@ -579,8 +586,10 @@ const store = {
       activeStake: BigNumber.from('0x0d3a51a84e0439ce65'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '4_1': {
+      id: '1',
       vaultId: '1',
       product: 4,
       allocations: [],
@@ -588,8 +597,10 @@ const store = {
       activeStake: BigNumber.from('0x0d3a51a84e0439ce65'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '1_2': {
+      id: '2',
       vaultId: '2',
       product: 1,
       allocations: [],
@@ -597,8 +608,10 @@ const store = {
       activeStake: BigNumber.from('0x557906d5e9daf7b31c'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '2_2': {
+      id: '2',
       vaultId: '2',
       product: 2,
       allocations: [],
@@ -606,8 +619,10 @@ const store = {
       activeStake: BigNumber.from('0x155e41b57a76bdecc7'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '4_2': {
+      id: '2',
       vaultId: '2',
       product: 4,
       allocations: [],
@@ -615,8 +630,10 @@ const store = {
       activeStake: BigNumber.from('0x155e41b57a76bdecc7'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '1_3': {
+      id: '3',
       vaultId: '3',
       product: 1,
       allocations: [],
@@ -624,8 +641,10 @@ const store = {
       activeStake: BigNumber.from('0x056bc75e2d63100000'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '2_3': {
+      id: '3',
       vaultId: '3',
       product: 2,
       allocations: [],
@@ -633,8 +652,10 @@ const store = {
       activeStake: BigNumber.from('0x015af1d78b58c40000'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
     '4_3': {
+      id: '3',
       vaultId: '3',
       product: 4,
       allocations: [],
@@ -642,6 +663,7 @@ const store = {
       activeStake: BigNumber.from('0x155e41b57a76bdecc7'),
       withdrawalAmount: BigNumber.from(0),
       asset: 0,
+      providerId: 1,
     },
   },
   riAssetRates: {

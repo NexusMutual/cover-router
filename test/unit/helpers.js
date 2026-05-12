@@ -592,9 +592,7 @@ describe('helpers', () => {
         start: 0,
         poolAllocations: [{ poolId: 42, packedTrancheAllocations: packed }],
       };
-      expect(getCoverTrancheAllocations(coverBn, 42, now)).to.deep.equal(
-        getCoverTrancheAllocations(coverNum, 42, now),
-      );
+      expect(getCoverTrancheAllocations(coverBn, 42, now)).to.deep.equal(getCoverTrancheAllocations(coverNum, 42, now));
       expect(getCoverTrancheAllocations(coverBn, 42, now).length).to.be.greaterThan(0);
     });
   });

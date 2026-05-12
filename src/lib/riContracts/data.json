@@ -26,5 +26,8 @@
       "method": "stEthPerToken",
       "quoteAssetId": 0
     }
+  },
+  "riVaultAssets": {
+    "1": 0
   }
 }

@@ -2,6 +2,7 @@ const { ethers } = require('ethers');
 
 const constants = require('./constants');
 const { calculateTrancheId, promiseAllInBatches, decodeRiData } = require('./helpers');
+const riContractsData = require('./riContracts/data.json');
 const config = require('../config');
 const {
   SET_ASSET_RATE,
@@ -362,6 +363,7 @@ module.exports = async (store, chainApi, eventsApi) => {
           subnetworkStakesForVault,
         );
         vaultProducts[key] = {
+          id: vaultId,
           vaultId,
           product: product.productId,
           allocations: allAllocations[key] || [],
@@ -369,6 +371,8 @@ module.exports = async (store, chainApi, eventsApi) => {
           activeStake,
           withdrawalAmount,
           subnetworkId,
+          asset: riContractsData.riVaultAssets[vaultId],
+          providerId: constants.SYMBIOTIC_PROVIDER_ID,
         };
       }
     }
