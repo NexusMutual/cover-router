@@ -10,9 +10,9 @@ const { selectProductPools, selectProduct } = require('../store/selectors');
  * weighted by each pool's available capacity.
  *
  * @param {Object} store - The application state store containing product data.
- * @param {number} productId - The unique identifier for the product to calculate pricing for.
- * @returns {Object|null} An object containing the product ID, an array of price per pool,
- *                       and the weighted average price, or null if no pools are found.
+ * @param {number|string} productId - Product id (coerced by selectors / store keys).
+ * @returns {{ productId: number, pricePerPool: Array<Object>, weightedAveragePrice: BigNumber }}
+ * @throws {ApiError} When the product or its pools are missing (`NOT_FOUND`).
  */
 function pricingEngine(store, productId) {
   const { assets, assetRates } = store.getState();

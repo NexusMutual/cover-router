@@ -24,7 +24,20 @@ const { BigNumber } = ethers;
 const { WeiPerEther } = ethers.constants;
 const { FETCH_COVER_DATA_FROM_ID, RI_FETCH_COVER_DATA_FROM_BLOCK } = constants;
 
+/**
+ * Wires blockchain/event callbacks to Redux: refreshes products, pools, covers, asset rates, and RI vault state.
+ *
+ * @param {Object} store - Redux store (dispatch + `getState`).
+ * @param {Object} chainApi - Async readers from `createChainApi`.
+ * @param {{ on: Function }} eventsApi - Emitter API from `eventsApi` factory.
+ * @returns {Promise<Object>} Imperative update helpers (`updateAll`, `updateAssetRates`, …).
+ */
 module.exports = async (store, chainApi, eventsApi) => {
+  /**
+   * Reloads one product’s metadata and all its pool staking rows into the store.
+   *
+   * @param {number|string} productId
+   */
   const updateProduct = async productId => {
     const { globalCapacityRatio } = store.getState();
 
@@ -54,6 +67,11 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.info(`Update: product data for product with id ${productId}`);
   };
 
+  /**
+   * Reloads staking data for every product linked to a single pool.
+   *
+   * @param {number|string} poolId
+   */
   async function updatePool(poolId) {
     const { globalCapacityRatio, products } = store.getState();
     const productIds = await chainApi.fetchPoolProductIds(poolId);
@@ -72,6 +90,9 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.info(`Update: Pool data for pool with id ${poolId}`);
   }
 
+  /**
+   * Full refresh: tranche id, global capacity ratio, all products/pools, then covers from `FETCH_COVER_DATA_FROM_ID`.
+   */
   const updateAll = async () => {
     const trancheId = calculateTrancheId(Math.floor(Date.now() / 1000));
     store.dispatch({ type: SET_TRANCHE_ID, payload: trancheId });
@@ -95,6 +116,7 @@ module.exports = async (store, chainApi, eventsApi) => {
     await promiseAllInBatches(coverId => updateCover(coverId), coverIds, concurrency);
   };
 
+  /** Updates protocol asset NXM rates and derived RI asset rates in the store. */
   const updateAssetRates = async () => {
     // Protocol Assets
     const { assets } = store.getState();
@@ -119,6 +141,11 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.info('Update: RI asset rates');
   };
 
+  /**
+   * Fetches cover primary data and per-pool tranche-packed allocations, then dispatches `SET_COVER`.
+   *
+   * @param {number|string|BigNumber} coverId - Id from HTTP routes or event args (ethers may pass BN).
+   */
   const updateCover = async coverId => {
     const cover = await chainApi.fetchCover(coverId);
     cover.poolAllocations = await Promise.all(
@@ -136,12 +163,20 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.info(`Update: Cover data for cover id ${coverId}`);
   };
 
+  /** Updates original/latest cover id pointers for edit chains. @param {number|string} coverId */
   const updateCoverReference = async coverId => {
     const { originalCoverId, latestCoverId } = await chainApi.fetchCoverReference(coverId);
     store.dispatch({ type: SET_COVER_REFERENCE, payload: { coverId, originalCoverId, latestCoverId } });
     console.info(`Update: Cover reference for cover id ${coverId}`);
   };
 
+  /**
+   * Applies decoded RI allocations from a `CoverRiAllocated` event into `vaultProducts` and bumps provider nonces.
+   *
+   * @param {number|string|BigNumber} coverId
+   * @param {string|Uint8Array} data - ABI-encoded allocation list (`bytes` from `CoverRiAllocated`).
+   * @param {number|BigNumber} dataFormat
+   */
   const updateRiVaultProductAllocations = async (coverId, data, dataFormat) => {
     const allocations = decodeRiData(data, dataFormat);
     const { vaultProducts } = store.getState();
@@ -176,6 +211,11 @@ module.exports = async (store, chainApi, eventsApi) => {
     console.info('Update: RI vault products');
   };
 
+  /**
+   * Advances RI epoch expiry timestamps that have passed and refreshes affected vault capacity.
+   *
+   * @param {number} timestamp - Typically latest block time in seconds.
+   */
   const updateEpoch = async timestamp => {
     const { epochExpires } = store.getState();
     const expiredEpochs = Object.entries(epochExpires).filter(([key, value]) => value <= timestamp);
@@ -190,12 +230,24 @@ module.exports = async (store, chainApi, eventsApi) => {
     store.dispatch({ type: SET_RI_EPOCH_EXPIRIES, payload: { expiries } });
   };
 
+  /**
+   * Picks the dominant subnetwork stake for a product using per-subnetwork weights.
+   *
+   * @param {number|string} productId
+   * @param {Array<Object>} subnetworks - Subnetwork rows including `products` weights.
+   * @param {Object<string, BigNumber>} subnetworkStakes - Fetched stake per subnetwork id.
+   * @returns {{ activeStake: BigNumber, subnetworkId: string|null }}
+   */
   const calculateVaultStake = (productId, subnetworks, subnetworkStakes) => {
     let maxWeightedStake = BigNumber.from(0);
     let maxStakeSubnetworkId = null;
 
     for (const subnetwork of subnetworks) {
       const subnetworkStake = subnetworkStakes[subnetwork.id];
+      if (!subnetworkStake) {
+        continue;
+      }
+
       const subnetworkProduct = subnetwork.products[String(productId)];
 
       if (!subnetworkProduct) {
@@ -219,6 +271,11 @@ module.exports = async (store, chainApi, eventsApi) => {
     };
   };
 
+  /**
+   * Recomputes weighted stakes, withdrawals, and dispatch payload for one vault across its subnetworks.
+   *
+   * @param {number|string} vaultId
+   */
   const updateRiVaultCapacity = async vaultId => {
     const { riSubnetworks } = store.getState();
     const vaultSubnetworks = Object.entries(riSubnetworks)
@@ -248,10 +305,19 @@ module.exports = async (store, chainApi, eventsApi) => {
     });
   };
 
+  /**
+   * Per-block maintenance: asset rates and RI epoch rollover.
+   *
+   * @param {number} blockNumber
+   * @param {number} blockTimestamp - Unix seconds.
+   */
   const updatesOnBlockMined = async (blockNumber, blockTimestamp) => {
     return Promise.all([updateAssetRates(), updateEpoch(blockTimestamp)]);
   };
 
+  /**
+   * Cold-load RI state: historical vault allocations from logs plus stakes, expiries, and vault product map.
+   */
   const updateRiData = async () => {
     const allAllocations = await chainApi.fetchVaultAllocations(RI_FETCH_COVER_DATA_FROM_BLOCK);
     const { riSubnetworks } = store.getState();

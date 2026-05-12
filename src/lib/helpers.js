@@ -24,8 +24,25 @@ const { defaultAbiCoder } = ethers.utils;
 
 /* Bignumber Utils */
 
+/**
+ * @param {BigNumber} a
+ * @param {BigNumber} b
+ * @returns {BigNumber}
+ */
 const bnMax = (a, b) => (a.gt(b) ? a : b);
+/**
+ * @param {BigNumber} a
+ * @param {BigNumber} b
+ * @returns {BigNumber}
+ */
 const bnMin = (a, b) => (a.lt(b) ? a : b);
+/**
+ * Integer ceiling of `a / b` for BigNumbers.
+ *
+ * @param {BigNumber} a
+ * @param {BigNumber} b
+ * @returns {BigNumber}
+ */
 const divCeil = (a, b) => a.div(b).add(a.mod(b).gt(0) ? 1 : 0);
 
 /* Express Server Utils */
@@ -60,6 +77,15 @@ const asyncRoute = fn => (req, res) => {
     });
 };
 
+/**
+ * Runs `task` over `items` with at most `concurrency` parallel executions, preserving order of batches.
+ *
+ * @template T, R
+ * @param {(item: T) => Promise<R>} task
+ * @param {T[]} items
+ * @param {number} concurrency
+ * @returns {Promise<R[]>}
+ */
 const promiseAllInBatches = async (task, items, concurrency) => {
   const itemsClone = [...items];
   const results = [];
@@ -73,11 +99,23 @@ const promiseAllInBatches = async (task, items, concurrency) => {
 
 /* Tranche & Bucket Calculations */
 
+/**
+ * Tranche index for a unix timestamp (`TRANCHE_DURATION` in `constants`).
+ *
+ * @param {BigNumber|number} time - Seconds since epoch.
+ * @returns {number}
+ */
 const calculateTrancheId = time => {
   const timeNumber = BigNumber.isBigNumber(time) ? time.toNumber() : time;
   return Math.floor(timeNumber / TRANCHE_DURATION);
 };
 
+/**
+ * Bucket index for a unix timestamp (`BUCKET_DURATION` in `constants`).
+ *
+ * @param {BigNumber|number} time - Seconds since epoch.
+ * @returns {number}
+ */
 const calculateBucketId = time => {
   const timeNumber = BigNumber.isBigNumber(time) ? time.toNumber() : time;
   return Math.floor(timeNumber / BUCKET_DURATION);
@@ -101,6 +139,12 @@ const calculateFirstUsableTrancheIndex = (now, gracePeriod, period) => {
 
 /* Capacity Calculations */
 
+/**
+ * Applies min buffer rules to raw NXM capacity so quotes stay below on-chain limits.
+ *
+ * @param {BigNumber} capacity
+ * @returns {BigNumber}
+ */
 const bufferedCapacityInNxm = capacity => {
   const capacityBuffer = bnMax(
     capacity.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
@@ -142,6 +186,14 @@ function calculateAvailableCapacityInNXM(
   return bufferedCapacityInNxm(unused);
 }
 
+/**
+ * Splits an NXM capacity amount across tradable assets using store rates.
+ *
+ * @param {BigNumber} capacityInNXM
+ * @param {Object} assets - Asset id → descriptor from store.
+ * @param {Object<string, BigNumber>} assetRates - Asset id → NXM exchange rate.
+ * @returns {Array<{ assetId: number, amount: BigNumber, asset: * }>}
+ */
 function getCapacitiesInAssets(capacityInNXM, assets, assetRates) {
   return Object.keys(assets).map(assetId => ({
     assetId: Number(assetId),
@@ -150,6 +202,18 @@ function getCapacitiesInAssets(capacityInNXM, assets, assetRates) {
   }));
 }
 
+/**
+ * Aggregates used/available NXM, min price, and per-pool asset capacities for one tranche slice.
+ *
+ * @param {Array<Object>} productPools - Pool snapshots for a product (allocations, capacities, prices).
+ * @param {number} firstUsableTrancheIndex - Tranche offset from current active tranche.
+ * @param {boolean} useFixedPrice - When true, uses target price only (no bump decay).
+ * @param {BigNumber} now - Current unix time in seconds.
+ * @param {Object} assets
+ * @param {Object<string, BigNumber>} assetRates
+ * @param {Object|null} [editedCover=null]
+ * @returns {{ aggregatedData: Object, capacityPerPool: Array<Object> }}
+ */
 function calculateProductDataForTranche(
   productPools,
   firstUsableTrancheIndex,
@@ -241,6 +305,15 @@ function calculateProductDataForTranche(
 
 /* Price Calculations */
 
+/**
+ * Effective staking price: target floor with bumped price decaying per `PRICE_CHANGE_PER_DAY` in `constants`.
+ *
+ * @param {BigNumber} targetPrice
+ * @param {BigNumber} [bumpedPrice]
+ * @param {BigNumber} [bumpedPriceUpdateTime]
+ * @param {BigNumber} now
+ * @returns {BigNumber}
+ */
 const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now) => {
   if (!targetPrice) {
     throw new Error('Target price is required');
@@ -255,12 +328,27 @@ const calculateBasePrice = (targetPrice, bumpedPrice, bumpedPriceUpdateTime, now
   return bnMax(targetPrice, bumpedPrice.sub(priceDrop));
 };
 
+/**
+ * Annual premium in raw price units (before period scaling).
+ *
+ * @param {BigNumber} coverAmount - NXM cover amount.
+ * @param {BigNumber} basePrice
+ * @returns {BigNumber}
+ */
 const calculatePremiumPerYear = (coverAmount, basePrice) => {
   return coverAmount.mul(basePrice).div(TARGET_PRICE_DENOMINATOR);
 };
 
 /* Cover Calculations */
 
+/**
+ * Expands packed per-tranche allocations for `poolId` on `cover` from the current active tranche onward.
+ *
+ * @param {Object} cover - Cover state including `start` and `poolAllocations`.
+ * @param {number} poolId
+ * @param {BigNumber} now
+ * @returns {BigNumber[]}
+ */
 const getCoverTrancheAllocations = (cover, poolId, now) => {
   const packedTrancheAllocations = cover.poolAllocations.find(p => p.poolId === poolId)?.packedTrancheAllocations;
   if (!packedTrancheAllocations) {
@@ -280,6 +368,13 @@ const getCoverTrancheAllocations = (cover, poolId, now) => {
   return coverTrancheAllocations;
 };
 
+/**
+ * Pro-rated unused premium in NXM when editing/extending a cover before expiry.
+ *
+ * @param {Object} cover
+ * @param {BigNumber} now
+ * @returns {BigNumber}
+ */
 const calculateCoverRefundInNXM = (cover, now) => {
   const totalPremiumInNXM = cover.poolAllocations.reduce((total, allocation) => {
     return total.add(allocation.premiumInNXM);
@@ -287,6 +382,13 @@ const calculateCoverRefundInNXM = (cover, now) => {
   return totalPremiumInNXM.mul(cover.start + cover.period - now.toNumber()).div(cover.period);
 };
 
+/**
+ * Resolves the canonical latest cover row for edits given an original cover id (or undefined if none).
+ *
+ * @param {Object} store
+ * @param {number} originalCoverId - Pass `0` for new covers.
+ * @returns {Object|undefined}
+ */
 function getLatestCover(store, originalCoverId) {
   if (originalCoverId === 0) {
     return undefined;
@@ -303,6 +405,13 @@ function getLatestCover(store, originalCoverId) {
     : selectCover(store, originalCover.latestCoverId);
 }
 
+/**
+ * ABI-decodes RI allocation tuples from cover event `data` using `RI_DATA_FORMATS` in `constants`.
+ *
+ * @param {string|Uint8Array} data - ABI-encoded payload (`bytes` from logs or hex string).
+ * @param {number} dataFormat - Format id matching event payload.
+ * @returns {Array<Object>}
+ */
 const decodeRiData = (data, dataFormat) => {
   const [allocations] = defaultAbiCoder.decode([RI_DATA_FORMATS[dataFormat]], data);
   return allocations;

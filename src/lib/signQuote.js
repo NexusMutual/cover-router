@@ -29,6 +29,12 @@ const types = {
   ],
 };
 
+/**
+ * Returns an ethers v5 signer backed by AWS KMS when required env/config is present.
+ *
+ * @returns {AwsKmsSigner}
+ * @throws {Error} If KMS-related configuration is missing.
+ */
 const getSigner = () => {
   const provider = new ethers.providers.JsonRpcProvider(config.get('providerUrl'));
 
@@ -45,6 +51,12 @@ const getSigner = () => {
   throw new Error('Could not get signer. AWS/KMS env vars must be set');
 };
 
+/**
+ * EIP-712 typed-data signature for an RI quote (`RiQuote` types), hashing `quote.data` with keccak256.
+ *
+ * @param {Object} quote - Fields matching `RiQuote` (coverId, productId, providerId, amount, premium, …).
+ * @returns {Promise<string>} Hex-encoded signature.
+ */
 const signRiQuote = async quote => {
   const signer = getSigner();
 

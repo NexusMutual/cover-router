@@ -41,6 +41,9 @@ const { formatEther } = ethers.utils;
 /**
  * Seeded PRNG based on splitmix32. Produces deterministic sequences for a given seed,
  * ensuring consistent pool ordering within the same time window.
+ *
+ * @param {number} a - Seed (will be coerced to int32).
+ * @returns {() => number} Generator yielding values in `[0, 1)`.
  */
 function splitmix32(a) {
   return function () {
@@ -114,6 +117,14 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
   return orderedPoolIds.map(id => poolsData.find(p => p.poolId === id));
 }
 
+/**
+ * Annualized price in `TARGET_PRICE_DENOMINATOR` units from premium, period, and covered amount (rounded up).
+ *
+ * @param {BigNumber} premiumInAsset
+ * @param {number} period - Cover period in seconds.
+ * @param {BigNumber} coverAmountInAsset
+ * @returns {BigNumber}
+ */
 function calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) {
   return premiumInAsset
     .mul(365 * 24 * 3600)
@@ -123,6 +134,15 @@ function calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) {
     .add(1); // add one as a round up to the second decimal for better precision
 }
 
+/**
+ * RI vault capacity in NXM: stake plus withdrawals minus allocations from other covers, converted via RI asset rate.
+ *
+ * @param {Object} store
+ * @param {Object} vault - Vault row from selectors (`asset`, `allocations`, `activeStake`, …).
+ * @param {BigNumber} now
+ * @param {number} [coverId=0] - Cover id excluded from “reserved” allocations (edit flow).
+ * @returns {BigNumber}
+ */
 function calculateVaultCapacity(store, vault, now, coverId = 0) {
   // assetRate from staked token to NXM
   const assetRate = selectRiAssetRate(store, vault.asset);
@@ -218,6 +238,18 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
   return totalRefundInPaymentAsset;
 }
 
+/**
+ * Builds Symbiotic/RI quote payload (premium, per-vault slices, EIP-712 `data`) or `null` if RI cannot satisfy amount.
+ *
+ * @param {Object} store
+ * @param {Object} product - Product row (`id`, `gracePeriod`, …).
+ * @param {BigNumber} period - Cover period in seconds.
+ * @param {BigNumber} amountInNXM - Portion of cover to route to RI.
+ * @param {BigNumber} now
+ * @param {number} paymentAsset - Asset id used for premium denomination.
+ * @param {Object} [cover] - Latest cover when editing.
+ * @returns {Object|null} `riRequest`-shaped object or null.
+ */
 function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset, cover) {
   if (amountInNXM.eq(0)) {
     return null;
@@ -337,8 +369,8 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
  * @param {object} store - The application state store.
  * @param {number} productId - The ID of the product to quote.
  * @param {BigNumber} amount - The amount of coverage requested.
- * @param {number} period - The cover period in seconds.
- * @param {string} coverAsset - The assetId of the asset to be covered.
+ * @param {BigNumber} period - The cover period in seconds.
+ * @param {number} coverAsset - Cover asset id (e.g. `0` ETH, `6` USDC).
  * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting quote for new cover.
  * @param {Array<Number>} priorityPoolsOrder - An array of pool IDs in the desired order for fixed price products
  * @param {number} paymentAsset - The assetId of the asset to be used for payment.

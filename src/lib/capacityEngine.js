@@ -62,7 +62,19 @@ function calculatePoolUtilizationRate(products) {
 }
 
 /**
- * Helper function to calculate capacity for a single product.
+ * Computes staking-pool (and optionally RI) capacity for one product for a given period and time.
+ *
+ * @param {Object} store - Redux store with products, pools, assets, and RI state.
+ * @param {string|number} productId
+ * @param {Object} options
+ * @param {string|number|null} [options.poolId] - When set, only that pool’s staking data is included.
+ * @param {BigNumber} options.period - Cover period in seconds.
+ * @param {BigNumber} options.now - Current unix time in seconds.
+ * @param {Object} options.assets - Asset id → metadata from store.
+ * @param {Object} options.assetRates - Asset id → NXM rate from store.
+ * @param {boolean} [options.withPools=true] - When true, includes per-pool breakdown on the result.
+ * @param {Object|null} [options.editedCover=null] - Active cover being edited, for allocation adjustments.
+ * @returns {Object|null} Capacity summary or null if the product is missing.
  */
 function calculateProductCapacity(
   store,
@@ -186,7 +198,7 @@ function calculateProductCapacity(
  * GET /capacity
  *
  * @param {Object} store - The Redux store containing application state.
- * @param {number} period - The coverage period in seconds.
+ * @param {BigNumber} period - The coverage period in seconds.
  * @returns {Array<Object>} Array of product capacity data.
  */
 function getAllProductCapacities(store, period) {
@@ -204,7 +216,7 @@ function getAllProductCapacities(store, period) {
  *
  * @param {Object} store - The Redux store containing application state.
  * @param {string|number} productId - The product ID.
- * @param {number} period - The coverage period in seconds.
+ * @param {BigNumber} period - The coverage period in seconds.
  * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting capacity for a new cover.
  * @returns {Object|null} Product capacity data or null if product not found.
  */
@@ -229,7 +241,7 @@ function getProductCapacity(store, productId, period, editedCoverId = 0) {
  *
  * @param {Object} store - The Redux store containing application state.
  * @param {string|number} poolId - The pool ID.
- * @param {number} period - The coverage period in seconds.
+ * @param {BigNumber} period - The coverage period in seconds.
  * @returns {Object|null} Pool capacity data or null if pool not found.
  */
 function getPoolCapacity(store, poolId, period) {
@@ -264,7 +276,7 @@ function getPoolCapacity(store, poolId, period) {
  * @param {Object} store - The Redux store containing application state.
  * @param {string|number} poolId - The pool ID.
  * @param {string|number} productId - The product ID.
- * @param {number} period - The coverage period in seconds.
+ * @param {BigNumber} period - The coverage period in seconds.
  * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting capacity for a new cover.
  * @returns {Object|null} Product capacity data for the specific pool or null if not found.
  */

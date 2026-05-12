@@ -5,6 +5,13 @@ const delegator = require('./Delegator.json');
 const slasher = require('./Slasher.json');
 const vault = require('./Vault.json');
 
+/**
+ * Instantiates RI/Symbiotic vault, delegator, slasher, and asset helper contracts from bundled deployment metadata.
+ *
+ * @param {import('ethers').providers.Provider} provider
+ * @returns {Object<string, *>} Keys like `vault_*`, `delegator_*`, `asset_*`; values are `Contract` instances or
+ *   `{ getRate, protocolAssetCorrelationId }` for assets.
+ */
 module.exports = provider => {
   const { vaults, delegators, slashers, assets } = data;
 

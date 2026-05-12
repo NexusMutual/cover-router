@@ -6,6 +6,15 @@ const { calculateTrancheId, calculateBucketId } = require('./helpers');
 
 const events = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
 
+/**
+ * Subscribes to on-chain events and new blocks, emitting normalized updates on a shared `EventEmitter`.
+ *
+ * @param {Provider} provider
+ * @param {Function} contracts - Contract factory used for Cover, pools, and related ABIs.
+ * @param {Object} riContracts - RI/Symbiotic contract instances keyed by deployment name.
+ * @returns {Promise<{ on: Function, off: Function, once: Function }>} Bound emitter API for `pool:change`,
+ *   `product:change`, `block`, RI events, etc.
+ */
 module.exports = async (provider, contracts, riContracts) => {
   // event emitter
   const emitter = new EventEmitter();
