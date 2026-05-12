@@ -383,7 +383,9 @@ const calculateCoverRefundInNXM = (cover, now) => {
   const totalPremiumInNXM = cover.poolAllocations.reduce((total, allocation) => {
     return total.add(allocation.premiumInNXM);
   }, Zero);
-  return totalPremiumInNXM.mul(cover.start + cover.period - now.toNumber()).div(cover.period);
+  const coverEnd = BigNumber.from(cover.start).add(cover.period);
+  const remaining = coverEnd.sub(now);
+  return totalPremiumInNXM.mul(remaining).div(cover.period);
 };
 
 /**
