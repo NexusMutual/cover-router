@@ -6,7 +6,7 @@ const router = express.Router();
 
 /**
  * @openapi
- * /v2/sybmbiotic:
+ * /v2/symbiotic:
  *   get:
  *     tags:
  *       - Symbiotic
@@ -19,7 +19,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/RiSubnetworksResponse'
  */
-router.get('/sybmbiotic', (req, res) => {
+router.get('/symbiotic', (req, res) => {
   res.json(riSubnetworks);
 });
 

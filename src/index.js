@@ -13,7 +13,7 @@ const createEventsApi = require('./lib/eventsApi');
 const riContractFactory = require('./lib/riContracts');
 const swaggerSpec = require('./lib/swagger');
 const createSynchronizer = require('./lib/synchronizer');
-const { capacityRouter, pricingRouter, quoteRouter, reindexRouter, sybmbioticRouter } = require('./routes');
+const { capacityRouter, pricingRouter, quoteRouter, reindexRouter, symbioticRouter } = require('./routes');
 const { createStore, initialState, load, save } = require('./store');
 
 const main = async () => {
@@ -56,7 +56,7 @@ const main = async () => {
   app.use('/v2', quoteRouter);
   app.use('/v2', reindexRouter);
   app.use('/v2', pricingRouter);
-  app.use('/v2', sybmbioticRouter);
+  app.use('/v2', symbioticRouter);
 
   // state
   const state = load(initialState);
