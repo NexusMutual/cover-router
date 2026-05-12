@@ -69,7 +69,7 @@ const chainApiMock = {
     const rate = data.riAssetRates[assetId];
     return {
       assetRate: BigNumber.from(rate),
-      protocolAssetCorrelationId: 0,
+      quoteAssetId: 0,
     };
   },
 };
