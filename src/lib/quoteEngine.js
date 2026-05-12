@@ -423,9 +423,9 @@ const quoteEngine = (
     const activeCover =
       cover && now.lt(BigNumber.from(cover.start).add(cover.period))
         ? cover.poolAllocations.reduce((acc, pool) => {
-            const poolAmount = BigNumber.isBigNumber(pool.coverAmountInNxm)
-              ? pool.coverAmountInNxm
-              : BigNumber.from(pool.coverAmountInNxm);
+            const poolAmount = BigNumber.isBigNumber(pool.coverAmountInNXM)
+              ? pool.coverAmountInNXM
+              : BigNumber.from(pool.coverAmountInNXM);
             return acc.sub(poolAmount);
           }, totalActiveCoverInNXM)
         : totalActiveCoverInNXM;

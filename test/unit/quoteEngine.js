@@ -326,7 +326,7 @@ describe('Quote Engine tests', () => {
             poolAllocations: [
               {
                 poolId: 1,
-                coverAmountInNxm: coverAmount,
+                coverAmountInNXM: coverAmount,
                 premiumInNXM: parseEther('100'),
               },
             ],
