@@ -21,6 +21,7 @@ const {
   divCeil,
   bnMax,
   bnMin,
+  getCoverTrancheAllocations,
 } = require('../../src/lib/helpers');
 const mockStore = require('../mocks/store');
 
@@ -576,6 +577,25 @@ describe('helpers', () => {
 
     it('should handle equal numbers', () => {
       expect(bnMin(a, a).toString()).to.equal(a.toString());
+    });
+  });
+
+  describe('getCoverTrancheAllocations', () => {
+    it('should match pool id when allocation.poolId is BigNumber and argument is number', () => {
+      const packed = BigNumber.from('0x0000000500000004000000030000000200000001');
+      const now = BigNumber.from(TRANCHE_DURATION * 2);
+      const coverBn = {
+        start: 0,
+        poolAllocations: [{ poolId: BigNumber.from(42), packedTrancheAllocations: packed }],
+      };
+      const coverNum = {
+        start: 0,
+        poolAllocations: [{ poolId: 42, packedTrancheAllocations: packed }],
+      };
+      expect(getCoverTrancheAllocations(coverBn, 42, now)).to.deep.equal(
+        getCoverTrancheAllocations(coverNum, 42, now),
+      );
+      expect(getCoverTrancheAllocations(coverBn, 42, now).length).to.be.greaterThan(0);
     });
   });
 });

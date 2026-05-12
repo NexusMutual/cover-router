@@ -345,12 +345,16 @@ const calculatePremiumPerYear = (coverAmount, basePrice) => {
  * Expands packed per-tranche allocations for `poolId` on `cover` from the current active tranche onward.
  *
  * @param {Object} cover - Cover state including `start` and `poolAllocations`.
- * @param {number} poolId
+ * @param {number|BigNumber} poolId - Numeric pool id (allocations from chain may still use BigNumber until normalized).
  * @param {BigNumber} now
  * @returns {BigNumber[]}
  */
 const getCoverTrancheAllocations = (cover, poolId, now) => {
-  const packedTrancheAllocations = cover.poolAllocations.find(p => p.poolId === poolId)?.packedTrancheAllocations;
+  const targetPoolId = BigNumber.isBigNumber(poolId) ? poolId.toNumber() : Number(poolId);
+  const packedTrancheAllocations = cover.poolAllocations.find(p => {
+    const id = BigNumber.isBigNumber(p.poolId) ? p.poolId.toNumber() : Number(p.poolId);
+    return id === targetPoolId;
+  })?.packedTrancheAllocations;
   if (!packedTrancheAllocations) {
     return [];
   }

@@ -130,7 +130,8 @@ const createChainApi = async (contracts, riContracts) => {
 
     const poolAllocations = (await cover.getPoolAllocations(coverId)).map(poolAllocation => {
       const { poolId, coverAmountInNXM, premiumInNXM, allocationId } = poolAllocation;
-      return { poolId, coverAmountInNXM, premiumInNXM, allocationId };
+      const poolIdNum = BigNumber.isBigNumber(poolId) ? poolId.toNumber() : Number(poolId);
+      return { poolId: poolIdNum, coverAmountInNXM, premiumInNXM, allocationId };
     });
 
     return { productId, coverAsset, amount, start, period, originalCoverId, latestCoverId, poolAllocations };
