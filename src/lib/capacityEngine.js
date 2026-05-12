@@ -155,7 +155,7 @@ function calculateProductCapacity(
         }
         const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
           // cover edit allocation
-          if (allocation.expiryTimestamp > now && allocation.coverId !== editedCover?.coverId && allocation.active) {
+          if (allocation.expiryTimestamp > now && allocation.coverId !== editedCover?.coverId) {
             acc = acc.add(allocation.amount);
           }
           return acc;

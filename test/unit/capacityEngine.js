@@ -388,7 +388,7 @@ describe('capacityEngine', function () {
             return total;
           }
           const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
-            if (allocation.expiryTimestamp > now && allocation.active) {
+            if (allocation.expiryTimestamp > now) {
               acc = acc.add(BigNumber.from(allocation.amount));
             }
             return acc;
@@ -790,7 +790,7 @@ describe('capacityEngine', function () {
                     return total;
                   }
                   const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
-                    if (allocation.expiryTimestamp > now && allocation.active) {
+                    if (allocation.expiryTimestamp > now) {
                       acc = acc.add(BigNumber.from(allocation.amount));
                     }
                     return acc;
