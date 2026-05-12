@@ -188,11 +188,11 @@ module.exports = async (store, chainApi, eventsApi) => {
       providerIds.add(allocation.providerId);
       const { amount, vaultId } = allocation;
       const vaultProductId = `${productId}_${vaultId}`;
-      const { allocations } = vaultProducts[vaultProductId];
+      const vaultProduct = vaultProducts[vaultProductId];
 
-      const newAllocations = allocations.filter(
-        allocation => allocation.originalCoverId !== originalCoverId && allocation.expiryTimestamp.gt(now),
-      );
+      const newAllocations = vaultProduct?.allocations
+        ? vaultProduct.allocations.filter(a => a.originalCoverId !== originalCoverId && a.expiryTimestamp.gt(now))
+        : [];
 
       store.dispatch({
         type: SET_RI_VAULT_PRODUCT,
@@ -218,7 +218,7 @@ module.exports = async (store, chainApi, eventsApi) => {
    */
   const updateEpoch = async timestamp => {
     const { epochExpires } = store.getState();
-    const expiredEpochs = Object.entries(epochExpires).filter(([key, value]) => value <= timestamp);
+    const expiredEpochs = Object.entries(epochExpires).filter(([, value]) => value <= timestamp);
     const expiries = {};
 
     for (const epochExpiration of expiredEpochs) {
@@ -261,8 +261,10 @@ module.exports = async (store, chainApi, eventsApi) => {
 
       // Keep track of the maximum weighted stake across all subnetworks
       // This allows a subnetwork with lower stake but higher weight to win
-      maxWeightedStake = weightedStake.gt(maxWeightedStake) ? weightedStake : maxWeightedStake;
-      maxStakeSubnetworkId = subnetwork.id;
+      if (weightedStake.gt(maxWeightedStake)) {
+        maxWeightedStake = weightedStake;
+        maxStakeSubnetworkId = subnetwork.id;
+      }
     }
 
     return {
@@ -278,9 +280,7 @@ module.exports = async (store, chainApi, eventsApi) => {
    */
   const updateRiVaultCapacity = async vaultId => {
     const { riSubnetworks } = store.getState();
-    const vaultSubnetworks = Object.entries(riSubnetworks)
-      .map(([subnetworkId, subnetwork]) => ({ id: subnetworkId, ...subnetwork }))
-      .filter(subnetwork => subnetwork.vaults.includes(vaultId));
+    const vaultSubnetworks = Object.values(riSubnetworks).filter(subnetwork => subnetwork.vaults.includes(vaultId));
 
     // get deduplicated product ids from all subnetworks of this vault
     const productIds = [...new Set(vaultSubnetworks.flatMap(subnetwork => Object.keys(subnetwork.products)))];
@@ -323,28 +323,44 @@ module.exports = async (store, chainApi, eventsApi) => {
     const { riSubnetworks } = store.getState();
     const vaultProducts = {};
     const expiries = {};
-    const subnetworkStakes = {};
     const vaultProductsMaping = {};
 
+    const subnetworks = Object.values(riSubnetworks);
     // Fetch vault stakes and expiries
-    for (const subnetwork of Object.values(riSubnetworks)) {
+    for (const subnetwork of subnetworks) {
       const { vaults, products } = subnetwork;
+      const productRows = Object.values(products);
       for (const vaultId of vaults) {
-        subnetworkStakes[vaultId] = await chainApi.fetchSubnetworkStake(vaultId, subnetwork.id);
-        vaultProductsMaping[vaultId] = new Set([...(vaultProductsMaping[vaultId] || []), ...products]);
+        if (!vaultProductsMaping[vaultId]) {
+          vaultProductsMaping[vaultId] = [];
+        }
+        vaultProductsMaping[vaultId].push(...productRows);
         if (!expiries[vaultId]) {
           expiries[vaultId] = await chainApi.fetchVaultNextEpochStart(vaultId);
         }
       }
     }
 
-    // Fetch product data
     for (const [vaultId, products] of Object.entries(vaultProductsMaping)) {
+      const vaultSubnetworks = subnetworks.filter(sn => sn.vaults.includes(vaultId));
+
+      const subnetworkStakesForVault = {};
+      for (const sn of vaultSubnetworks) {
+        subnetworkStakesForVault[sn.id] = await chainApi.fetchSubnetworkStake(vaultId, sn.id);
+      }
+
       const withdrawalAmount = await chainApi.fetchVaultWithdrawals(vaultId);
-      for (const product of Object.values(products)) {
-        // Calculate activeStake for each product based on its weight
-        const { activeStake, subnetworkId } = calculateVaultStake(product.productId, riSubnetworks, subnetworkStakes);
+      for (const product of products) {
         const key = `${product.productId}_${vaultId}`;
+
+        if (vaultProducts[key]) {
+          continue;
+        }
+        const { activeStake, subnetworkId } = calculateVaultStake(
+          product.productId,
+          vaultSubnetworks,
+          subnetworkStakesForVault,
+        );
         vaultProducts[key] = {
           vaultId,
           product: product.productId,
