@@ -39,6 +39,68 @@ const { WeiPerEther, Zero } = ethers.constants;
 const { formatEther } = ethers.utils;
 
 /**
+ * @typedef {import('../store/reducer').Store} Store
+ * @typedef {import('../store/reducer').Product} Product
+ * @typedef {import('../store/reducer').Cover} Cover
+ * @typedef {import('../store/reducer').VaultProduct} VaultProduct
+ */
+
+/**
+ * @typedef {Object} PoolAllocation
+ * @property {number} poolId
+ * @property {BigNumber} amount
+ */
+
+/**
+ * @typedef {Object} PoolData
+ * @property {number} poolId
+ * @property {BigNumber} basePrice
+ * @property {BigNumber} availableCapacityInNXM
+ */
+
+/**
+ * @typedef {Object} PoolWithPremium
+ * @property {number} poolId
+ * @property {BigNumber} premiumInNxm
+ * @property {BigNumber} premiumInAsset
+ * @property {BigNumber} coverAmountInNxm
+ * @property {BigNumber} coverAmountInAsset
+ * @property {BigNumber} availableCapacityInNXM
+ */
+
+/**
+ * @typedef {Object} RiRequestDataEntry
+ * @property {BigNumber} amount - Allocation in vault-asset units.
+ * @property {string} riVaultId
+ * @property {number} providerId
+ * @property {string|null} subnetworkId
+ */
+
+/**
+ * @typedef {Object} RiRequest
+ * @property {number} providerId
+ * @property {BigNumber} amount - Total RI amount in NXM.
+ * @property {BigNumber} premium - Total premium in payment asset.
+ * @property {RiRequestDataEntry[]} data
+ * @property {number} dataFormat
+ * @property {number} deadline - Unix timestamp.
+ */
+
+/**
+ * @typedef {Object} QuoteResult
+ * @property {PoolWithPremium[]} poolsWithPremium
+ * @property {BigNumber} premiumInNXM
+ * @property {BigNumber} premiumInAsset
+ * @property {BigNumber} refundInNXM
+ * @property {BigNumber} refundInAsset
+ * @property {BigNumber} premiumInNXMWithRefund
+ * @property {BigNumber} premiumInAssetWithRefund
+ * @property {BigNumber} annualPrice
+ * @property {BigNumber} coverAmountInAsset
+ * @property {RiRequest|null} riQuote
+ */
+
+/**
  * Seeded PRNG based on splitmix32. Produces deterministic sequences for a given seed,
  * ensuring consistent pool ordering within the same time window.
  *
@@ -61,9 +123,9 @@ function splitmix32(a) {
  * This function allocates the requested amount in the provided list of pools in the provided order.
  * Empty array is returned if not enough capacity is available.
  *
- * @param {BigNumber} coverAmount - The amount to be covered.
- * @param {Array<object>} pools - An array of pool data objects.
- * @returns {Array<object>} - An array of objects containing pool and allocation amount for that pool
+ * @param {BigNumber} coverAmount - The amount to be covered in NXM.
+ * @param {PoolData[]} pools
+ * @returns {PoolAllocation[]}
  */
 const calculatePoolAllocations = (coverAmount, pools) => {
   const allocations = [];
@@ -98,15 +160,21 @@ const calculatePoolAllocations = (coverAmount, pools) => {
 /**
  * Sorts the pools based on the custom pool priority and the base price.
  *
- * @param {Array<object>} poolsData - An array of pool data objects
- * @param {Array<Number>} customPoolIdPriorityFixedPrice - An array of pool IDs in the desired order
- * @return {Array<object>} - A sorted array of pool data objects
+ * @param {PoolData[]} poolsData
+ * @param {number[]} customPoolIdPriorityFixedPrice - Pool IDs in the desired priority order.
+ * @returns {PoolData[]}
  */
 function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
   const hourSeed = Math.floor(Date.now() / (3600 * 1000));
   const randomTiebreaker = new Map(poolsData.map(p => [p.poolId, splitmix32(hourSeed ^ Number(p.poolId))()]));
   const poolIdsByPrice = [...poolsData]
-    .sort((a, b) => a.basePrice - b.basePrice || randomTiebreaker.get(a.poolId) - randomTiebreaker.get(b.poolId))
+    .sort((a, b) => {
+      const priceCmp = a.basePrice.sub(b.basePrice);
+      if (!priceCmp.isZero()) {
+        return priceCmp.isNegative() ? -1 : 1;
+      }
+      return randomTiebreaker.get(a.poolId) - randomTiebreaker.get(b.poolId);
+    })
     .map(p => p.poolId);
 
   const prioritized = new Set(customPoolIdPriorityFixedPrice.filter(poolId => poolIdsByPrice.includes(poolId)));
@@ -137,10 +205,10 @@ function calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) {
 /**
  * RI vault capacity in NXM: stake plus withdrawals minus allocations from other covers, converted via RI asset rate.
  *
- * @param {Object} store
- * @param {Object} vault - Vault row from selectors (`asset`, `allocations`, `activeStake`, …).
- * @param {BigNumber} now
- * @param {number} [coverId=0] - Cover id excluded from “reserved” allocations (edit flow).
+ * @param {Store} store
+ * @param {VaultProduct} vault
+ * @param {number} now
+ * @param {number} [coverId=0] - Cover id excluded from "reserved" allocations (edit flow).
  * @returns {BigNumber}
  */
 function calculateVaultCapacity(store, vault, now, coverId = 0) {
@@ -151,11 +219,10 @@ function calculateVaultCapacity(store, vault, now, coverId = 0) {
   }
   const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
     // cover edit allocation
-    const expiryTimestamp = BigNumber.from(allocation.expiryTimestamp || 0);
     const allocationAmount = BigNumber.isBigNumber(allocation.amount)
       ? allocation.amount
       : BigNumber.from(allocation.amount || 0);
-    if (expiryTimestamp.gt(now) && allocation.coverId !== coverId) {
+    if (allocation.expiryTimestamp > now && allocation.coverId !== coverId) {
       acc = acc.add(allocationAmount);
     }
     return acc;
@@ -177,12 +244,12 @@ function calculateVaultCapacity(store, vault, now, coverId = 0) {
  * Calculates the refund premium for RI (Reinsurance) allocations when a cover is being edited.
  * The refund is calculated based on the remaining period of the cover.
  *
- * @param {object} store - The application state store.
- * @param {object} product - The product object.
- * @param {object} cover - The cover being edited (must have coverId, start, and period).
- * @param {BigNumber} now - The current timestamp in seconds.
+ * @param {Store} store
+ * @param {Product} product
+ * @param {Cover|undefined} cover - The cover being edited.
+ * @param {number} now - Current timestamp in seconds.
  * @param {number} paymentAsset - The assetId of the asset used for payment.
- * @returns {BigNumber} - The total refund premium in payment asset, or Zero if no refund.
+ * @returns {BigNumber} - Total refund premium in payment asset, or Zero if no refund.
  */
 function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsset) {
   if (!cover || !cover.coverId) {
@@ -190,17 +257,14 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
   }
 
   const paymentAssetRate = selectAssetRate(store, paymentAsset);
-  const coverStart = BigNumber.isBigNumber(cover.start) ? cover.start : BigNumber.from(cover.start);
-  const coverPeriod = BigNumber.isBigNumber(cover.period) ? cover.period : BigNumber.from(cover.period);
-  const remainingPeriod = coverStart.add(coverPeriod).sub(now);
+  const remainingPeriod = cover.start + cover.period - now;
 
-  if (remainingPeriod.lte(0)) {
+  if (remainingPeriod <= 0) {
     return Zero;
   }
 
   const vaults = selectProductVaults(store, product.id);
   let totalRefundInPaymentAsset = Zero;
-  const nowNumber = BigNumber.isBigNumber(now) ? now.toNumber() : now;
 
   for (const vault of vaults) {
     if (!vault || !vault.allocations) {
@@ -209,7 +273,7 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
 
     // Find allocations for this cover that are still active
     const coverAllocations = vault.allocations.filter(
-      allocation => allocation.coverId === cover.coverId && allocation.expiryTimestamp > nowNumber,
+      allocation => allocation.coverId === cover.coverId && allocation.expiryTimestamp > now,
     );
 
     for (const allocation of coverAllocations) {
@@ -220,12 +284,12 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
       // Calculate the original premium that was paid for this existing allocation
       const premiumInNXM = allocationAmountInNXM
         .mul(vault.price)
-        .mul(coverPeriod)
+        .mul(cover.period)
         .div(ONE_YEAR)
         .div(TARGET_PRICE_DENOMINATOR);
 
       // Calculate refund based on remaining period
-      const refundInNXM = premiumInNXM.mul(remainingPeriod).div(coverPeriod);
+      const refundInNXM = premiumInNXM.mul(remainingPeriod).div(cover.period);
 
       // Convert refund to payment asset
       const refundForAllocation = refundInNXM.mul(paymentAssetRate).div(WeiPerEther);
@@ -237,16 +301,16 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
 }
 
 /**
- * Builds Symbiotic/RI quote payload (premium, per-vault slices, EIP-712 `data`) or `null` if RI cannot satisfy amount.
+ * Builds Symbiotic/RI quote payload or null if RI cannot satisfy amount.
  *
- * @param {Object} store
- * @param {Object} product - Product row (`id`, `gracePeriod`, …).
- * @param {BigNumber} period - Cover period in seconds.
+ * @param {Store} store
+ * @param {Product} product
+ * @param {number} period - Cover period in seconds.
  * @param {BigNumber} amountInNXM - Portion of cover to route to RI.
- * @param {BigNumber} now
+ * @param {number} now
  * @param {number} paymentAsset - Asset id used for premium denomination.
- * @param {Object} [cover] - Latest cover when editing.
- * @returns {Object|null} `riRequest`-shaped object or null.
+ * @param {Cover} [cover] - Latest cover when editing.
+ * @returns {RiRequest|null}
  */
 function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset, cover) {
   if (amountInNXM.eq(0)) {
@@ -255,7 +319,7 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
 
   const paymentAssetRate = selectAssetRate(store, paymentAsset);
   const expiries = selectVaultEpochExpiryTimestamp(store); // timestamps of current epoch expiration
-  const coverExpiry = now.add(product.gracePeriod).add(period);
+  const coverExpiry = now + product.gracePeriod + period;
   const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
 
   let totalAvailableCapacity = BigNumber.from(0);
@@ -269,7 +333,6 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
   if (validVaults.length === 0) {
     return null;
   }
-  const epochDurationBN = BigNumber.from(epochDuration);
   const vaults = validVaults
     .filter(vault => {
       if (!vault || !vault.vaultId) {
@@ -279,9 +342,7 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
       if (!expiry) {
         return false;
       }
-      const expiryBigNumber = BigNumber.isBigNumber(expiry) ? expiry : BigNumber.from(expiry);
-      const expiryWithDuration = expiryBigNumber.add(epochDurationBN);
-      return expiryWithDuration.gt(coverExpiry);
+      return expiry + epochDuration > coverExpiry;
     })
     .map(vault => {
       const availableCapacityInNXM = calculateVaultCapacity(store, vault, now, cover?.coverId || 0);
@@ -308,7 +369,7 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
     premium: BigNumber.from(0),
     data: [], // { amount: riAmount, riPoolId: 1, providerId: riProviderId }
     dataFormat: 1,
-    deadline: now.add(2 * 24 * 3600).toNumber(),
+    deadline: now + 2 * 24 * 3600,
   };
 
   let vaultsCount = vaults.length;
@@ -362,18 +423,18 @@ function calculateRiQuote(store, product, period, amountInNXM, now, paymentAsset
 }
 
 /**
- * Calculates the premium and allocations for a given insurance product based on the specified parameters.
+ * Calculates the premium and allocations for a given insurance product.
  *
- * @param {object} store - The application state store.
- * @param {number} productId - The ID of the product to quote.
- * @param {BigNumber} amount - The amount of coverage requested.
- * @param {BigNumber} period - The cover period in seconds.
- * @param {number} coverAsset - Cover asset id (e.g. `0` ETH, `6` USDC).
- * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting quote for new cover.
- * @param {Array<Number>} priorityPoolsOrder - An array of pool IDs in the desired order for fixed price products
- * @param {number} paymentAsset - The assetId of the asset to be used for payment.
- * @param {boolean} useRiVaults - Whether to use RI vaults for the quote.
- * @returns {Array<object>} - An array of objects containing pool allocations and premiums.
+ * @param {Store} store
+ * @param {number} productId
+ * @param {BigNumber} amount - Coverage amount in cover asset units.
+ * @param {number} period - Cover period in seconds.
+ * @param {number} coverAsset - Cover asset id (e.g. 0 ETH, 6 USDC).
+ * @param {number} [editedCoverId=0] - Cover id being edited (0 for new cover).
+ * @param {number[]} priorityPoolsOrder - Pool IDs in desired priority order for fixed-price products.
+ * @param {number} paymentAsset - Asset id used for premium payment.
+ * @param {boolean} useRiVaults - Whether to include RI vaults in the quote.
+ * @returns {QuoteResult}
  */
 const quoteEngine = (
   store,
@@ -399,7 +460,7 @@ const quoteEngine = (
   const productPools = selectProductPools(store, productId);
   const assetRate = selectAssetRate(store, coverAsset);
 
-  const now = BigNumber.from(Date.now()).div(1000);
+  const now = Math.floor(Date.now() / 1000);
   const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, product.gracePeriod, period);
   const coverAmountInNxm = amount.mul(WeiPerEther).div(assetRate);
 
@@ -411,7 +472,7 @@ const quoteEngine = (
 
   const cover = getLatestCover(store, editedCoverId);
 
-  if (cover && BigNumber.from(cover.start).add(cover.period).lt(now)) {
+  if (cover && cover.start + cover.period < now) {
     throw new ApiError('Cover already expired', HTTP_STATUS.BAD_REQUEST);
   }
 
@@ -421,7 +482,7 @@ const quoteEngine = (
     const usdcRate = selectAssetRate(store, 6);
 
     const activeCover =
-      cover && now.lt(BigNumber.from(cover.start).add(cover.period))
+      cover && now < cover.start + cover.period
         ? cover.poolAllocations.reduce((acc, pool) => {
             const poolAmount = BigNumber.isBigNumber(pool.coverAmountInNXM)
               ? pool.coverAmountInNXM
@@ -481,12 +542,12 @@ const quoteEngine = (
     // Calculate total RI capacity
     let totalRiCapacity = Zero;
     const expiries = selectVaultEpochExpiryTimestamp(store);
-    const coverExpiry = now.add(product.gracePeriod).add(period);
+    const coverExpiry = now + product.gracePeriod + period;
     const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
     const riVaults = selectProductVaults(store, productId);
     totalRiCapacity = riVaults
       .filter(vault => {
-        return vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry);
+        return vault && expiries[vault.vaultId] && expiries[vault.vaultId] + epochDuration > coverExpiry;
       })
       .reduce((total, vault) => {
         const availableCapacityInNXM = calculateVaultCapacity(store, vault, now, cover?.coverId || 0);

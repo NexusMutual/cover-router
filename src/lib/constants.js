@@ -1,4 +1,4 @@
-const { BigNumber, ethers } = require('ethers');
+const { ethers } = require('ethers');
 const { parseEther } = ethers.utils;
 
 const HTTP_STATUS = {
@@ -42,8 +42,6 @@ module.exports = {
   CAPACITY_BUFFER_MINIMUM: 10, // 10 allocation units = 0.1 nxm
   CAPACITY_BUFFER_RATIO: 10, // 0.1%
   CAPACITY_BUFFER_DENOMINATOR: 100_00,
-
-  SECONDS_PER_DAY: BigNumber.from(24 * 60 * 60),
 
   // set to minimal cover id which is not expired
   FETCH_COVER_DATA_FROM_ID: 3710,

@@ -6,19 +6,36 @@ const { calculateProductDataForTranche } = require('./helpers');
 const { selectProductPools, selectProduct } = require('../store/selectors');
 
 /**
+ * @typedef {import('../store/reducer').Store} Store
+ */
+
+/**
+ * @typedef {Object} PoolPrice
+ * @property {number} poolId
+ * @property {BigNumber} targetPrice
+ */
+
+/**
+ * @typedef {Object} PricingResult
+ * @property {number} productId
+ * @property {PoolPrice[]} pricePerPool
+ * @property {BigNumber} weightedAveragePrice
+ */
+
+/**
  * Calculates the pricing information for a given product based on its associated pools,
  * weighted by each pool's available capacity.
  *
- * @param {Object} store - The application state store containing product data.
- * @param {number|string} productId - Product id (coerced by selectors / store keys).
- * @returns {{ productId: number, pricePerPool: Array<Object>, weightedAveragePrice: BigNumber }}
+ * @param {Store} store
+ * @param {number|string} productId
+ * @returns {PricingResult}
  * @throws {ApiError} When the product or its pools are missing (`NOT_FOUND`).
  */
 function pricingEngine(store, productId) {
   const { assets, assetRates } = store.getState();
   const product = selectProduct(store, productId);
   const productPools = selectProductPools(store, productId);
-  const now = BigNumber.from(Math.floor(Date.now() / 1000));
+  const now = Math.floor(Date.now() / 1000);
 
   if (!product || !productPools.length) {
     throw new ApiError('Product not found', HTTP_STATUS.NOT_FOUND);
