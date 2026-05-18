@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const {
+  BigNumber,
   utils: { parseEther },
 } = require('ethers');
 const sinon = require('sinon');
@@ -9,7 +10,7 @@ const { sortPools } = require('../../src/lib/quoteEngine');
 const makePools = pools =>
   pools.map(({ poolId, price }) => ({
     poolId,
-    basePrice: price,
+    basePrice: BigNumber.from(price),
     availableCapacityInNXM: parseEther('1000'),
   }));
 

@@ -3,33 +3,24 @@
         "id": "0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000",
         "products": {
           "1": {
-            "productId": 1,
             "price": 500,
             "weight": 100,
             "riCoverAmountPercentage": 80
           },
           "5": {
-            "id": "5",
-            "productId": 5,
             "price": 500,
             "weight": 25,
             "riCoverAmountPercentage": 100
           },
           "8": {
-            "id": "8",
-            "productId": 8,
             "price": 500,
             "weight": 25
           },
           "11": {
-            "id": "11",
-            "productId": 11,
             "price": 500,
             "weight": 25
           },
           "25": {
-            "id": "25",
-            "productId": 25,
             "price": 500,
             "weight": 25
           }
@@ -44,20 +35,14 @@
         "id": "0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000001",
         "products": {
           "1": {
-            "id": "1",
-            "productId": 1,
             "price": 500,
             "weight": 100
           },
           "21": {
-            "id": "21",
-            "productId": 21,
             "price": 500,
             "weight": 25
           },
           "22": {
-            "id": "22",
-            "productId": 22,
             "price": 500,
             "weight": 25
           }

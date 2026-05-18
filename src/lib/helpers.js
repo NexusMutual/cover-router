@@ -165,7 +165,7 @@ const calculateFirstUsableTrancheIndex = (now, gracePeriod, period) => {
 const bufferedCapacityInNxm = capacity => {
   const capacityBuffer = bnMax(
     capacity.mul(CAPACITY_BUFFER_RATIO).div(CAPACITY_BUFFER_DENOMINATOR),
-    CAPACITY_BUFFER_MINIMUM,
+    BigNumber.from(CAPACITY_BUFFER_MINIMUM),
   );
 
   return bnMax(capacity.sub(capacityBuffer).mul(NXM_PER_ALLOCATION_UNIT), Zero);
@@ -207,16 +207,18 @@ function calculateAvailableCapacityInNXM(
  * Splits an NXM capacity amount across tradable assets using store rates.
  *
  * @param {BigNumber} capacityInNXM
- * @param {Object<number, Asset>} assets
+ * @param {Object<string, Asset>} assets
  * @param {Object<string, BigNumber>} assetRates
  * @returns {CapacityAsset[]}
  */
 function getCapacitiesInAssets(capacityInNXM, assets, assetRates) {
-  return Object.keys(assets).map(assetId => ({
-    assetId: Number(assetId),
-    amount: capacityInNXM.mul(assetRates[assetId]).div(WeiPerEther),
-    asset: assets[assetId],
-  }));
+  return Object.keys(assets)
+    .filter(assetId => assetRates[assetId])
+    .map(assetId => ({
+      assetId: Number(assetId),
+      amount: capacityInNXM.mul(assetRates[assetId]).div(WeiPerEther),
+      asset: assets[assetId],
+    }));
 }
 
 /**
@@ -226,7 +228,7 @@ function getCapacitiesInAssets(capacityInNXM, assets, assetRates) {
  * @param {number} firstUsableTrancheIndex - Tranche offset from current active tranche.
  * @param {boolean} useFixedPrice - When true, uses target price only (no bump decay).
  * @param {number} now - Current unix time in seconds.
- * @param {Object<number, Asset>} assets
+ * @param {Object<string, Asset>} assets
  * @param {Object<string, BigNumber>} assetRates
  * @param {Cover|null} [editedCover=null]
  * @returns {{ aggregatedData: AggregatedTrancheData, capacityPerPool: PoolCapacityResult[] }}
@@ -279,7 +281,7 @@ function calculateProductDataForTranche(
       return {
         poolId,
         availableCapacity: [],
-        allocatedNxm: usedInNXM.toString(),
+        allocatedNxm: usedInNXM,
         minAnnualPrice: Zero,
         maxAnnualPrice: Zero,
       };
@@ -362,16 +364,12 @@ const calculatePremiumPerYear = (coverAmount, basePrice) => {
  * Expands packed per-tranche allocations for `poolId` on `cover` from the current active tranche onward.
  *
  * @param {Cover} cover
- * @param {number|BigNumber} poolId
+ * @param {number} poolId
  * @param {number} now
  * @returns {BigNumber[]}
  */
 const getCoverTrancheAllocations = (cover, poolId, now) => {
-  const targetPoolId = BigNumber.isBigNumber(poolId) ? poolId.toNumber() : Number(poolId);
-  const packedTrancheAllocations = cover.poolAllocations.find(p => {
-    const id = BigNumber.isBigNumber(p.poolId) ? p.poolId.toNumber() : Number(p.poolId);
-    return id === targetPoolId;
-  })?.packedTrancheAllocations;
+  const packedTrancheAllocations = cover.poolAllocations.find(p => p.poolId === poolId)?.packedTrancheAllocations;
   if (!packedTrancheAllocations) {
     return [];
   }

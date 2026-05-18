@@ -10,6 +10,10 @@ const parseCache = item => {
     return BigNumber.from(item);
   }
 
+  if (item === null) {
+    return null;
+  }
+
   if (Array.isArray(item)) {
     return item.map(parseCache);
   }
@@ -43,6 +47,7 @@ const load = defaultState => {
   // refresh constants values
   parsedData.assets = { ...defaultState.assets };
   parsedData.riSubnetworks = { ...defaultState.riSubnetworks };
+  parsedData.riAssets = { ...defaultState.riAssets };
 
   return parsedData;
 };

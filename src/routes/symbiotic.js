@@ -20,7 +20,16 @@ const router = express.Router();
  *               $ref: '#/components/schemas/RiSubnetworksResponse'
  */
 router.get('/symbiotic', (req, res) => {
-  res.json(riSubnetworks);
+  const response = {};
+  for (const [subnetworkId, subnetwork] of Object.entries(riSubnetworks)) {
+    response[subnetworkId] = {
+      ...subnetwork,
+      products: Object.fromEntries(
+        Object.entries(subnetwork.products).map(([key, product]) => [key, { ...product, productId: Number(key) }]),
+      ),
+    };
+  }
+  res.json(response);
 });
 
 /**

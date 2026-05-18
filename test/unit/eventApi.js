@@ -1,6 +1,6 @@
 const { addresses } = require('@nexusmutual/deployments');
 const { expect } = require('chai');
-const { getDefaultProvider } = require('ethers');
+const { BigNumber, getDefaultProvider } = require('ethers');
 
 const contractFactory = require('../../src/lib/contracts');
 const eventsApiConstructor = require('../../src/lib/eventsApi');
@@ -23,7 +23,7 @@ function contractFactoryMock(addresses, provider) {
 
     const stakingPoolFactory = factory('StakingPoolFactory');
     const entries = Object.entries(stakingPoolFactory).map(([key, value]) => {
-      return [key, key === 'stakingPoolCount' ? async () => 1 : value];
+      return [key, key === 'stakingPoolCount' ? async () => BigNumber.from(1) : value];
     });
 
     const stakingPoolFactoryMock = Object.fromEntries(entries);
@@ -86,9 +86,8 @@ describe('Catching events', () => {
     eventsApi.on('product:change', () => {
       productChangeCounter += 1;
     });
-    for (const eventName of coverEvents) {
-      cover.emit(eventName);
-    }
+    // CoverBought expects (coverId, originalCoverId, memberId, productId)
+    cover.emit('CoverBought', BigNumber.from(1), BigNumber.from(1), BigNumber.from(1), BigNumber.from(1));
 
     // pushing expect to end of the event queue
     await settleEvents();
@@ -153,9 +152,8 @@ describe('Catching events', () => {
     eventsApi.on('pool:change', () => {
       poolChangeCounter += 1;
     });
-    for (const eventName of stakingPoolFactoryEvents) {
-      stakingPoolFactory.emit(eventName);
-    }
+    // StakingPoolCreated expects (poolId)
+    stakingPoolFactory.emit('StakingPoolCreated', BigNumber.from(99));
 
     // pushing expect to end of the event queue
     await settleEvents();

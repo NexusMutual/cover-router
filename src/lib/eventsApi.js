@@ -1,7 +1,5 @@
 const EventEmitter = require('events');
 
-const { BigNumber } = require('ethers');
-
 const { calculateTrancheId, calculateBucketId } = require('./helpers');
 
 const events = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
@@ -110,7 +108,7 @@ module.exports = async (provider, contracts, riContracts) => {
 
   // subscribe to events on new staking pool
   stakingPoolFactory.on('StakingPoolCreated', async poolId => {
-    const poolIdParsed = BigNumber.isBigNumber(poolId) ? poolId.toNumber() : poolId;
+    const poolIdParsed = poolId.toNumber();
     console.info(`Event: Pool ${poolIdParsed} created`);
     emitter.emit('pool:change', poolIdParsed);
     const stakingPool = contracts('StakingPool', poolIdParsed);
