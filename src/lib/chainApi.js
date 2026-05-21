@@ -276,10 +276,10 @@ const createChainApi = async (contracts, riContracts) => {
     const allocations = {};
 
     for (const event of events) {
-      const { coverId, data, dataFormat } = event.args;
+      const { coverId, data, dataFormatVersion } = event.args;
 
       const { start, period, productId, originalCoverId } = await fetchCover(coverId);
-      const [coverAllocations] = defaultAbiCoder.decode([constants.RI_DATA_FORMATS[dataFormat]], data);
+      const [coverAllocations] = defaultAbiCoder.decode([constants.RI_DATA_FORMATS[dataFormatVersion]], data);
 
       for (const coverAllocation of coverAllocations) {
         const { amount, vaultId } = coverAllocation;

@@ -35,7 +35,7 @@ const chainApiMock = {
   },
 
   fetchProductCount: async () => {
-    return Object.keys(data.products).length;
+    return BigNumber.from(Object.keys(data.products).length);
   },
 
   fetchPoolProduct: async (productId, poolId, globalCapacityRatio, capacityReductionRatio) => {
@@ -50,7 +50,7 @@ const chainApiMock = {
   },
 
   fetchCoverCount: async () => {
-    return Object.keys(data.covers).length;
+    return BigNumber.from(Object.keys(data.covers).length);
   },
 
   fetchCover: async coverId => {

@@ -193,7 +193,7 @@ function sortPools(poolsData, customPoolIdPriorityFixedPrice) {
  * @param {BigNumber} coverAmountInAsset
  * @returns {BigNumber}
  */
-function calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) {
+function calculateAnnualPrice(premiumInAsset, period, coverAmountInAsset) {
   return premiumInAsset
     .mul(365 * 24 * 3600)
     .mul(TARGET_PRICE_DENOMINATOR)
@@ -215,13 +215,11 @@ function calculateVaultCapacity(store, vault, now, coverId = 0) {
   // assetRate from staked token to NXM
   const assetRate = selectRiAssetRate(store, vault.asset);
   if (!assetRate) {
+    console.warn(`calculateVaultCapacity: no RI asset rate for asset ${vault.asset}`);
     return BigNumber.from(0);
   }
   const allocatedAmount = (vault.allocations || []).reduce((acc, allocation) => {
-    // cover edit allocation
-    const allocationAmount = BigNumber.isBigNumber(allocation.amount)
-      ? allocation.amount
-      : BigNumber.from(allocation.amount || 0);
+    const allocationAmount = allocation.amount;
     if (allocation.expiryTimestamp > now && allocation.coverId !== coverId) {
       acc = acc.add(allocationAmount);
     }
@@ -230,12 +228,8 @@ function calculateVaultCapacity(store, vault, now, coverId = 0) {
 
   // All values are in vault asset units: activeStake, withdrawalAmount, and allocatedAmount
   // Convert to NXM at the end
-  const activeStake = BigNumber.isBigNumber(vault.activeStake)
-    ? vault.activeStake
-    : BigNumber.from(vault.activeStake || 0);
-  const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount)
-    ? vault.withdrawalAmount
-    : BigNumber.from(vault.withdrawalAmount || 0);
+  const activeStake = vault.activeStake;
+  const withdrawalAmount = vault.withdrawalAmount;
   const availableCapacityInAsset = activeStake.add(withdrawalAmount).sub(allocatedAmount);
   return availableCapacityInAsset.mul(assetRate).div(WeiPerEther);
 }
@@ -277,8 +271,11 @@ function calculateRiRefundInPaymentAsset(store, product, cover, now, paymentAsse
     );
 
     for (const allocation of coverAllocations) {
-      // Convert allocation amount from vault asset to NXM
       const riAssetRate = selectRiAssetRate(store, vault.asset);
+      if (!riAssetRate) {
+        console.warn(`calculateRiRefundInPaymentAsset: no RI asset rate for asset ${vault.asset}`);
+        continue;
+      }
       const allocationAmountInNXM = allocation.amount.mul(riAssetRate).div(WeiPerEther);
 
       // Calculate the original premium that was paid for this existing allocation
@@ -617,7 +614,7 @@ const quoteEngine = (
   const premiumInNXMWithRefund = premiumInNXM.sub(refundInNXM).gt(0) ? premiumInNXM.sub(refundInNXM) : Zero;
   const premiumInAssetWithRefund = premiumInAsset.sub(refundInAsset).gt(0) ? premiumInAsset.sub(refundInAsset) : Zero;
 
-  const annualPrice = premiumInAsset.gt(0) ? calculateAnualPrice(premiumInAsset, period, coverAmountInAsset) : Zero;
+  const annualPrice = premiumInAsset.gt(0) ? calculateAnnualPrice(premiumInAsset, period, coverAmountInAsset) : Zero;
 
   const riQuote = calculateRiQuote(store, product, period, riAmountInNXM, now, paymentAsset, cover);
 

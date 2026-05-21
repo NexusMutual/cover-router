@@ -2,12 +2,12 @@
   "0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000": {
     "id": "0x51ad1265c8702c9e96ea61fe4088c2e22ed4418e000000000000000000000000",
     "products": {
-      "97": { "id": "97", "productId": 97, "price": 105 },
-      "130": { "id": "130", "productId": 130, "price": 324 },
-      "229": { "id": "229", "productId": 229, "price": 122 },
-      "348": { "id": "348", "productId": 348, "price": 141 },
-      "128": { "id": "128", "productId": 128, "price": 102 },
-      "308": { "id": "308", "productId": 308, "price": 162 }
+      "97": { "weight": 80, "price": 105 },
+      "130": { "weight": 80, "price": 324 },
+      "229": { "weight": 80, "price": 122 },
+      "348": { "weight": 80, "price": 141 },
+      "128": { "weight": 80, "price": 102 },
+      "308": { "weight": 80, "price": 162 }
     },
     "vaults": []
   }

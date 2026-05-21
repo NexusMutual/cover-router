@@ -8,11 +8,11 @@ const sinon = require('sinon');
 const {
   MIN_COVER_PERIOD,
   TRANCHE_DURATION,
-  SECONDS_PER_DAY,
   RI_THRESHOLD,
   RI_COVER_AMOUNT_PERCENTAGE,
   RI_COVER_AMOUNT_DENOMINATOR,
 } = require('../../src/lib/constants');
+const SECONDS_PER_DAY = 86400;
 const { quoteEngine } = require('../../src/lib/quoteEngine');
 const mockStore = require('../mocks/store');
 
@@ -163,8 +163,8 @@ describe('Quote Engine tests', () => {
     const productId = 4;
     const amount = parseEther('102000');
 
-    const now = BigNumber.from(Date.now()).div(1000);
-    mockStore.covers[1].start = now.toNumber();
+    const now = Math.floor(Date.now() / 1000);
+    mockStore.covers[1].start = now;
 
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1, [18, 22, 1]);
     const [quote1, quote2] = quote.poolsWithPremium;
@@ -190,14 +190,14 @@ describe('Quote Engine tests', () => {
     const productId = 4;
     const amount = parseEther('102000');
 
-    const now = BigNumber.from(Date.now()).div(1000);
+    const now = Math.floor(Date.now() / 1000);
 
     // Anchor to tranche boundaries to avoid date-dependent flakiness.
     // This places the cover in an earlier tranche, yielding a stable
     // allocation split of 2 full pools and 1 partially filled pool.
-    const currentTrancheStart = now.div(TRANCHE_DURATION).mul(TRANCHE_DURATION);
-    const startTime = currentTrancheStart.sub(TRANCHE_DURATION + 7 * SECONDS_PER_DAY);
-    mockStore.covers[1].start = startTime.toNumber();
+    const currentTrancheStart = Math.floor(now / TRANCHE_DURATION) * TRANCHE_DURATION;
+    const startTime = currentTrancheStart - TRANCHE_DURATION - 7 * SECONDS_PER_DAY;
+    mockStore.covers[1].start = startTime;
     // Extend period to ensure cover is still active (original period was 30 days)
     mockStore.covers[1].period = 120 * 24 * 3600; // 120 days to ensure it's still active
 
@@ -229,8 +229,8 @@ describe('Quote Engine tests', () => {
     const productId = 4;
     const amount = parseEther('102000');
 
-    const now = BigNumber.from(Date.now()).div(1000);
-    mockStore.covers[1].start = now.toNumber();
+    const now = Math.floor(Date.now() / 1000);
+    mockStore.covers[1].start = now;
 
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1, [18, 22, 1]);
 
@@ -242,8 +242,8 @@ describe('Quote Engine tests', () => {
     const productId = 4;
     const amount = parseEther('102000');
 
-    const now = BigNumber.from(Date.now()).div(1000);
-    mockStore.covers[1].start = now.sub(Math.floor(mockStore.covers[1].period / 2)).toNumber();
+    const now = Math.floor(Date.now() / 1000);
+    mockStore.covers[1].start = now - Math.floor(mockStore.covers[1].period / 2);
 
     const quote = quoteEngine(store, productId, amount, MIN_COVER_PERIOD, 1, 1, [18, 22, 1]);
 
@@ -261,7 +261,7 @@ describe('Quote Engine tests', () => {
   });
 
   describe('RI Quote Tests', () => {
-    const now = BigNumber.from(Date.now()).div(1000);
+    const now = Math.floor(Date.now() / 1000);
     const period = MIN_COVER_PERIOD;
 
     const createRiStore = (
@@ -283,12 +283,8 @@ describe('Quote Engine tests', () => {
         },
         epochExpires: {
           ...(mockStore.epochExpires || {}),
-          1: BigNumber.from(Date.now())
-            .div(1000)
-            .add(365 * 24 * 3600), // Set far in the future to ensure it passes the check
-          2: BigNumber.from(Date.now())
-            .div(1000)
-            .add(365 * 24 * 3600), // Set far in the future to ensure it passes the check
+          1: Math.floor(Date.now() / 1000) + 365 * 24 * 3600,
+          2: Math.floor(Date.now() / 1000) + 365 * 24 * 3600,
         },
       };
 
@@ -319,7 +315,7 @@ describe('Quote Engine tests', () => {
         baseStore.covers = {
           ...(mockStore.covers || {}),
           100: {
-            start: now.toNumber() - 1000,
+            start: now - 1000,
             period: 365 * 24 * 3600,
             coverAsset: 6,
             productId: 1,

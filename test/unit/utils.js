@@ -5,7 +5,7 @@ const { Zero } = ethers.constants;
 const { NXM_PER_ALLOCATION_UNIT } = require('../../src/lib/constants');
 const { calculateFirstUsableTrancheIndex, calculateAvailableCapacityInNXM } = require('../../src/lib/helpers');
 
-const getCurrentTimestamp = () => BigNumber.from(Math.floor(Date.now() / 1000));
+const getCurrentTimestamp = () => Math.floor(Date.now() / 1000);
 
 const verifyCapacityCalculation = (response, poolProduct, storeProduct, now, period) => {
   const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(now, storeProduct.gracePeriod, period);

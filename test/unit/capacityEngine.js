@@ -12,12 +12,8 @@ const {
   calculatePoolUtilizationRate,
   calculateProductCapacity,
 } = require('../../src/lib/capacityEngine');
-const {
-  MAX_COVER_PERIOD,
-  SECONDS_PER_DAY,
-  NXM_PER_ALLOCATION_UNIT,
-  RI_EPOCH_DURATION,
-} = require('../../src/lib/constants');
+const { MAX_COVER_PERIOD, NXM_PER_ALLOCATION_UNIT, RI_EPOCH_DURATION } = require('../../src/lib/constants');
+const SECONDS_PER_DAY = 86400;
 const {
   calculateAvailableCapacityInNXM,
   calculateBasePrice,
@@ -46,7 +42,7 @@ const verifyPoolCapacity = (poolCapacity, productId, products, poolProducts, now
   const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
     now,
     products[productId].gracePeriod,
-    SECONDS_PER_DAY.mul(30),
+    30 * SECONDS_PER_DAY,
   );
 
   // Calculate available capacity considering all usable tranches
@@ -113,7 +109,7 @@ describe('capacityEngine', function () {
       const { poolProducts } = store.getState();
 
       const response = calculateProductCapacity(store, productId, {
-        period: SECONDS_PER_DAY.mul(30),
+        period: 30 * SECONDS_PER_DAY,
         now,
         assets,
         assetRates,
@@ -177,7 +173,7 @@ describe('capacityEngine', function () {
       const lastIndex = allocations.length - 1;
 
       const response = calculateProductCapacity(store, productId, {
-        period: SECONDS_PER_DAY.mul(30),
+        period: 30 * SECONDS_PER_DAY,
         now,
         assets,
         assetRates,
@@ -212,7 +208,7 @@ describe('capacityEngine', function () {
       const now = getCurrentTimestamp();
       const productId = '0';
       const response = calculateProductCapacity(store, productId, {
-        period: SECONDS_PER_DAY.mul(30),
+        period: 30 * SECONDS_PER_DAY,
         now,
         assets,
         assetRates,
@@ -229,7 +225,7 @@ describe('capacityEngine', function () {
       const now = getCurrentTimestamp();
       const response = calculateProductCapacity(store, productId, {
         poolId,
-        period: SECONDS_PER_DAY.mul(30),
+        period: 30 * SECONDS_PER_DAY,
         now,
         assets: mockStore.assets,
         assetRates: mockStore.assetRates,
@@ -247,7 +243,7 @@ describe('capacityEngine', function () {
       const nonExistingProductId = '999';
       const now = getCurrentTimestamp();
       const response = calculateProductCapacity(store, nonExistingProductId, {
-        period: SECONDS_PER_DAY.mul(30),
+        period: 30 * SECONDS_PER_DAY,
         now,
         assets: mockStore.assets,
         assetRates: mockStore.assetRates,
@@ -276,7 +272,7 @@ describe('capacityEngine', function () {
       };
 
       const response = calculateProductCapacity(zeroCapacityStore, productId, {
-        period: SECONDS_PER_DAY.mul(30),
+        period: 30 * SECONDS_PER_DAY,
         now,
         assets,
         assetRates,
@@ -291,7 +287,7 @@ describe('capacityEngine', function () {
       const productId = '1'; // Non-fixed price product
       const now = getCurrentTimestamp();
       const response = calculateProductCapacity(store, productId, {
-        period: SECONDS_PER_DAY.mul(7), // 1 week
+        period: 7 * SECONDS_PER_DAY, // 1 week
         now,
         assets: mockStore.assets,
         assetRates: mockStore.assetRates,
@@ -360,7 +356,7 @@ describe('capacityEngine', function () {
       const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
         now,
         storeProduct.gracePeriod,
-        SECONDS_PER_DAY.mul(30),
+        30 * SECONDS_PER_DAY,
       );
 
       const expectedAvailableNXM = poolIds.reduce((total, poolId) => {
@@ -374,14 +370,14 @@ describe('capacityEngine', function () {
       }, Zero);
 
       // Add RI capacity if product is in riSubnetworks
-      const period = SECONDS_PER_DAY.mul(30);
-      const coverExpiry = now.add(storeProduct.gracePeriod).add(period);
+      const period = 30 * SECONDS_PER_DAY;
+      const coverExpiry = now + storeProduct.gracePeriod + period;
       const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
       const riVaults = selectProductVaults(store, product.productId);
       const expiries = selectVaultEpochExpiryTimestamp(store);
 
       const totalRiCapacity = riVaults
-        .filter(vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry))
+        .filter(vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId] + epochDuration > coverExpiry)
         .reduce((total, vault) => {
           const assetRate = selectRiAssetRate(store, vault.asset);
           if (!assetRate) {
@@ -393,12 +389,8 @@ describe('capacityEngine', function () {
             }
             return acc;
           }, Zero);
-          const activeStake = BigNumber.isBigNumber(vault.activeStake)
-            ? vault.activeStake
-            : BigNumber.from(vault.activeStake || 0);
-          const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount)
-            ? vault.withdrawalAmount
-            : BigNumber.from(vault.withdrawalAmount || 0);
+          const activeStake = vault.activeStake;
+          const withdrawalAmount = vault.withdrawalAmount;
           const availableCapacityInAsset = activeStake.add(withdrawalAmount).sub(allocatedAmount);
           const availableCapacityInNXM = availableCapacityInAsset.mul(assetRate).div(WeiPerEther);
           return total.add(availableCapacityInNXM);
@@ -420,7 +412,7 @@ describe('capacityEngine', function () {
     };
 
     it('should return capacity for all products across all pools', function () {
-      const period = SECONDS_PER_DAY.mul(30);
+      const period = 30 * SECONDS_PER_DAY;
       const response = getAllProductCapacities(store, period);
       const { products, productPoolIds, poolProducts, assets } = store.getState();
 
@@ -454,7 +446,7 @@ describe('capacityEngine', function () {
 
   describe('getProductCapacity', function () {
     it('should handle invalid period seconds gracefully getProductCapacity', function () {
-      const invalidPeriod = Zero;
+      const invalidPeriod = 0;
       const response = getProductCapacity(store, '0', invalidPeriod);
       expect(response).to.not.equal(null);
     });
@@ -462,7 +454,7 @@ describe('capacityEngine', function () {
     it('should return detailed capacity for a single product', function () {
       const productId = 3;
       const now = getCurrentTimestamp();
-      const period = SECONDS_PER_DAY.mul(30);
+      const period = 30 * SECONDS_PER_DAY;
       const response = getProductCapacity(store, productId, period);
 
       const { assets, assetRates, productPoolIds, poolProducts, products } = store.getState();
@@ -501,7 +493,7 @@ describe('capacityEngine', function () {
   describe('getPoolCapacity', function () {
     it('should return detailed pool capacity with correct utilization rate', function () {
       const poolId = 4;
-      const period = SECONDS_PER_DAY.mul(30);
+      const period = 30 * SECONDS_PER_DAY;
       const response = getPoolCapacity(store, poolId, period);
 
       const { poolProducts, products } = store.getState();
@@ -526,7 +518,7 @@ describe('capacityEngine', function () {
         const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
           now,
           storeProduct.gracePeriod,
-          SECONDS_PER_DAY.mul(30),
+          30 * SECONDS_PER_DAY,
         );
 
         // Calculate available capacity
@@ -559,7 +551,7 @@ describe('capacityEngine', function () {
     it('should return detailed capacity for a specific product in a specific pool', function () {
       const poolId = 4;
       const productId = '3';
-      const period = SECONDS_PER_DAY.mul(30);
+      const period = 30 * SECONDS_PER_DAY;
       const response = getProductCapacityInPool(store, poolId, productId, period);
 
       verifyCapacityResponse(response);
@@ -584,26 +576,25 @@ describe('capacityEngine', function () {
   describe('calculateFirstUsableTrancheIndexForMaxPeriod', function () {
     it('should calculate correct tranche index for max period', function () {
       const now = getCurrentTimestamp();
-      const gracePeriod = SECONDS_PER_DAY.mul(35);
+      const gracePeriod = 35 * SECONDS_PER_DAY;
 
       const result = calculateFirstUsableTrancheIndexForMaxPeriod(now, gracePeriod);
 
-      // Calculate expected result
       const firstActiveTrancheId = calculateTrancheId(now);
-      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now + MAX_COVER_PERIOD + gracePeriod);
       const expected = firstUsableTrancheIdForMaxPeriod - firstActiveTrancheId;
 
       expect(result).to.equal(expected);
     });
 
     it('should handle zero grace period', function () {
-      const now = BigNumber.from(1678700054);
-      const gracePeriod = Zero;
+      const now = 1678700054;
+      const gracePeriod = 0;
 
       const result = calculateFirstUsableTrancheIndexForMaxPeriod(now, gracePeriod);
 
       const firstActiveTrancheId = calculateTrancheId(now);
-      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now + MAX_COVER_PERIOD + gracePeriod);
       const expected = firstUsableTrancheIdForMaxPeriod - firstActiveTrancheId;
 
       expect(result).to.equal(expected);
@@ -611,12 +602,12 @@ describe('capacityEngine', function () {
 
     it('should handle large grace period', function () {
       const now = getCurrentTimestamp();
-      const gracePeriod = SECONDS_PER_DAY.mul(365);
+      const gracePeriod = 365 * SECONDS_PER_DAY;
 
       const result = calculateFirstUsableTrancheIndexForMaxPeriod(now, gracePeriod);
 
       const firstActiveTrancheId = calculateTrancheId(now);
-      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+      const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now + MAX_COVER_PERIOD + gracePeriod);
       const expected = firstUsableTrancheIdForMaxPeriod - firstActiveTrancheId;
 
       expect(result).to.equal(expected);
@@ -716,7 +707,7 @@ describe('capacityEngine', function () {
       const productId = '0';
       const { assets, assetRates, poolProducts: storePoolProducts, products, productPoolIds } = store.getState();
       const now = getCurrentTimestamp();
-      const period = SECONDS_PER_DAY.mul(30);
+      const period = 30 * SECONDS_PER_DAY;
 
       // Get responses from all endpoints
       const allProducts = getAllProductCapacities(store, period);
@@ -749,7 +740,7 @@ describe('capacityEngine', function () {
               const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
                 now,
                 products[expectedProductId].gracePeriod,
-                SECONDS_PER_DAY.mul(30),
+                30 * SECONDS_PER_DAY,
               );
               expectedAmount = calculateAvailableCapacityInNXM(
                 expectedPoolProduct.trancheCapacities,
@@ -763,7 +754,7 @@ describe('capacityEngine', function () {
                 const firstUsableTrancheIndex = calculateFirstUsableTrancheIndex(
                   now,
                   products[expectedProductId].gracePeriod,
-                  SECONDS_PER_DAY.mul(30),
+                  30 * SECONDS_PER_DAY,
                 );
                 const poolCapacity = calculateAvailableCapacityInNXM(
                   poolProduct.trancheCapacities,
@@ -774,15 +765,14 @@ describe('capacityEngine', function () {
               }, Zero);
 
               // Add RI capacity if product is in riSubnetworks
-              const coverExpiry = now.add(products[expectedProductId].gracePeriod).add(period);
+              const coverExpiry = now + products[expectedProductId].gracePeriod + period;
               const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
               const riVaults = selectProductVaults(store, Number(expectedProductId));
               const expiries = selectVaultEpochExpiryTimestamp(store);
 
               const totalRiCapacity = riVaults
                 .filter(
-                  vault =>
-                    vault && expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverExpiry),
+                  vault => vault && expiries[vault.vaultId] && expiries[vault.vaultId] + epochDuration > coverExpiry,
                 )
                 .reduce((total, vault) => {
                   const assetRate = selectRiAssetRate(store, vault.asset);
@@ -795,12 +785,8 @@ describe('capacityEngine', function () {
                     }
                     return acc;
                   }, Zero);
-                  const activeStake = BigNumber.isBigNumber(vault.activeStake)
-                    ? vault.activeStake
-                    : BigNumber.from(vault.activeStake || 0);
-                  const withdrawalAmount = BigNumber.isBigNumber(vault.withdrawalAmount)
-                    ? vault.withdrawalAmount
-                    : BigNumber.from(vault.withdrawalAmount || 0);
+                  const activeStake = vault.activeStake;
+                  const withdrawalAmount = vault.withdrawalAmount;
                   const availableCapacityInAsset = activeStake.add(withdrawalAmount).sub(allocatedAmount);
                   const availableCapacityInNXM = availableCapacityInAsset.mul(assetRate).div(WeiPerEther);
                   return total.add(availableCapacityInNXM);
@@ -898,7 +884,7 @@ describe('capacityEngine', function () {
   describe('RI Capacity Integration', function () {
     const { assets, assetRates } = mockStore;
     const now = getCurrentTimestamp();
-    const period = SECONDS_PER_DAY.mul(30);
+    const period = 30 * SECONDS_PER_DAY;
 
     const calculatePoolCapacity = (poolProduct, firstUsableTrancheIndex = 0) => {
       return calculateAvailableCapacityInNXM(
@@ -949,8 +935,8 @@ describe('capacityEngine', function () {
             0: BigNumber.from(parseEther('1.2')), // 1 wstETH = 1.2 NXM
           },
           epochExpires: {
-            1: now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
-            2: now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
+            1: now + RI_EPOCH_DURATION * 24 * 3600 + period + 100,
+            2: now + RI_EPOCH_DURATION * 24 * 3600 + period + 100,
           },
         }),
       };
@@ -1019,7 +1005,7 @@ describe('capacityEngine', function () {
             0: BigNumber.from(parseEther('1.2')),
           },
           epochExpires: {
-            1: now.add(RI_EPOCH_DURATION * 24 * 3600 + period + 100),
+            1: now + RI_EPOCH_DURATION * 24 * 3600 + period + 100,
           },
         }),
       };

@@ -208,9 +208,9 @@ module.exports = async (store, chainApi, eventsApi) => {
 
     const providerIds = new Set();
     for (const allocation of allocations) {
-      providerIds.add(allocation.providerId);
+      providerIds.add(allocation.providerId.toNumber());
       const { amount, vaultId } = allocation;
-      const vaultProductId = `${productId}_${vaultId}`;
+      const vaultProductId = `${productId}_${vaultId.toString()}`;
       const vaultProduct = vaultProducts[vaultProductId];
 
       const newAllocations = vaultProduct?.allocations
@@ -349,7 +349,10 @@ module.exports = async (store, chainApi, eventsApi) => {
     // Fetch vault stakes and expiries
     for (const subnetwork of subnetworks) {
       const { vaults, products } = subnetwork;
-      const productRows = Object.values(products);
+      const productRows = Object.entries(products).map(([key, product]) => ({
+        ...product,
+        productId: Number(key),
+      }));
       for (const vaultId of vaults) {
         if (!vaultProductsMaping[vaultId]) {
           vaultProductsMaping[vaultId] = [];
@@ -402,6 +405,9 @@ module.exports = async (store, chainApi, eventsApi) => {
 
   eventsApi.on('pool:change', updatePool);
   eventsApi.on('cover:bought', updateCover);
+  eventsApi.on('cover:change', async coverId => {
+    await updateCover(coverId);
+  });
   eventsApi.on('cover:edit', updateCoverReference);
   eventsApi.on('product:change', updateProduct);
   eventsApi.on('tranche:change', updateAll);

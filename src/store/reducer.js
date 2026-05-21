@@ -1,3 +1,5 @@
+const { BigNumber } = require('ethers');
+
 const {
   SET_ASSET_RATE,
   SET_GLOBAL_CAPACITY_RATIO,
@@ -304,7 +306,7 @@ const initialState = {
   riAssets: {
     0: { id: 0, symbol: 'wstETH', decimals: 18 },
   },
-  globalCapacityRatio: 0,
+  globalCapacityRatio: BigNumber.from(0),
   poolProducts: {}, // {productId}_{poolId} -> { allocations, trancheCapacities }
   productPoolIds: {}, // productId -> [ poolIds ]
   products: {}, // productId -> { product }
@@ -361,6 +363,9 @@ function reducer(state = initialState, action) {
 
   if (action.type === SET_COVER_REFERENCE) {
     const { coverId, originalCoverId, latestCoverId } = action.payload;
+    if (!state.covers[coverId]) {
+      console.warn(`SET_COVER_REFERENCE: cover ${coverId} not loaded yet, creating placeholder`);
+    }
     const covers = { ...state.covers, [coverId]: { ...state.covers[coverId], originalCoverId, latestCoverId } };
     return { ...state, covers };
   }
@@ -390,23 +395,33 @@ function reducer(state = initialState, action) {
   if (action.type === SET_RI_VAULT_PRODUCT) {
     const { vaultProductId, allocations } = action.payload;
     const vaultProduct = state.vaultProducts[vaultProductId];
+    if (!vaultProduct) {
+      console.warn(`SET_RI_VAULT_PRODUCT: ${vaultProductId} not initialized yet`);
+    }
     const vaultProducts = { ...state.vaultProducts, [vaultProductId]: { ...vaultProduct, allocations } };
     return { ...state, vaultProducts };
   }
 
   if (action.type === SET_VAULT_STAKE) {
     const { vaultId, productIds, productStakes, withdrawalAmount } = action.payload;
-    const newVaultProducts = {};
+    const vaultProducts = { ...state.vaultProducts };
     for (const productId of productIds) {
       const key = `${productId}_${vaultId}`;
-      newVaultProducts[key] = {
+      const { activeStake, subnetworkId } = productStakes[productId];
+      if (activeStake.isZero()) {
+        delete vaultProducts[key];
+        continue;
+      }
+      if (!state.vaultProducts[key]) {
+        console.warn(`SET_VAULT_STAKE: vaultProduct ${key} not initialized yet`);
+      }
+      vaultProducts[key] = {
         ...state.vaultProducts[key],
-        activeStake: productStakes[productId].activeStake,
-        subnetworkId: productStakes[productId].subnetworkId,
+        activeStake,
+        subnetworkId,
         withdrawalAmount,
       };
     }
-    const vaultProducts = { ...state.vaultProducts, ...newVaultProducts };
     return { ...state, vaultProducts };
   }
 

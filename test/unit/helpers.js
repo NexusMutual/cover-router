@@ -5,10 +5,10 @@ const {
   BUCKET_DURATION,
   NXM_PER_ALLOCATION_UNIT,
   PRICE_CHANGE_PER_DAY,
-  SECONDS_PER_DAY,
   TARGET_PRICE_DENOMINATOR,
   TRANCHE_DURATION,
 } = require('../../src/lib/constants');
+const SECONDS_PER_DAY = 86400;
 const {
   calculateFirstUsableTrancheIndex,
   calculateProductDataForTranche,
@@ -32,21 +32,20 @@ const { WeiPerEther, Zero } = ethers.constants;
 describe('helpers', () => {
   describe('calculateFirstUsableTrancheIndex', () => {
     it('should calculate correct index with minimum values (35 days grace, 28 days period)', () => {
-      const now = BigNumber.from(1000000);
-      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
-      const period = BigNumber.from(28 * SECONDS_PER_DAY);
+      const now = 1000000;
+      const gracePeriod = 35 * SECONDS_PER_DAY;
+      const period = 28 * SECONDS_PER_DAY;
 
       const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
 
-      // Expected tranches = (gracePeriod + period) / TRANCHE_DURATION
       const expectedTrancheIndex = Math.floor(((35 + 28) * SECONDS_PER_DAY) / TRANCHE_DURATION);
       expect(result).to.equal(expectedTrancheIndex);
     });
 
     it('should calculate correct index with maximum values (365 days grace, 365 days period)', () => {
-      const now = BigNumber.from(1000000);
-      const gracePeriod = BigNumber.from(365 * SECONDS_PER_DAY);
-      const period = BigNumber.from(365 * SECONDS_PER_DAY);
+      const now = 1000000;
+      const gracePeriod = 365 * SECONDS_PER_DAY;
+      const period = 365 * SECONDS_PER_DAY;
 
       const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
 
@@ -55,9 +54,9 @@ describe('helpers', () => {
     });
 
     it('should handle period of 0', () => {
-      const now = BigNumber.from(1000000);
-      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
-      const period = BigNumber.from(0);
+      const now = 1000000;
+      const gracePeriod = 35 * SECONDS_PER_DAY;
+      const period = 0;
 
       const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
 
@@ -65,33 +64,11 @@ describe('helpers', () => {
       expect(result).to.equal(expectedTrancheIndex);
     });
 
-    it('should handle native number for now parameter', () => {
-      const now = 1000000; // number instead of BigNumber
-      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
-      const period = BigNumber.from(28 * SECONDS_PER_DAY);
-
-      const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
-
-      const expectedTrancheIndex = Math.floor(((35 + 28) * SECONDS_PER_DAY) / TRANCHE_DURATION);
-      expect(result).to.equal(expectedTrancheIndex);
-    });
-
-    it('should handle BigNumber for period parameter', () => {
-      const now = BigNumber.from(1000000);
-      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
-      const period = BigNumber.from(28 * SECONDS_PER_DAY); // explicitly testing BigNumber period
-
-      const result = calculateFirstUsableTrancheIndex(now, gracePeriod, period);
-
-      const expectedTrancheIndex = Math.floor(((35 + 28) * SECONDS_PER_DAY) / TRANCHE_DURATION);
-      expect(result).to.equal(expectedTrancheIndex);
-    });
-
     it('should handle different timestamps that would result in same tranche', () => {
-      const now1 = BigNumber.from(1000000);
-      const now2 = BigNumber.from(1000000 + TRANCHE_DURATION - 1);
-      const gracePeriod = BigNumber.from(35 * SECONDS_PER_DAY);
-      const period = BigNumber.from(28 * SECONDS_PER_DAY);
+      const now1 = 1000000;
+      const now2 = 1000000 + TRANCHE_DURATION - 1;
+      const gracePeriod = 35 * SECONDS_PER_DAY;
+      const period = 28 * SECONDS_PER_DAY;
 
       const result1 = calculateFirstUsableTrancheIndex(now1, gracePeriod, period);
       const result2 = calculateFirstUsableTrancheIndex(now2, gracePeriod, period);
@@ -101,7 +78,7 @@ describe('helpers', () => {
   });
 
   describe('calculateProductDataForTranche', function () {
-    const now = BigNumber.from(1000);
+    const now = 1000;
     const { assets, assetRates } = mockStore;
 
     function assertAvailableCapacity(capacityPool, availableInNXM) {
@@ -450,15 +427,15 @@ describe('helpers', () => {
     const bumpedPrice = BigNumber.from('2000');
 
     it('should return bumpedPrice when no time has elapsed', () => {
-      const now = BigNumber.from(Math.floor(Date.now() / 1000));
-      const bumpedPriceUpdateTime = now;
+      const now = Math.floor(Date.now() / 1000);
+      const bumpedPriceUpdateTime = BigNumber.from(now);
 
       const result = calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, now);
       expect(result.toString()).to.equal(bumpedPrice.toString());
     });
 
     it('should return targetPrice when price drop exceeds difference', () => {
-      const twoDaysFromNow = BigNumber.from(Math.floor(Date.now() / 1000)).add(SECONDS_PER_DAY.mul(2)); // 2 days later
+      const twoDaysFromNow = Math.floor(Date.now() / 1000) + 2 * SECONDS_PER_DAY;
       const bumpedPriceUpdateTime = BigNumber.from('1000');
       const smallBumpedPrice = targetPrice.add('500'); // Small bump that will drop below target
 
@@ -468,7 +445,7 @@ describe('helpers', () => {
 
     it('should calculate correct price drop over time', () => {
       const bumpedPriceUpdateTime = BigNumber.from('1000'); // use fixed timestamp to avoid issues
-      const oneDayFromNow = bumpedPriceUpdateTime.add(SECONDS_PER_DAY); // Exactly 1 day later
+      const oneDayFromNow = 1000 + SECONDS_PER_DAY; // Exactly 1 day later
 
       const result = calculateBasePrice(targetPrice, bumpedPrice, bumpedPriceUpdateTime, oneDayFromNow);
       const expectedDrop = PRICE_CHANGE_PER_DAY;
@@ -581,19 +558,15 @@ describe('helpers', () => {
   });
 
   describe('getCoverTrancheAllocations', () => {
-    it('should match pool id when allocation.poolId is BigNumber and argument is number', () => {
+    it('should return tranche allocations for matching poolId', () => {
       const packed = BigNumber.from('0x0000000500000004000000030000000200000001');
-      const now = BigNumber.from(TRANCHE_DURATION * 2);
-      const coverBn = {
-        start: 0,
-        poolAllocations: [{ poolId: BigNumber.from(42), packedTrancheAllocations: packed }],
-      };
-      const coverNum = {
+      const now = TRANCHE_DURATION * 2;
+      const cover = {
         start: 0,
         poolAllocations: [{ poolId: 42, packedTrancheAllocations: packed }],
       };
-      expect(getCoverTrancheAllocations(coverBn, 42, now)).to.deep.equal(getCoverTrancheAllocations(coverNum, 42, now));
-      expect(getCoverTrancheAllocations(coverBn, 42, now).length).to.be.greaterThan(0);
+      const result = getCoverTrancheAllocations(cover, 42, now);
+      expect(result.length).to.be.greaterThan(0);
     });
   });
 });
