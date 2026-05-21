@@ -52,9 +52,28 @@ const getSigner = () => {
 };
 
 /**
+ * @typedef {import('./quoteEngine').RiRequest} RiRequest
+ */
+
+/**
+ * @typedef {Object} SignableRiQuote
+ * @property {number} [coverId]
+ * @property {number} [productId]
+ * @property {number} providerId
+ * @property {BigNumber} amount
+ * @property {BigNumber} premium
+ * @property {number} [period]
+ * @property {number} [coverAsset]
+ * @property {number} [nonce]
+ * @property {*} data
+ * @property {number} dataFormat
+ * @property {number} deadline
+ */
+
+/**
  * EIP-712 typed-data signature for an RI quote (`RiQuote` types), hashing `quote.data` with keccak256.
  *
- * @param {Object} quote - Fields matching `RiQuote` (coverId, productId, providerId, amount, premium, …).
+ * @param {SignableRiQuote} quote
  * @returns {Promise<string>} Hex-encoded signature.
  */
 const signRiQuote = async quote => {

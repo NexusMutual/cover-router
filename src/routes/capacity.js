@@ -1,4 +1,4 @@
-const { ethers, BigNumber } = require('ethers');
+const { ethers } = require('ethers');
 const express = require('express');
 
 const {
@@ -7,7 +7,7 @@ const {
   getPoolCapacity,
   getProductCapacityInPool,
 } = require('../lib/capacityEngine');
-const { SECONDS_PER_DAY, HTTP_STATUS } = require('../lib/constants');
+const { HTTP_STATUS } = require('../lib/constants');
 const { ApiError } = require('../lib/error');
 const { asyncRoute } = require('../lib/helpers');
 
@@ -76,7 +76,7 @@ router.get(
       throw new ApiError('Invalid period: must be an integer between 28 and 365', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+    const period = periodQuery * 24 * 3600; // days to seconds
     const store = req.app.get('store');
     const capacities = getAllProductCapacities(store, period);
 
@@ -176,7 +176,7 @@ router.get(
       throw new ApiError('Invalid productId: must be an integer', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+    const period = periodQuery * 24 * 3600; // days to seconds
     const store = req.app.get('store');
     const capacity = getProductCapacity(store, productId, period, editedCoverId);
 
@@ -270,7 +270,7 @@ router.get(
       throw new ApiError('Invalid poolId: must be a positive integer', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+    const period = periodQuery * 24 * 3600; // days to seconds
     const store = req.app.get('store');
     const poolCapacity = getPoolCapacity(store, poolId, period);
 
@@ -343,7 +343,7 @@ router.get(
       throw new ApiError('Invalid productId: must be an integer', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const period = BigNumber.from(periodQuery).mul(SECONDS_PER_DAY);
+    const period = periodQuery * 24 * 3600; // days to seconds
     const store = req.app.get('store');
     const capacity = getProductCapacityInPool(store, poolId, productId, period);
 

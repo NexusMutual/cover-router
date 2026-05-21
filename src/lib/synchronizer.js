@@ -26,46 +26,67 @@ const { WeiPerEther } = ethers.constants;
 const { FETCH_COVER_DATA_FROM_ID, RI_FETCH_COVER_DATA_FROM_BLOCK } = constants;
 
 /**
+ * @typedef {import('../store/reducer').Store} Store
+ * @typedef {import('../store/reducer').RiSubnetwork} RiSubnetwork
+ * @typedef {import('../store/reducer').ProductStakeEntry} ProductStakeEntry
+ * @typedef {import('../store/reducer').VaultProduct} VaultProduct
+ * @typedef {import('./chainApi').ChainApi} ChainApi
+ * @typedef {import('./eventsApi').EventsApi} EventsApi
+ */
+
+/**
+ * @typedef {Object} Synchronizer
+ * @property {() => Promise<void>} updateAll
+ * @property {() => Promise<void>} updateAssetRates
+ * @property {(coverId: number|string|BigNumber) => Promise<void>} updateCover
+ * @property {(coverId: number|string) => Promise<void>} updateCoverReference
+ * @property {(timestamp: number) => Promise<void>} updateEpoch
+ * @property {(
+ *   coverId: number|string|BigNumber,
+ *   data: string, dataFormat: number|BigNumber,
+ * ) => Promise<void>} updateRiVaultProductAllocations
+ * @property {(vaultId: number|string) => Promise<void>} updateRiVaultCapacity
+ * @property {(blockNumber: number, blockTimestamp: number) => Promise<void>} updatesOnBlockMined
+ * @property {() => Promise<void>} updateRiData
+ */
+
+/**
  * Wires blockchain/event callbacks to Redux: refreshes products, pools, covers, asset rates, and RI vault state.
  *
- * @param {Object} store - Redux store (dispatch + `getState`).
- * @param {Object} chainApi - Async readers from `createChainApi`.
- * @param {{ on: Function }} eventsApi - Emitter API from `eventsApi` factory.
- * @returns {Promise<Object>} Imperative update helpers (`updateAll`, `updateAssetRates`, …).
+ * @param {Store} store
+ * @param {ChainApi} chainApi
+ * @param {EventsApi} eventsApi
+ * @returns {Promise<Synchronizer>}
  */
 module.exports = async (store, chainApi, eventsApi) => {
   /**
    * Reloads one product’s metadata and all its pool staking rows into the store.
    *
-   * @param {number|string} productId
+   * @param {number|string|BigNumber} productId
    */
   const updateProduct = async productId => {
+    const id = BigNumber.from(productId).toNumber();
     const { globalCapacityRatio } = store.getState();
 
-    const product = await chainApi.fetchProduct(productId);
-    store.dispatch({ type: SET_PRODUCT, payload: { ...product, id: productId } });
+    const product = await chainApi.fetchProduct(id);
+    store.dispatch({ type: SET_PRODUCT, payload: { ...product, id } });
 
     const { capacityReductionRatio } = product;
-    const poolIds = await chainApi.fetchProductPoolsIds(productId);
+    const poolIds = await chainApi.fetchProductPoolsIds(id);
 
     store.dispatch({
       type: RESET_PRODUCT_POOLS,
-      payload: { productId, poolIds },
+      payload: { productId: id, poolIds },
     });
 
     for (const poolId of poolIds) {
-      const poolProduct = await chainApi.fetchPoolProduct(
-        productId,
-        poolId,
-        globalCapacityRatio,
-        capacityReductionRatio,
-      );
+      const poolProduct = await chainApi.fetchPoolProduct(id, poolId, globalCapacityRatio, capacityReductionRatio);
       store.dispatch({
         type: SET_POOL_PRODUCT,
-        payload: { productId, poolId, poolProduct },
+        payload: { productId: id, poolId, poolProduct },
       });
     }
-    console.info(`Update: product data for product with id ${productId}`);
+    console.info(`Update: product data for product with id ${id}`);
   };
 
   /**
@@ -101,14 +122,14 @@ module.exports = async (store, chainApi, eventsApi) => {
     const globalCapacityRatio = await chainApi.fetchGlobalCapacityRatio();
     store.dispatch({ type: SET_GLOBAL_CAPACITY_RATIO, payload: globalCapacityRatio });
 
-    const productCount = await chainApi.fetchProductCount();
+    const productCount = (await chainApi.fetchProductCount()).toNumber();
 
     const productIds = Array.from({ length: productCount }, (_, i) => i);
     const concurrency = config.get('concurrency');
 
     await promiseAllInBatches(productId => updateProduct(productId), productIds, concurrency);
 
-    const coverCount = await chainApi.fetchCoverCount();
+    const coverCount = (await chainApi.fetchCoverCount()).toNumber();
     const coverIds = Array.from(
       { length: coverCount - FETCH_COVER_DATA_FROM_ID + 1 },
       (_, i) => FETCH_COVER_DATA_FROM_ID + i,
@@ -160,7 +181,8 @@ module.exports = async (store, chainApi, eventsApi) => {
       })),
     );
 
-    store.dispatch({ type: SET_COVER, payload: { coverId, cover } });
+    cover.coverId = coverId;
+    store.dispatch({ type: SET_COVER, payload: { cover } });
     console.info(`Update: Cover data for cover id ${coverId}`);
   };
 
@@ -192,17 +214,14 @@ module.exports = async (store, chainApi, eventsApi) => {
       const vaultProduct = vaultProducts[vaultProductId];
 
       const newAllocations = vaultProduct?.allocations
-        ? vaultProduct.allocations.filter(a => a.originalCoverId !== originalCoverId && a.expiryTimestamp.gt(now))
+        ? vaultProduct.allocations.filter(a => a.originalCoverId !== originalCoverId && a.expiryTimestamp > now)
         : [];
 
       store.dispatch({
         type: SET_RI_VAULT_PRODUCT,
         payload: {
           vaultProductId,
-          allocations: [
-            ...newAllocations,
-            { amount, coverId, expiryTimestamp: BigNumber.from(start).add(period), originalCoverId },
-          ],
+          allocations: [...newAllocations, { amount, coverId, expiryTimestamp: start + period, originalCoverId }],
         },
       });
     }
@@ -235,9 +254,9 @@ module.exports = async (store, chainApi, eventsApi) => {
    * Picks the dominant subnetwork stake for a product using per-subnetwork weights.
    *
    * @param {number|string} productId
-   * @param {Array<Object>} subnetworks - Subnetwork rows including `products` weights.
+   * @param {RiSubnetwork[]} subnetworks
    * @param {Object<string, BigNumber>} subnetworkStakes - Fetched stake per subnetwork id.
-   * @returns {{ activeStake: BigNumber, subnetworkId: string|null }}
+   * @returns {ProductStakeEntry}
    */
   const calculateVaultStake = (productId, subnetworks, subnetworkStakes) => {
     let maxWeightedStake = BigNumber.from(0);

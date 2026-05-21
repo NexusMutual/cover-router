@@ -18,6 +18,39 @@ const {
   selectVaultEpochExpiryTimestamp,
 } = require('../store/selectors');
 
+/**
+ * @typedef {import('../store/reducer').Store} Store
+ * @typedef {import('../store/reducer').Asset} Asset
+ * @typedef {import('../store/reducer').Product} Product
+ * @typedef {import('../store/reducer').VaultProduct} VaultProduct
+ */
+
+/**
+ * @typedef {Object} CapacityAsset
+ * @property {number} assetId
+ * @property {BigNumber} amount
+ * @property {Asset} asset
+ */
+
+/**
+ * @typedef {Object} PoolCapacityResult
+ * @property {number} poolId
+ * @property {CapacityAsset[]} availableCapacity
+ * @property {BigNumber|string} allocatedNxm
+ * @property {BigNumber} minAnnualPrice
+ * @property {BigNumber} maxAnnualPrice
+ */
+
+/**
+ * @typedef {Object} ProductCapacityResult
+ * @property {number} productId
+ * @property {CapacityAsset[]} availableCapacity
+ * @property {BigNumber} usedCapacity
+ * @property {BigNumber} minAnnualPrice
+ * @property {BigNumber} maxAnnualPrice
+ * @property {PoolCapacityResult[]} [capacityPerPool]
+ */
+
 const { WeiPerEther, Zero } = ethers.constants;
 
 const BASIS_POINTS = 10000;
@@ -26,21 +59,21 @@ const BASIS_POINTS = 10000;
  * Calculates the index of the first usable tranche for the maximum cover period.
  * This is used to determine the maximum price a user would get when buying cover.
  *
- * @param {BigNumber} now - The current timestamp in seconds.
- * @param {BigNumber} gracePeriod - The product's grace period in seconds.
+ * @param {number} now - Current timestamp in seconds.
+ * @param {number} gracePeriod - The product's grace period in seconds.
  * @returns {number} The index difference between the first usable tranche for max period and the first active tranche.
  */
 function calculateFirstUsableTrancheIndexForMaxPeriod(now, gracePeriod) {
   const firstActiveTrancheId = calculateTrancheId(now);
-  const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now.add(MAX_COVER_PERIOD).add(gracePeriod));
+  const firstUsableTrancheIdForMaxPeriod = calculateTrancheId(now + MAX_COVER_PERIOD + gracePeriod);
   return firstUsableTrancheIdForMaxPeriod - firstActiveTrancheId;
 }
 
 /**
  * Calculates the pool-level utilization rate across all products in the pool.
  *
- * @param {Array<Object>} products - Array of product capacity data for the pool
- * @returns {BigNumber} The pool-level utilization rate as a BigNumber, expressed in basis points (0-10,000)
+ * @param {ProductCapacityResult[]} products - Array of product capacity data (output of calculateProductCapacity).
+ * @returns {BigNumber} Utilization rate in basis points (0-10,000).
  */
 function calculatePoolUtilizationRate(products) {
   let totalCapacityAvailableNXM = Zero;
@@ -64,17 +97,17 @@ function calculatePoolUtilizationRate(products) {
 /**
  * Computes staking-pool (and optionally RI) capacity for one product for a given period and time.
  *
- * @param {Object} store - Redux store with products, pools, assets, and RI state.
+ * @param {Store} store
  * @param {string|number} productId
  * @param {Object} options
- * @param {string|number|null} [options.poolId] - When set, only that pool’s staking data is included.
- * @param {BigNumber} options.period - Cover period in seconds.
- * @param {BigNumber} options.now - Current unix time in seconds.
- * @param {Object} options.assets - Asset id → metadata from store.
- * @param {Object} options.assetRates - Asset id → NXM rate from store.
+ * @param {number|null} [options.poolId] - When set, only that pool's staking data is included (no RI).
+ * @param {number} options.period - Cover period in seconds.
+ * @param {number} options.now - Current unix time in seconds.
+ * @param {Object<number, Asset>} options.assets - Asset id -> metadata from store.
+ * @param {Object<string, BigNumber>} options.assetRates - Asset id -> NXM rate from store.
  * @param {boolean} [options.withPools=true] - When true, includes per-pool breakdown on the result.
- * @param {Object|null} [options.editedCover=null] - Active cover being edited, for allocation adjustments.
- * @returns {Object|null} Capacity summary or null if the product is missing.
+ * @param {Cover|null} [options.editedCover=null] - Active cover being edited, for allocation adjustments.
+ * @returns {ProductCapacityResult|null} Capacity summary or null if the product is missing.
  */
 function calculateProductCapacity(
   store,
@@ -142,12 +175,12 @@ function calculateProductCapacity(
   let totalRiCapacity = Zero;
   if (!poolId) {
     const expiries = selectVaultEpochExpiryTimestamp(store);
-    const coverGracePeriodExpiry = now.add(product.gracePeriod).add(period);
+    const coverGracePeriodExpiry = now + product.gracePeriod + period;
     const epochDuration = RI_EPOCH_DURATION * 24 * 3600;
     const riVaults = selectProductVaults(store, productId);
 
     totalRiCapacity = riVaults
-      .filter(vault => expiries[vault.vaultId] && expiries[vault.vaultId].add(epochDuration).gt(coverGracePeriodExpiry))
+      .filter(vault => expiries[vault.vaultId] && expiries[vault.vaultId] + epochDuration > coverGracePeriodExpiry)
       .reduce((total, vault) => {
         const assetRate = selectRiAssetRate(store, vault.asset);
         if (!assetRate) {
@@ -197,13 +230,13 @@ function calculateProductCapacity(
  * Gets capacity data for all products.
  * GET /capacity
  *
- * @param {Object} store - The Redux store containing application state.
- * @param {BigNumber} period - The coverage period in seconds.
- * @returns {Array<Object>} Array of product capacity data.
+ * @param {Store} store
+ * @param {number} period - The coverage period in seconds.
+ * @returns {ProductCapacityResult[]}
  */
 function getAllProductCapacities(store, period) {
   const { assets, assetRates, products } = store.getState();
-  const now = BigNumber.from(Date.now()).div(1000);
+  const now = Math.floor(Date.now() / 1000);
 
   return Object.keys(products)
     .map(productId => calculateProductCapacity(store, productId, { period, now, assets, assetRates, withPools: false }))
@@ -214,15 +247,15 @@ function getAllProductCapacities(store, period) {
  * Gets capacity data for a single product across all pools.
  * GET /capacity/:productId
  *
- * @param {Object} store - The Redux store containing application state.
- * @param {string|number} productId - The product ID.
- * @param {BigNumber} period - The coverage period in seconds.
- * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting capacity for a new cover.
- * @returns {Object|null} Product capacity data or null if product not found.
+ * @param {Store} store
+ * @param {string|number} productId
+ * @param {number} period - The coverage period in seconds.
+ * @param {number} [editedCoverId=0] - The ID of the cover being edited (0 for new cover).
+ * @returns {ProductCapacityResult|null}
  */
 function getProductCapacity(store, productId, period, editedCoverId = 0) {
   const { assets, assetRates } = store.getState();
-  const now = BigNumber.from(Date.now()).div(1000);
+  const now = Math.floor(Date.now() / 1000);
 
   const editedCover = getLatestCover(store, editedCoverId);
 
@@ -239,14 +272,14 @@ function getProductCapacity(store, productId, period, editedCoverId = 0) {
  * Gets capacity data for a pool, including all its products.
  * GET /capacity/pools/:poolId
  *
- * @param {Object} store - The Redux store containing application state.
- * @param {string|number} poolId - The pool ID.
- * @param {BigNumber} period - The coverage period in seconds.
- * @returns {Object|null} Pool capacity data or null if pool not found.
+ * @param {Store} store
+ * @param {string|number} poolId
+ * @param {number} period - The coverage period in seconds.
+ * @returns {{ poolId: number, utilizationRate: BigNumber, productsCapacity: ProductCapacityResult[] }}
  */
 function getPoolCapacity(store, poolId, period) {
   const { assets, assetRates } = store.getState();
-  const now = BigNumber.from(Date.now()).div(1000);
+  const now = Math.floor(Date.now() / 1000);
   const productIds = selectProductsInPool(store, poolId);
 
   const productsCapacity = productIds
@@ -273,16 +306,16 @@ function getPoolCapacity(store, poolId, period) {
  * Gets capacity data for a specific product in a specific pool.
  * GET /capacity/pools/:poolId/products/:productId
  *
- * @param {Object} store - The Redux store containing application state.
- * @param {string|number} poolId - The pool ID.
- * @param {string|number} productId - The product ID.
- * @param {BigNumber} period - The coverage period in seconds.
- * @param {number} editedCoverId - The ID of the cover which is edited. ID is 0 when getting capacity for a new cover.
- * @returns {Object|null} Product capacity data for the specific pool or null if not found.
+ * @param {Store} store
+ * @param {string|number} poolId
+ * @param {string|number} productId
+ * @param {number} period - The coverage period in seconds.
+ * @param {number} [editedCoverId=0] - The ID of the cover being edited (0 for new cover).
+ * @returns {ProductCapacityResult|null}
  */
 function getProductCapacityInPool(store, poolId, productId, period, editedCoverId = 0) {
   const { assets, assetRates } = store.getState();
-  const now = BigNumber.from(Math.floor(Date.now() / 1000));
+  const now = Math.floor(Date.now() / 1000);
 
   const editedCover = getLatestCover(store, editedCoverId);
 

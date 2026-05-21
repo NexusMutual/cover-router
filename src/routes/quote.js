@@ -116,7 +116,7 @@ router.get(
   asyncRoute(async (req, res) => {
     const productId = Number(req.query.productId);
     const amount = BigNumber.from(req.query.amount);
-    const period = BigNumber.from(req.query.period).mul(24 * 3600);
+    const period = Number(req.query.period) * 24 * 3600;
     const coverAsset = Number(req.query.coverAsset);
     const paymentAsset = Number(req.query.paymentAsset);
     const editedCoverId = req.query.coverEditId ? Number(req.query.coverEditId) : 0;

@@ -7,13 +7,44 @@ const { calculateTrancheId, calculateBucketId } = require('./helpers');
 const events = ['StakeBurned', 'DepositExtended', 'StakeDeposited', 'PoolFeeChanged', 'Deallocated'];
 
 /**
- * Subscribes to on-chain events and new blocks, emitting normalized updates on a shared `EventEmitter`.
+ * @typedef {import('ethers').providers.Provider} Provider
+ */
+
+/**
+ * Event names emitted by the events API and the argument types the synchronizer
+ * receives in each listener:
+ *
+ * | Event                  | Args                                             |
+ * |------------------------|--------------------------------------------------|
+ * | `pool:change`          | `(poolId: number)`                               |
+ * | `product:change`       | `(productId: BigNumber)`                         |
+ * | `cover:bought`         | `(coverId: number)`                               |
+ * | `cover:edit`           | `(originalCoverId: number)`                      |
+ * | `cover:change`         | `(coverId: number)`                               |
+ * | `block`                | `(blockNumber: number, blockTimestamp: number)`   |
+ * | `tranche:change`       | (none)                                           |
+ * | `bucket:change`        | (none)                                           |
+ * | `ri:bought`            | `(coverId: number, data: string, dataFormat: number)` |
+ * | `ri:withdraw`          | `(vaultId: string)`                              |
+ * | `ri:deposit`           | `(vaultId: string)`                              |
+ * | `ri:slash`             | `(vaultId: string)`                              |
+ * | `ri:setMaxNetworkLimit`| `(vaultId: string)`                              |
+ * | `ri:setNetworkLimit`   | `(vaultId: string)`                              |
+ *
+ * @typedef {Object} EventsApi
+ * @property {Function} on
+ * @property {Function} off
+ * @property {Function} once
+ */
+
+/**
+ * Subscribes to on-chain events and new blocks, emitting normalized
+ * updates on a shared EventEmitter.
  *
  * @param {Provider} provider
- * @param {Function} contracts - Contract factory used for Cover, pools, and related ABIs.
- * @param {Object} riContracts - RI/Symbiotic contract instances keyed by deployment name.
- * @returns {Promise<{ on: Function, off: Function, once: Function }>} Bound emitter API for `pool:change`,
- *   `product:change`, `block`, RI events, etc.
+ * @param {Function} contracts - Contract factory `(name, id?) => ethers.Contract`.
+ * @param {Object} riContracts - RI/Symbiotic contract instances keyed by `vault_*`, `delegator_*`.
+ * @returns {Promise<EventsApi>}
  */
 module.exports = async (provider, contracts, riContracts) => {
   // event emitter
@@ -64,7 +95,7 @@ module.exports = async (provider, contracts, riContracts) => {
   });
 
   // listeners
-  const stakingPoolCount = await stakingPoolFactory.stakingPoolCount();
+  const stakingPoolCount = (await stakingPoolFactory.stakingPoolCount()).toNumber();
 
   // subscribe to events for currently existing pools
   for (let poolId = 1; poolId <= stakingPoolCount; poolId++) {
@@ -100,22 +131,26 @@ module.exports = async (provider, contracts, riContracts) => {
     emitter.emit('product:change', productId);
   });
   cover.on('CoverBought', (coverId, originalCoverId, memberId, productId) => {
-    console.info(`Event: Cover ${coverId} for product ${productId} bought`);
+    const coverIdNum = coverId.toNumber();
+    const originalCoverIdNum = originalCoverId.toNumber();
+    console.info(`Event: Cover ${coverIdNum} for product ${productId} bought`);
     emitter.emit('product:change', productId);
-    emitter.emit('cover:bought', coverId);
-    if (coverId !== originalCoverId) {
-      emitter.emit('cover:edit', originalCoverId);
+    emitter.emit('cover:bought', coverIdNum);
+    if (coverIdNum !== originalCoverIdNum) {
+      emitter.emit('cover:edit', originalCoverIdNum);
     }
   });
   claims.on('ClaimPayoutRedeemed', (user, amount, claimId, coverId) => {
-    console.info(`Event: Claim payout redeemed for cover id ${coverId}`);
-    emitter.emit('cover:change', coverId);
+    const coverIdNum = coverId.toNumber();
+    console.info(`Event: Claim payout redeemed for cover id ${coverIdNum}`);
+    emitter.emit('cover:change', coverIdNum);
   });
 
   // Cover Ri events
   cover.on('CoverRiAllocated', (coverId, premium, paymentAsset, data, dataFormat) => {
-    console.info(`Event: Cover ${coverId} allocated with RI`);
-    emitter.emit('ri:bought', coverId, data, dataFormat);
+    const coverIdNum = coverId.toNumber();
+    console.info(`Event: Cover ${coverIdNum} allocated with RI`);
+    emitter.emit('ri:bought', coverIdNum, data, dataFormat);
   });
 
   for (const contractName of Object.keys(riContracts)) {

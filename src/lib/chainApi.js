@@ -6,11 +6,86 @@ const { WeiPerEther } = ethers.constants;
 const { defaultAbiCoder } = ethers.utils;
 
 /**
+ * @typedef {import('../store/reducer').Cover} Cover
+ * @typedef {import('../store/reducer').RiAllocation} RiAllocation
+ * @typedef {import('../store/reducer').PoolProductData} PoolProductData
+ */
+
+/**
+ * @typedef {Object} ProductData
+ * @property {number} productType - uint16, coerced to number by ethers.
+ * @property {number} capacityReductionRatio - uint16, coerced to number by ethers.
+ * @property {boolean} useFixedPrice
+ * @property {number} gracePeriod - uint32 from chain (coerced to number) or literal 0.
+ * @property {boolean} isDeprecated
+ */
+
+/**
+ * @typedef {Object} RawCoverPoolAllocation
+ * @property {number} poolId - Explicitly converted via toNumber() in fetchCover.
+ * @property {BigNumber} coverAmountInNXM - uint96.
+ * @property {BigNumber} premiumInNXM - uint96.
+ * @property {number} allocationId - uint24, coerced to number by ethers.
+ */
+
+/**
+ * @typedef {Object} CoverData
+ * @property {number} productId - uint24, coerced to number by ethers.
+ * @property {number} coverAsset - uint8, coerced to number by ethers.
+ * @property {BigNumber} amount - uint96.
+ * @property {number} start - uint32, coerced to number by ethers.
+ * @property {number} period - uint32, coerced to number by ethers.
+ * @property {number} originalCoverId - uint32, coerced to number by ethers.
+ * @property {number} latestCoverId - uint32, coerced to number by ethers.
+ * @property {RawCoverPoolAllocation[]} poolAllocations
+ */
+
+/**
+ * @typedef {Object} CoverReference
+ * @property {number} originalCoverId - uint32, coerced to number by ethers.
+ * @property {number} latestCoverId - uint32, coerced to number by ethers.
+ */
+
+/**
+ * @typedef {Object} RiAssetRateResult
+ * @property {BigNumber} assetRate
+ * @property {number} quoteAssetId
+ */
+
+/**
+ * @typedef {Object} ChainApi
+ * @property {(id: number|string) => Promise<ProductData>} fetchProduct
+ * @property {() => Promise<ProductData[]>} fetchProducts
+ * @property {(productId: number|string) => Promise<number[]>} fetchProductPoolsIds
+ * @property {(poolId: number|string) => Promise<number[]>} fetchPoolProductIds
+ * @property {() => Promise<BigNumber>} fetchGlobalCapacityRatio
+ * @property {() => Promise<BigNumber>} fetchStakingPoolCount
+ * @property {() => Promise<BigNumber>} fetchProductCount
+ * @property {(
+ *   productId: number|string, poolId: number|string,
+ *   globalCapacityRatio: BigNumber, capacityReductionRatio: number,
+ * ) => Promise<PoolProductData>} fetchPoolProduct
+ * @property {(assetId: string|number) => Promise<BigNumber>} fetchTokenPriceInAsset
+ * @property {() => Promise<BigNumber>} fetchCoverCount
+ * @property {(coverId: number|string) => Promise<CoverData>} fetchCover
+ * @property {(
+ *   coverId: number|string, poolId: number|string,
+ *   allocationId: number|string,
+ * ) => Promise<BigNumber>} fetchCoverPoolTrancheAllocations
+ * @property {(coverId: number|string) => Promise<CoverReference>} fetchCoverReference
+ * @property {(vaultId: number|string, subnetworkId: number|string) => Promise<BigNumber>} fetchSubnetworkStake
+ * @property {(vaultId: number|string) => Promise<BigNumber>} fetchVaultWithdrawals
+ * @property {(blockNumber: number) => Promise<Record<string, RiAllocation[]>>} fetchVaultAllocations
+ * @property {(vaultId: number|string) => Promise<number>} fetchVaultNextEpochStart
+ * @property {(assetId: string|number) => Promise<RiAssetRateResult>} fetchRiAssetRate
+ */
+
+/**
  * Builds an async API that reads Cover, staking, and RI contract state via ethers.
  *
  * @param {Function} contracts - Factory `(name, id?, forceNew?) => ethers.Contract` for protocol contracts.
  * @param {Object} riContracts - Map of Symbiotic/RI contract handles (`vault_*`, `delegator_*`, `asset_*`, etc.).
- * @returns {Promise<Object>} Named fetch helpers for products, pools, covers, and RI vault data.
+ * @returns {Promise<ChainApi>}
  */
 const createChainApi = async (contracts, riContracts) => {
   // contract instances
@@ -56,8 +131,7 @@ const createChainApi = async (contracts, riContracts) => {
 
   /**
    * @param {number|string} id
-   * @returns {Promise<Object>} Resolves with productType, capacityReductionRatio, useFixedPrice, gracePeriod,
-   *   isDeprecated (`capacityReductionRatio` is a BigNumber).
+   * @returns {Promise<ProductData>}
    */
   const fetchProduct = async id => {
     const { productType, capacityReductionRatio, useFixedPrice, isDeprecated } = await coverProducts.getProduct(id);
@@ -66,7 +140,7 @@ const createChainApi = async (contracts, riContracts) => {
   };
 
   /**
-   * @returns {Promise<Array<Object>>} One row per product; fields match `fetchProduct` results.
+   * @returns {Promise<ProductData[]>}
    */
   const fetchProducts = async () => {
     const products = await coverProducts.getProducts();
@@ -83,7 +157,8 @@ const createChainApi = async (contracts, riContracts) => {
    * @param {number|string} productId
    * @param {number|string} poolId
    * @param {BigNumber} globalCapacityRatio
-   * @param {BigNumber} capacityReductionRatio
+   * @param {number} capacityReductionRatio - uint16, coerced to number by ethers.
+   * @returns {Promise<PoolProductData>}
    */
   const fetchPoolProduct = async (productId, poolId, globalCapacityRatio, capacityReductionRatio) => {
     const stakingPool = contracts('StakingPool', poolId);
@@ -122,7 +197,7 @@ const createChainApi = async (contracts, riContracts) => {
 
   /**
    * @param {number|string} coverId
-   * @returns {Promise<Object>} Cover fields, reference ids, and normalized pool allocations.
+   * @returns {Promise<CoverData>}
    */
   const fetchCover = async coverId => {
     const [{ productId, coverAsset, amount, start, period }, { originalCoverId, latestCoverId }] =
@@ -137,7 +212,10 @@ const createChainApi = async (contracts, riContracts) => {
     return { productId, coverAsset, amount, start, period, originalCoverId, latestCoverId, poolAllocations };
   };
 
-  /** @param {number|string} coverId */
+  /**
+   * @param {number|string} coverId
+   * @returns {Promise<CoverReference>}
+   */
   const fetchCoverReference = async coverId => {
     const { originalCoverId, latestCoverId } = await cover.getCoverReference(coverId);
     return { originalCoverId, latestCoverId };
@@ -147,6 +225,7 @@ const createChainApi = async (contracts, riContracts) => {
    * @param {number|string} coverId
    * @param {number|string} poolId
    * @param {number|string} allocationId
+   * @returns {Promise<BigNumber>} Packed tranche allocations bitmask.
    */
   const fetchCoverPoolTrancheAllocations = async (coverId, poolId, allocationId) => {
     const stakingPool = contracts('StakingPool', poolId);
@@ -157,7 +236,11 @@ const createChainApi = async (contracts, riContracts) => {
 
   // RiContracts
 
-  /** @param {number|string} vaultId @param {number|string} subnetworkId */
+  /**
+   * @param {number|string} vaultId
+   * @param {number|string} subnetworkId
+   * @returns {Promise<BigNumber>}
+   */
   const fetchSubnetworkStake = async (vaultId, subnetworkId) => {
     return await riContracts[`delegator_${vaultId}`].stake(subnetworkId, constants.RI_OPERATOR);
   };
@@ -177,8 +260,7 @@ const createChainApi = async (contracts, riContracts) => {
    * Scans `CoverRiAllocated` logs from `blockNumber` to chain tip and groups RI allocations by `productId_vaultId`.
    *
    * @param {number} blockNumber - Starting block (inclusive).
-   * @returns {Promise<Record<string, Array<Object>>>} Values include BigNumber fields amount, coverId,
-   *   expiryTimestamp, originalCoverId.
+   * @returns {Promise<Record<string, RiAllocation[]>>}
    */
   const fetchVaultAllocations = async blockNumber => {
     const latestBlockNumber = await cover.provider.getBlockNumber();
@@ -197,7 +279,7 @@ const createChainApi = async (contracts, riContracts) => {
       const { coverId, data, dataFormat } = event.args;
 
       const { start, period, productId, originalCoverId } = await fetchCover(coverId);
-      const coverAllocations = defaultAbiCoder.decode([constants.RI_DATA_FORMATS[dataFormat]], data);
+      const [coverAllocations] = defaultAbiCoder.decode([constants.RI_DATA_FORMATS[dataFormat]], data);
 
       for (const coverAllocation of coverAllocations) {
         const { amount, vaultId } = coverAllocation;
@@ -207,8 +289,8 @@ const createChainApi = async (contracts, riContracts) => {
 
         allocations[`${productId}_${vaultId}`].push({
           amount,
-          coverId,
-          expiryTimestamp: BigNumber.from(start).add(period),
+          coverId: BigNumber.from(coverId).toNumber(),
+          expiryTimestamp: start + period,
           originalCoverId,
         });
       }
@@ -217,12 +299,18 @@ const createChainApi = async (contracts, riContracts) => {
     return allocations;
   };
 
-  /** @param {number|string} vaultId */
+  /**
+   * @param {number|string} vaultId
+   * @returns {Promise<number>} uint48, coerced to number by ethers.
+   */
   const fetchVaultNextEpochStart = async vaultId => {
     return await riContracts[`vault_${vaultId}`].nextEpochStart();
   };
 
-  /** @param {string|number} assetId */
+  /**
+   * @param {string|number} assetId
+   * @returns {Promise<RiAssetRateResult>}
+   */
   const fetchRiAssetRate = async assetId => {
     return {
       assetRate: await riContracts[`asset_${assetId}`].getRate(),
